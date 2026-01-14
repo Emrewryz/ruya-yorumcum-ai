@@ -32,46 +32,31 @@ export default function PricingPage() {
 
   // --- GARANTİLİ LINK YÖNTEMİ ---
   // API Hatası almamak için direkt linke yönlendiriyoruz
-  const handlePurchase = async (tier: 'pro' | 'elite') => {
-    setProcessing(tier);
-    
-    try {
-        // 1. Kullanıcıyı Kontrol Et
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            toast.error("Lütfen önce giriş yapın.");
-            router.push('/auth');
-            return;
-        }
+  // --- YENİ PROFESYONEL API YÖNTEMİ ---
+  const handlePurchase = async (tier: 'pro' | 'elite') => {
+    setProcessing(tier);
+    
+    try {
+        // 1. Kullanıcı Giriş Kontrolü
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            toast.error("Lütfen önce giriş yapın.");
+            router.push('/auth');
+            return;
+        }
 
-        // 2. Linki Seç (.env dosyasından)
-        let paymentUrl = "";
-        if (tier === 'pro') {
-            paymentUrl = process.env.NEXT_PUBLIC_LINK_KASIF || "";
-        } else {
-            paymentUrl = process.env.NEXT_PUBLIC_LINK_KAHIN || "";
-        }
+        // 2. Kullanıcıyı API rotamıza yönlendir
+        // Bu rota arka planda formu hazırlayıp kullanıcıyı Shopier'e fırlatacak.
+        toast.loading("Ödeme ekranı hazırlanıyor...");
+        
+        // window.location.href kullanıyoruz ki API'nin döndürdüğü HTML'i tarayıcı çalıştırsın.
+        window.location.href = `/api/payment/create?plan=${tier}`;
 
-        if (!paymentUrl) {
-            toast.error("Ödeme linki bulunamadı.");
-            console.error("Link eksik! Vercel Environment Variables kontrol et.");
-            return;
-        }
-
-        // 3. KRİTİK NOKTA: Kullanıcı ID'sini linke ekle
-        // Shopier bu ID'yi ödeme bitince bize geri söyleyecek (Callback)
-        const finalUrl = `${paymentUrl}&custom_param=${user.id}`;
-
-        // 4. Yönlendir
-        toast.loading("Güvenli ödeme sayfasına yönlendiriliyorsunuz...");
-        window.location.href = finalUrl;
-
-    } catch (e) {
-        toast.error("Bir hata oluştu.");
-    } finally {
+    } catch (e) {
+        toast.error("Bir hata oluştu.");
         setProcessing(null);
-    }
-  };
+    }
+  };
 
   const plans = [
     {
