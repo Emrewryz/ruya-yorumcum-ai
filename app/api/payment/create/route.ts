@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from "@/utils/supabase/server"; // Veya senin client yolun
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
