@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Check, Star, Zap, Crown, ArrowLeft, Loader2, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Check, Star, Zap, Crown, ArrowLeft, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 export default function PricingPage() {
@@ -12,12 +12,7 @@ export default function PricingPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [currentTier, setCurrentTier] = useState<string>('free');
-  
-  // Modal State'leri
-  const [showModal, setShowModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'elite' | null>(null);
-  const [formData, setFormData] = useState({ name: "", surname: "", phone: "" });
-  const [submitting, setSubmitting] = useState(false);
+  const [processing, setProcessing] = useState<string | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -35,64 +30,49 @@ export default function PricingPage() {
     getUser();
   }, [supabase]);
 
-  // Modal Açma
-  const openPaymentModal = (tier: 'pro' | 'elite') => {
-    setSelectedPlan(tier);
-    setShowModal(true);
-  };
-
-  // Ödeme Başlatma (API'ye İstek Atar)
-  const handlePayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.surname || !formData.phone) {
-        toast.warning("Lütfen tüm alanları doldurun.");
-        return;
-    }
-
-    setSubmitting(true);
-
+  // --- GARANTİLİ LINK YÖNTEMİ ---
+  // API Hatası almamak için direkt linke yönlendiriyoruz
+  const handlePurchase = async (tier: 'pro' | 'elite') => {
+    setProcessing(tier);
+    
     try {
-        // 1. Backend'den Shopier Form Verisini İste
-        const response = await fetch('/api/payment/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                plan: selectedPlan,
-                buyerInfo: formData
-            })
-        });
-
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(data.error || "Ödeme başlatılamadı.");
+        // 1. Kullanıcıyı Kontrol Et
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            toast.error("Lütfen önce giriş yapın.");
+            router.push('/auth');
+            return;
         }
 
-        // 2. Görünmez Form Oluştur ve Gönder (Shopier'e Yönlendirme)
-        const form = document.createElement("form");
-        form.setAttribute("method", "post");
-        form.setAttribute("action", "https://www.shopier.com/ShowProduct/api_pay4.php");
+        // 2. Linki Seç (.env dosyasından)
+        let paymentUrl = "";
+        if (tier === 'pro') {
+            paymentUrl = process.env.NEXT_PUBLIC_LINK_KASIF || "";
+        } else {
+            paymentUrl = process.env.NEXT_PUBLIC_LINK_KAHIN || "";
+        }
 
-        // Gelen verileri input olarak ekle
-        Object.keys(data.form).forEach(key => {
-            const input = document.createElement("input");
-            input.setAttribute("type", "hidden");
-            input.setAttribute("name", key);
-            input.setAttribute("value", data.form[key]);
-            form.appendChild(input);
-        });
+        if (!paymentUrl) {
+            toast.error("Ödeme linki bulunamadı.");
+            console.error("Link eksik! Vercel Environment Variables kontrol et.");
+            return;
+        }
 
-        document.body.appendChild(form);
-        form.submit(); // Yönlendir
+        // 3. KRİTİK NOKTA: Kullanıcı ID'sini linke ekle
+        // Shopier bu ID'yi ödeme bitince bize geri söyleyecek (Callback)
+        const finalUrl = `${paymentUrl}&custom_param=${user.id}`;
 
-    } catch (error: any) {
-        console.error(error);
-        toast.error(error.message);
-        setSubmitting(false);
+        // 4. Yönlendir
+        toast.loading("Güvenli ödeme sayfasına yönlendiriliyorsunuz...");
+        window.location.href = finalUrl;
+
+    } catch (e) {
+        toast.error("Bir hata oluştu.");
+    } finally {
+        setProcessing(null);
     }
   };
 
-  // Paket Listesi
   const plans = [
     {
       id: 'free',
@@ -107,7 +87,7 @@ export default function PricingPage() {
       name: 'KAŞİF',
       price: '119 TL', oldPrice: '199 TL', period: '/ay',
       description: 'Bilinçaltını keşfetmek isteyenler.',
-      features: ['Günde 5 Rüya Analizi', 'Psikolojik Analiz', 'Haftada 1 Tarot', 'Günde 1 Görsel (Standart)', 'Reklamsız'],
+      features: ['Günde 5 Rüya Analizi', 'Psikolojik Analiz', 'Haftada 1 Tarot', 'Reklamsız'],
       color: 'blue', icon: <Zap className="w-6 h-6" />, buttonText: 'Kaşif Ol', popular: true
     },
     {
@@ -115,7 +95,7 @@ export default function PricingPage() {
       name: 'KAHİN',
       price: '299 TL', oldPrice: '499 TL', period: '/ay',
       description: 'Rüyaların hakimi olmak isteyenler.',
-      features: ['SINIRSIZ Analiz', 'Manevi Mesajlar', 'Her Gün Tarot', 'Günde 5 Görsel (Ultra HD)', 'Rüya Sohbeti'],
+      features: ['SINIRSIZ Analiz', 'Manevi Mesajlar', 'Her Gün Tarot', 'Öncelikli Destek'],
       color: 'amber', icon: <Crown className="w-6 h-6" />, buttonText: 'Kahin Ol', popular: false
     }
   ];
@@ -126,7 +106,6 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#020617] text-white font-sans relative overflow-hidden">
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
       
-      {/* Navbar */}
       <nav className="p-6 relative z-20">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5" /> <span>Geri Dön</span>
@@ -164,56 +143,18 @@ export default function PricingPage() {
               </ul>
 
               <button
-                onClick={() => plan.id !== 'free' && openPaymentModal(plan.id as 'pro' | 'elite')}
-                disabled={currentTier === plan.id}
+                onClick={() => plan.id !== 'free' && handlePurchase(plan.id as 'pro' | 'elite')}
+                disabled={currentTier === plan.id || processing !== null}
                 className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
                   currentTier === plan.id ? 'bg-white/10 text-gray-400 cursor-not-allowed' : plan.color === 'amber' ? 'bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black hover:scale-[1.02]' : plan.color === 'blue' ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-[1.02]' : 'bg-white/10 text-white'
                 }`}
               >
-                {currentTier === plan.id ? 'Mevcut Planın' : plan.buttonText}
+                {processing === plan.id ? <Loader2 className="w-5 h-5 animate-spin" /> : (currentTier === plan.id ? 'Mevcut Planın' : plan.buttonText)}
               </button>
             </motion.div>
           ))}
         </div>
       </div>
-
-      {/* --- ÖDEME BİLGİ FORMU MODALI --- */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-[#0f172a] border border-white/10 rounded-2xl p-8 w-full max-w-md relative shadow-2xl">
-              <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
-              
-              <h3 className="text-xl font-serif text-[#fbbf24] mb-2">Ödeme Bilgileri</h3>
-              <p className="text-sm text-gray-400 mb-6">Fatura ve güvenlik için yasal zorunluluktur.</p>
-
-              <form onSubmit={handlePayment} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-xs text-gray-500 block mb-1">Ad</label>
-                        <input type="text" required className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-sm focus:border-[#fbbf24] outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                    </div>
-                    <div>
-                        <label className="text-xs text-gray-500 block mb-1">Soyad</label>
-                        <input type="text" required className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-sm focus:border-[#fbbf24] outline-none" value={formData.surname} onChange={e => setFormData({...formData, surname: e.target.value})} />
-                    </div>
-                </div>
-                <div>
-                    <label className="text-xs text-gray-500 block mb-1">Telefon</label>
-                    <input type="tel" required placeholder="05..." className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-sm focus:border-[#fbbf24] outline-none" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-                </div>
-
-                <div className="pt-4">
-                    <button type="submit" disabled={submitting} className="w-full py-3 rounded-lg bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black font-bold flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-50">
-                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Güvenli Ödemeye Geç <ArrowLeft className="w-4 h-4 rotate-180" /></>}
-                    </button>
-                    <p className="text-[10px] text-gray-500 text-center mt-3">Shopier güvenli ödeme sayfasına yönlendirileceksiniz.</p>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
