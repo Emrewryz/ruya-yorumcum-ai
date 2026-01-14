@@ -33,15 +33,16 @@ export async function GET(req: NextRequest) {
 
     // 2. Şifre Temizliği (Boşlukları Siliyoruz)
     // .trim() komutu, şifrenin başında/sonunda boşluk varsa temizler.
-    const apiKey = process.env.SHOPIER_API_KEY?.trim()!;
-    const apiSecret = process.env.SHOPIER_API_SECRET?.trim()!;
-    const websiteIndex = process.env.SHOPIER_WEBSITE_INDEX?.trim() || "1"; 
+    // Şifreleri direkt buraya yazıyoruz (Test bitince eski haline getiririz)
+const apiKey = "1180c7f5d9c933234b8d4e6c3c8c8847"; // Senin API Kullanıcın
+const apiSecret = "4c25c282fe62b5bf9ca9c9f8b2ab5d1f"; // Senin API Şifren
+const websiteIndex = 1;
     
     const orderId = `${user.id.slice(0, 5)}-${Date.now()}`;
     const randomNr = Math.floor(Math.random() * 999999);
 
     // 3. KRİTİK DÜZELTME: Fiyat Formatı (119.00 şeklinde zorluyoruz)
-    const priceStr = price.toFixed(2); // Örn: "119.00" yapar
+    const priceStr = price.toString(); // Örn: "119.00" yapar
     
     // İmza Oluşturma (Sıralama: Secret + Random + OrderID + Price + Currency)
     const dataToSign = `${apiSecret}${randomNr}${orderId}${priceStr}0`;
