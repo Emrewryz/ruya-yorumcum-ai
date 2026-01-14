@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     const apiSecret = "4c25c282fe62b5bf9ca9c9f8b2ab5d1f";
     
     // 👇 BURASI ÖNEMLİ: Eğer 1 çalışmazsa 2, 3 dene. Ama genelde 1'dir.
-    const websiteIndex = 1; 
+    const websiteIndex = 3; 
 
     const orderId = `${Date.now()}`;
     const randomNr = Math.floor(Math.random() * 999999);
