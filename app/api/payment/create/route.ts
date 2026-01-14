@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     // Modül Ayarları sayfasındaki bilgiler
     const apiKey = "1180c7f5d9c933234b8d4e6c3c8c8847"; 
-    const websiteIndex = 2; //
+    const websiteIndex = 1; //
 
     // Bu yöntem daha az parametre istediği için hata payı düşüktür.
     const htmlForm = `
