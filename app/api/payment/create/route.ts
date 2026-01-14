@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 export async function GET(req: NextRequest) {
+  // Bu yorum satırını Git değişikliği algılasın diye ekledik: v2 fix
   try {
     // 1. URL'den hangi paketin seçildiğini al (örn: ?plan=pro)
     const { searchParams } = new URL(req.url);
