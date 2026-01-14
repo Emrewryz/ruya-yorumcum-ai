@@ -10,65 +10,46 @@ export async function GET(req: NextRequest) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
-    }
+    if (!user) return NextResponse.json({ error: "Giris yap" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const plan = searchParams.get('plan');
+    
+    // Paket Fiyatı ve Adı
+    let price = plan === 'elite' ? 299 : 119;
+    let productName = plan === 'elite' ? "KAHIN" : "KASIF";
 
-    // 1. Paket Fiyatı (Sayı olarak)
-    let price = 0;
-    let productName = "";
-
-    if (plan === 'pro') {
-        price = 119;
-        productName = "Ruya Yorumcum - KASIF";
-    } else if (plan === 'elite') {
-        price = 299;
-        productName = "Ruya Yorumcum - KAHIN";
-    } else {
-        return NextResponse.json({ error: "Paket secilmedi" }, { status: 400 });
-    }
-
-    // 2. Şifreler (Test için HARDCODED - Açık şekilde)
-    // Buraya Modül Ayarları sayfasındaki bilgileri tırnak içine yapıştır
-    const apiKey = "1180c7f5d9c933234b8d4e6c3c8c8847"; 
+    // Şifreler (Test)
+    const apiKey = "1180c7f5d9c933234b8d4e6c3c8c8847";
     const apiSecret = "4c25c282fe62b5bf9ca9c9f8b2ab5d1f";
     
-    // Website Index (Eğer 1 çalışmazsa burayı 2 yapıp dene!)
-    const websiteIndex = 2; 
+    // 👇 BURASI ÖNEMLİ: Eğer 1 çalışmazsa 2, 3 dene. Ama genelde 1'dir.
+    const websiteIndex = 1; 
 
-    // Sipariş No
-    const orderId = `${Date.now()}`; // Basit ve benzersiz olsun
+    const orderId = `${Date.now()}`;
     const randomNr = Math.floor(Math.random() * 999999);
+    const priceStr = price.toFixed(2); // "119.00"
 
-    // 3. KRİTİK DÜZELTME: Fiyat Formatı (119.00)
-    // Shopier genelde .00 formatını sever.
-    const priceStr = price.toFixed(2); // "119.00" yapar
-    
-    // 4. İMZA OLUŞTURMA
-    // Sıralama: Secret + Random + OrderID + Price + Currency
+    // İMZA
     const dataToSign = `${apiSecret}${randomNr}${orderId}${priceStr}0`;
-    
     const signature = crypto.createHash("sha256").update(dataToSign).digest("base64");
 
-    // 5. FORM
+    // FORM
     const htmlForm = `
       <!DOCTYPE html>
       <html>
-      <head><title>Ödeme...</title></head>
       <body>
         <form action="https://www.shopier.com/ShowProduct/api_pay4.php" method="post" id="shopier_form">
           <input type="hidden" name="API_key" value="${apiKey}">
           <input type="hidden" name="website_index" value="${websiteIndex}">
           <input type="hidden" name="platform_order_id" value="${orderId}">
           <input type="hidden" name="product_name" value="${productName}">
-          <input type="hidden" name="product_type" value="0"> <input type="hidden" name="buyer_name_last" value="Musteri">
+          <input type="hidden" name="product_type" value="0">
+          <input type="hidden" name="buyer_name_last" value="Musteri">
           <input type="hidden" name="buyer_name_first" value="Degerli">
           <input type="hidden" name="buyer_email" value="${user.email}">
           <input type="hidden" name="buyer_phone" value="05325555555">
-          <input type="hidden" name="billing_address" value="Istanbul Turkiye">
+          <input type="hidden" name="billing_address" value="Istanbul">
           <input type="hidden" name="city" value="Istanbul">
           <input type="hidden" name="country" value="Turkiye">
           <input type="hidden" name="zip_code" value="34000">
@@ -78,10 +59,8 @@ export async function GET(req: NextRequest) {
           <input type="hidden" name="random_nr" value="${randomNr}">
           <input type="hidden" name="signature" value="${signature}">
           <input type="hidden" name="custom_param" value="${user.id}">
-        </form>
-        <script>
-           document.getElementById("shopier_form").submit();
-        </script>
+          </form>
+        <script>document.getElementById("shopier_form").submit();</script>
       </body>
       </html>
     `;
