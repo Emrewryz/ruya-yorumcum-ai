@@ -1,4 +1,4 @@
-// 👇 EN ÜST SATIR (Dokunma)
+// 👇 EN ÜST SATIR
 export const dynamic = 'force-dynamic';
 
 import { createClient } from "@/utils/supabase/server";
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const plan = searchParams.get('plan');
 
-    // 1. Paket Ayarları
+    // 1. Paket Fiyatı (Sayı olarak)
     let price = 0;
     let productName = "";
 
@@ -28,43 +28,47 @@ export async function GET(req: NextRequest) {
         price = 299;
         productName = "Ruya Yorumcum - KAHIN";
     } else {
-        return NextResponse.json({ error: "Gecersiz paket" }, { status: 400 });
+        return NextResponse.json({ error: "Paket secilmedi" }, { status: 400 });
     }
 
-    // 2. Şifre Temizliği (Boşlukları Siliyoruz)
-    // .trim() komutu, şifrenin başında/sonunda boşluk varsa temizler.
-    // Şifreleri direkt buraya yazıyoruz (Test bitince eski haline getiririz)
-const apiKey = "1180c7f5d9c933234b8d4e6c3c8c8847"; // Senin API Kullanıcın
-const apiSecret = "4c25c282fe62b5bf9ca9c9f8b2ab5d1f"; // Senin API Şifren
-const websiteIndex = 1;
+    // 2. Şifreler (Test için HARDCODED - Açık şekilde)
+    // Buraya Modül Ayarları sayfasındaki bilgileri tırnak içine yapıştır
+    const apiKey = "1180c7f5d9c933234b8d4e6c3c8c8847"; 
+    const apiSecret = "4c25c282fe62b5bf9ca9c9f8b2ab5d1f";
     
-    const orderId = `${user.id.slice(0, 5)}-${Date.now()}`;
+    // Website Index (Eğer 1 çalışmazsa burayı 2 yapıp dene!)
+    const websiteIndex = 2; 
+
+    // Sipariş No
+    const orderId = `${Date.now()}`; // Basit ve benzersiz olsun
     const randomNr = Math.floor(Math.random() * 999999);
 
-    // 3. KRİTİK DÜZELTME: Fiyat Formatı (119.00 şeklinde zorluyoruz)
-    const priceStr = price.toString(); // Örn: "119.00" yapar
+    // 3. KRİTİK DÜZELTME: Fiyat Formatı (119.00)
+    // Shopier genelde .00 formatını sever.
+    const priceStr = price.toFixed(2); // "119.00" yapar
     
-    // İmza Oluşturma (Sıralama: Secret + Random + OrderID + Price + Currency)
+    // 4. İMZA OLUŞTURMA
+    // Sıralama: Secret + Random + OrderID + Price + Currency
     const dataToSign = `${apiSecret}${randomNr}${orderId}${priceStr}0`;
     
     const signature = crypto.createHash("sha256").update(dataToSign).digest("base64");
 
-    // 4. Form HTML
+    // 5. FORM
     const htmlForm = `
       <!DOCTYPE html>
       <html>
-      <head><title>Yönlendiriliyor...</title></head>
+      <head><title>Ödeme...</title></head>
       <body>
         <form action="https://www.shopier.com/ShowProduct/api_pay4.php" method="post" id="shopier_form">
           <input type="hidden" name="API_key" value="${apiKey}">
           <input type="hidden" name="website_index" value="${websiteIndex}">
           <input type="hidden" name="platform_order_id" value="${orderId}">
           <input type="hidden" name="product_name" value="${productName}">
-          <input type="hidden" name="product_type" value="0">
-          <input type="hidden" name="buyer_name_last" value="Musteri">
+          <input type="hidden" name="product_type" value="0"> <input type="hidden" name="buyer_name_last" value="Musteri">
           <input type="hidden" name="buyer_name_first" value="Degerli">
           <input type="hidden" name="buyer_email" value="${user.email}">
-          <input type="hidden" name="buyer_phone" value="05325555555"> <input type="hidden" name="billing_address" value="Dijital Teslimat">
+          <input type="hidden" name="buyer_phone" value="05325555555">
+          <input type="hidden" name="billing_address" value="Istanbul Turkiye">
           <input type="hidden" name="city" value="Istanbul">
           <input type="hidden" name="country" value="Turkiye">
           <input type="hidden" name="zip_code" value="34000">
@@ -82,12 +86,9 @@ const websiteIndex = 1;
       </html>
     `;
 
-    return new NextResponse(htmlForm, {
-      headers: { "Content-Type": "text/html" },
-    });
+    return new NextResponse(htmlForm, { headers: { "Content-Type": "text/html" } });
 
   } catch (error) {
-    console.error("Ödeme Hatası:", error);
-    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
+    return NextResponse.json({ error: "Hata" }, { status: 500 });
   }
 }
