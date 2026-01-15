@@ -1,62 +1,40 @@
+export const dynamic = 'force-dynamic'; 
+
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Supabase Admin Client
+// Admin yetkisiyle profil güncellemek için gerekli
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Shopier bazen test için GET isteği atabilir, onu da karşılıyoruz.
 export async function GET(req: NextRequest) {
-  return new NextResponse('Shopier Callback API Calisiyor!', { status: 200 });
+  return new NextResponse('Shopier Callback Aktif', { status: 200 });
 }
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const customId = formData.get('custom_param');
-    const status = formData.get('status');
-    const paymentLink = formData.get('product_link');
+    const customId = formData.get('custom_param')?.toString(); // Supabase User ID
+    const status = formData.get('status')?.toString().toLowerCase(); // 'success'
+    const paymentLink = formData.get('product_link')?.toString() || "";
 
-    console.log("🔔 Shopier'den İstek Geldi!");
-    console.log("📝 Gelen Data:", { 
-      status: status?.toString(), 
-      customId: customId?.toString(),
-      link: paymentLink?.toString() 
-    });
+    console.log("💳 Shopier Sinyali Alındı:", { status, customId });
 
-    // 1. SHOPIER TEST BOTU İÇİN ÖZEL AYAR
-    // Eğer custom_param yoksa bu bir test isteğidir.
-    // Shopier'e "Tamam kardeşim, seni duydum" (200 OK) demeliyiz ki testi onaylasın.
-    if (!customId) {
-      console.log("⚠️ Bu bir Shopier Test isteği olabilir (User ID yok). 200 dönülüyor.");
-      return new NextResponse('OK', { status: 200 });
+    // 1. Shopier Test Botu Kontrolü: Test sinyallerine 200 OK dönmeliyiz
+    if (!customId) return new NextResponse('OK', { status: 200 });
+
+    // 2. Ödeme Başarısızsa İşlem Yapma
+    if (status !== 'success') return new NextResponse('OK', { status: 200 });
+
+    // 3. Alınan Paketi Belirle (Link ID veya Fiyat Üzerinden)
+    let newTier = 'pro';
+    if (paymentLink.includes('43213110') || formData.get('total_order_value') === '299.00') {
+      newTier = 'elite';
     }
 
-    // 2. Ödeme Başarısızsa işlem yapma ama 200 dön (Shopier tekrar tekrar denemesin)
-    if (status?.toString().toLowerCase() !== 'success') {
-      console.log("❌ Ödeme başarısız veya iptal.");
-      return new NextResponse('OK', { status: 200 });
-    }
-
-    // 3. Paketi Belirle
-    let newTier = 'free';
-    const linkString = paymentLink?.toString() || "";
-    
-    // Senin ürün ID'lerin (.env dosyasındakilerle aynı olmalı)
-    if (linkString.includes('43213110')) {
-        newTier = 'elite';
-    } else if (linkString.includes('43212949')) {
-        newTier = 'pro';
-    } else {
-        // ID eşleşmezse fiyattan yakalamayı dene
-        const price = formData.get('total_order_value');
-        if (price === '299.00' || price === '299') newTier = 'elite';
-        else if (price === '119.00' || price === '119') newTier = 'pro';
-    }
-
-    // 4. Veritabanını Güncelle
+    // 4. Veritabanında Kullanıcıyı Yükselt
     const { error } = await supabaseAdmin
       .from('profiles')
       .update({ 
@@ -66,19 +44,15 @@ export async function POST(req: NextRequest) {
       .eq('id', customId);
 
     if (error) {
-      console.error("🔥 DB Hatası:", error);
-      // DB hatası olsa bile Shopier'e yansıtma, loglara bakarsın.
+      console.error("❌ Veritabanı Güncellenemedi:", error.message);
       return new NextResponse('OK', { status: 200 });
     }
 
-    console.log(`✅ BAŞARILI: Kullanıcı (${customId}) -> ${newTier} paketine geçti.`);
-    
-    // Shopier mutlaka "text/plain" formatında basit bir yanıt bekler.
+    console.log(`✅ Kullanıcı ${customId} artık ${newTier} paketinde!`);
     return new NextResponse('OK', { status: 200 });
 
   } catch (error) {
-    console.error("💥 Kritik Hata:", error);
-    // Her durumda 200 dönüyoruz ki Shopier sistemi kilitlemesin.
+    console.error("💥 Callback Hatası:", error);
     return new NextResponse('OK', { status: 200 });
   }
 }
