@@ -4,76 +4,65 @@
 
 :root {
   --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 2, 6, 23; /* mystic-dark rengimiz */
+  --background-start-rgb: 2, 6, 23;
   --background-end-rgb: 2, 6, 23;
+  /* Mobil tarayıcı yüksekliği */
+  --app-height: 100dvh; 
+}
+
+html {
+  /* Bu özellik mobilde sayfanın lastik gibi esnemesini engeller, masaüstüne zararı yoktur */
+  overscroll-behavior-y: none;
+  height: 100%;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: #020617; /* Arka planı siyaha sabitledik */
+  background: #020617;
   font-family: Arial, Helvetica, sans-serif;
-  overflow-x: hidden; /* Yan taşmaları engelle */
+  overflow-x: hidden;
+  min-height: 100vh; /* Masaüstü varsayılan */
 }
 
-/* Scrollbar (Kaydırma çubuğu) Tasarımı - İnce ve mor */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #020617; 
-}
-::-webkit-scrollbar-thumb {
-  background: #4c1d95; 
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #7c3aed; 
-}
-/* ...önceki kodların altına ekle... */
+/* --- SADECE MOBİL CİHAZLAR İÇİN APP HİSSİYATI KURALLARI --- */
+@media (max-width: 768px) {
+  body {
+    min-height: var(--app-height); /* Adres çubuğu sorununu çözer */
+    user-select: none;             /* Mobilde yazı seçmeyi engeller (App hissi) */
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent; /* Tıklama mavisini kaldırır */
+    touch-action: manipulation;    /* Çift tıkla zoom'u kapatır */
+  }
 
-/* Sinematik Gürültü Efekti */
+  /* Mobilde scrollbar gizlensin, temiz görünsün */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* --- MASAÜSTÜ İÇİN ÖZEL KURALLAR --- */
+@media (min-width: 769px) {
+  /* Masaüstünde scrollbar şık görünsün */
+  ::-webkit-scrollbar {
+    width: 8px;
+    display: block;
+  }
+  ::-webkit-scrollbar-track { background: #020617; }
+  ::-webkit-scrollbar-thumb { background: #4c1d95; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+}
+
+/* Diğer stillerin (Noise, Glass Panel, AutoFill) aynen kalabilir */
 .bg-noise {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 50;
-  opacity: 0.03; /* %3 Opaklık */
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none; z-index: 50; opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
-/* Cam Efekti Sınıfları */
 .glass-panel {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.glass-pill {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-}
-/* ...önceki kodların altı... */
-
-/* TARAYICI OTOMATİK DOLDURMA (AUTOFILL) DÜZELTMESİ */
-/* Input sarı/beyaz olmasın, bizim koyu rengimizi korusun */
-input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
-input:-webkit-autofill:active{
-    -webkit-box-shadow: 0 0 0 30px #0f172a inset !important; /* Input zemin rengiyle aynı */
-    -webkit-text-fill-color: white !important; /* Yazı rengi beyaz */
-    transition: background-color 5000s ease-in-out 0s;
-    caret-color: white;
-}
-
-/* Şifre Göz İkonu için düzenleme */
-.password-eye-icon {
-  cursor: pointer;
-  user-select: none;
 }
