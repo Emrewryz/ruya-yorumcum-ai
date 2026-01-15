@@ -12,7 +12,6 @@ export default function PricingPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [currentTier, setCurrentTier] = useState<string>('free');
-  const [processing, setProcessing] = useState<string | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -30,33 +29,10 @@ export default function PricingPage() {
     getUser();
   }, [supabase]);
 
-  // --- GARANTİLİ LINK YÖNTEMİ ---
-  // API Hatası almamak için direkt linke yönlendiriyoruz
-  // --- YENİ PROFESYONEL API YÖNTEMİ ---
-  const handlePurchase = async (tier: 'pro' | 'elite') => {
-    setProcessing(tier);
-    
-    try {
-        // 1. Kullanıcı Giriş Kontrolü
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            toast.error("Lütfen önce giriş yapın.");
-            router.push('/auth');
-            return;
-        }
-
-        // 2. Kullanıcıyı API rotamıza yönlendir
-        // Bu rota arka planda formu hazırlayıp kullanıcıyı Shopier'e fırlatacak.
-        toast.loading("Ödeme ekranı hazırlanıyor...");
-        
-        // window.location.href kullanıyoruz ki API'nin döndürdüğü HTML'i tarayıcı çalıştırsın.
-        window.location.href = `/api/payment/create?plan=${tier}`;
-
-    } catch (e) {
-        toast.error("Bir hata oluştu.");
-        setProcessing(null);
-    }
-  };
+  const handlePurchase = (tier: string) => {
+    // Ödeme sistemi kaldırıldığı için bilgilendirme mesajı gösteriyoruz
+    toast.info(`${tier.toUpperCase()} paketi yakında aktif edilecektir. Şu an sadece manuel işlem yapılmaktadır.`);
+  };
 
   const plans = [
     {
@@ -85,7 +61,11 @@ export default function PricingPage() {
     }
   ];
 
-  if (loading) return <div className="min-h-screen bg-[#020617] flex items-center justify-center"><Loader2 className="w-10 h-10 text-white animate-spin" /></div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+      <Loader2 className="w-10 h-10 text-white animate-spin" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#020617] text-white font-sans relative overflow-hidden">
@@ -107,34 +87,61 @@ export default function PricingPage() {
           {plans.map((plan, index) => (
             <motion.div 
               key={plan.id}
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: index * 0.1 }}
               className={`relative p-8 rounded-3xl border transition-all duration-300 flex flex-col h-full ${
                 plan.popular ? 'bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.15)] scale-105 z-10' : 'bg-white/5 border-white/10 hover:border-white/20'
               }`}
             >
-              {plan.popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">En Popüler</div>}
+              {plan.popular && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">
+                  En Popüler
+                </div>
+              )}
               
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${plan.color === 'amber' ? 'bg-amber-500/20 text-amber-400' : plan.color === 'blue' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'}`}>{plan.icon}</div>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${
+                plan.color === 'amber' ? 'bg-amber-500/20 text-amber-400' : 
+                plan.color === 'blue' ? 'bg-blue-500/20 text-blue-400' : 
+                'bg-gray-500/20 text-gray-400'
+              }`}>
+                {plan.icon}
+              </div>
+
               <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+              
               <div className="mb-8">
                 {plan.oldPrice && <span className="text-gray-500 line-through text-sm block mb-1">{plan.oldPrice}</span>}
-                <div className="flex items-baseline gap-1"><span className="text-4xl font-serif text-white">{plan.price}</span>{plan.period && <span className="text-gray-500 text-sm">{plan.period}</span>}</div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-serif text-white">{plan.price}</span>
+                  {plan.period && <span className="text-gray-500 text-sm">{plan.period}</span>}
+                </div>
               </div>
               
               <ul className="space-y-4 mb-8 flex-1">
                 {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-gray-300"><Check className={`w-5 h-5 shrink-0 ${plan.color === 'amber' ? 'text-amber-400' : plan.color === 'blue' ? 'text-blue-400' : 'text-gray-500'}`} /><span>{feature}</span></li>
+                  <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
+                    <Check className={`w-5 h-5 shrink-0 ${
+                      plan.color === 'amber' ? 'text-amber-400' : 
+                      plan.color === 'blue' ? 'text-blue-400' : 
+                      'text-gray-500'
+                    }`} />
+                    <span>{feature}</span>
+                  </li>
                 ))}
               </ul>
 
               <button
-                onClick={() => plan.id !== 'free' && handlePurchase(plan.id as 'pro' | 'elite')}
-                disabled={currentTier === plan.id || processing !== null}
+                onClick={() => plan.id !== 'free' && handlePurchase(plan.id)}
+                disabled={currentTier === plan.id}
                 className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
-                  currentTier === plan.id ? 'bg-white/10 text-gray-400 cursor-not-allowed' : plan.color === 'amber' ? 'bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black hover:scale-[1.02]' : plan.color === 'blue' ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-[1.02]' : 'bg-white/10 text-white'
+                  currentTier === plan.id ? 'bg-white/10 text-gray-400 cursor-not-allowed' : 
+                  plan.color === 'amber' ? 'bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black hover:scale-[1.02]' : 
+                  plan.color === 'blue' ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-[1.02]' : 
+                  'bg-white/10 text-white'
                 }`}
               >
-                {processing === plan.id ? <Loader2 className="w-5 h-5 animate-spin" /> : (currentTier === plan.id ? 'Mevcut Planın' : plan.buttonText)}
+                {currentTier === plan.id ? 'Mevcut Planın' : plan.buttonText}
               </button>
             </motion.div>
           ))}
