@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Moon, Instagram, Twitter, Mail } from "lucide-react";
+import { Moon, Mail } from "lucide-react"; // Instagram ve Twitter importlarını kaldırdık
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -24,19 +24,18 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Hızlı Linkler */}
+          {/* Hızlı Linkler - "Rüya Yorumla" Kaldırıldı */}
           <div>
             <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-1 h-4 bg-[#fbbf24] rounded-full"></span> Keşfet
             </h4>
             <ul className="space-y-4 text-gray-500 text-sm">
-              <li><Link href="/dashboard" className="hover:text-[#fbbf24] transition-colors hover:translate-x-1 inline-block duration-200">Rüya Yorumla</Link></li>
               <li><Link href="/dashboard/pricing" className="hover:text-[#fbbf24] transition-colors hover:translate-x-1 inline-block duration-200">Paketler & Fiyatlar</Link></li>
               <li><Link href="/dashboard/ay-takvimi" className="hover:text-[#fbbf24] transition-colors hover:translate-x-1 inline-block duration-200">Ay Takvimi</Link></li>
             </ul>
           </div>
 
-          {/* Kurumsal / Yasal */}
+          {/* Kurumsal */}
           <div>
             <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-1 h-4 bg-purple-500 rounded-full"></span> Kurumsal
@@ -49,7 +48,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* İletişim */}
+          {/* İletişim - Mail Güncellendi, Sosyal Medya Kaldırıldı */}
           <div>
             <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-1 h-4 bg-blue-500 rounded-full"></span> İletişim
@@ -59,11 +58,7 @@ export default function Footer() {
                 <div className="p-2 bg-white/5 rounded-lg group-hover:bg-white/10 transition-colors">
                   <Mail className="w-4 h-4 text-gray-300" />
                 </div>
-                <span className="group-hover:text-white transition-colors">info@ruyayorumcum.ai</span>
-              </li>
-              <li className="flex gap-4 pt-4">
-                <Instagram className="w-5 h-5 text-gray-500 cursor-pointer hover:text-[#fbbf24] transition-colors" />
-                <Twitter className="w-5 h-5 text-gray-500 cursor-pointer hover:text-[#fbbf24] transition-colors" />
+                <span className="group-hover:text-white transition-colors">fikriemretopcu07s@gmail.com</span>
               </li>
             </ul>
           </div>
@@ -75,7 +70,7 @@ export default function Footer() {
             © {currentYear} Fikri Emre Topçu - Rüya Yorumcum AI. Tüm Hakları Saklıdır.
           </p>
           
-          {/* PayTR Logoları - Gri tonlamalı ve hoverda renkli */}
+          {/* PayTR Logoları */}
           <div className="flex items-center gap-6 opacity-50 grayscale hover:grayscale-0 transition-all duration-300">
             <div className="flex items-center gap-2 text-[10px] text-green-500 font-bold tracking-widest border border-green-500/20 px-2 py-1 rounded bg-green-500/5">
                SSL SECURE

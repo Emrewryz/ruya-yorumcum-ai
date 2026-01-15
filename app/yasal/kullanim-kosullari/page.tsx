@@ -6,28 +6,31 @@ export default function TermsOfUse() {
         
         <div className="space-y-6 text-sm md:text-base leading-relaxed">
           <section>
-            <h2 className="text-white font-bold text-lg mb-2">1. TARAFLAR</h2>
-            <p>İşbu Kullanım Koşulları, Rüya Yorumcum AI (bundan böyle "Platform" olarak anılacaktır) ile bu platforma üye olan veya ziyaret eden kullanıcı ("Kullanıcı") arasında düzenlenmiştir.</p>
+            <h2 className="text-white font-bold text-lg mb-2">1. TARAFLAR VE TANIMLAR</h2>
+            <p>İşbu Kullanım Koşulları, <strong>Fikri Emre Topçu (Rüya Yorumcum AI)</strong> ile https://ruya-yorumcum-ai.vercel.app alan adlı web sitesine ("Platform") üye olan veya ziyaret eden kullanıcı ("Kullanıcı") arasında düzenlenmiştir.</p>
           </section>
 
           <section>
-            <h2 className="text-white font-bold text-lg mb-2">2. HİZMETİN KAPSAMI</h2>
-            <p>Platform, yapay zeka teknolojisi kullanarak kullanıcılara rüya tabiri ve görselleştirme hizmeti sunar. Sunulan yorumlar tamamen eğlence ve kişisel gelişim amaçlı olup, kesin bir gelecek tahmini, tıbbi teşhis veya psikolojik tedavi niteliği taşımaz.</p>
+            <h2 className="text-white font-bold text-lg mb-2">2. HİZMETİN KAPSAMI VE YASAL UYARI</h2>
+            <p>Platform, yapay zeka teknolojisi kullanarak kullanıcılara rüya tabiri ve görselleştirme hizmeti sunar.</p>
+            <p className="mt-2 text-yellow-500 font-bold border border-yellow-500/20 p-3 rounded-lg bg-yellow-500/5">
+              YASAL UYARI: Sunulan analizler ve yorumlar tamamen eğlence, kişisel gelişim ve genel bilgilendirme amaçlıdır. Kesinlikle tıbbi teşhis, psikolojik tedavi veya profesyonel gelecek tahmini niteliği taşımaz. Kullanıcıların ruh sağlığı ile ilgili konularda uzman bir doktora danışmaları önerilir.
+            </p>
           </section>
 
           <section>
             <h2 className="text-white font-bold text-lg mb-2">3. KULLANICI SORUMLULUKLARI</h2>
-            <p>Kullanıcı, siteyi kullanırken yasalara uygun davranacağını, suç teşkil edecek veya genel ahlaka aykırı rüya içerikleri girmeyeceğini kabul eder. Aksi takdirde doğacak hukuki sorumluluk tamamen Kullanıcı'ya aittir.</p>
+            <p>Kullanıcı, siteyi kullanırken Türkiye Cumhuriyeti yasalarına uygun davranacağını, suç teşkil edecek, genel ahlaka aykırı veya başkalarının haklarını ihlal edecek rüya içerikleri girmeyeceğini kabul eder. Aksi takdirde doğacak hukuki ve cezai sorumluluk tamamen Kullanıcı'ya aittir.</p>
           </section>
 
           <section>
             <h2 className="text-white font-bold text-lg mb-2">4. FİKRİ MÜLKİYET</h2>
-            <p>Sitede yer alan tasarım, logo, yazılım ve yapay zeka çıktıları Platform'un mülkiyetindedir. İzinsiz kopyalanamaz ve ticari amaçla kullanılamaz.</p>
+            <p>Sitede yer alan tasarım, logo, yazılım kodları, algoritmalar ve üretilen yapay zeka çıktıları Platform'un mülkiyetindedir. İzinsiz kopyalanamaz, çoğaltılamaz ve ticari amaçla kullanılamaz.</p>
           </section>
 
           <section>
             <h2 className="text-white font-bold text-lg mb-2">5. DEĞİŞİKLİKLER</h2>
-            <p>Platform, işbu koşulları dilediği zaman güncelleme hakkını saklı tutar.</p>
+            <p>Platform, işbu koşulları dilediği zaman güncelleme hakkını saklı tutar. Güncel koşullar site üzerinden yayınlandığı tarihte yürürlüğe girer.</p>
           </section>
         </div>
       </div>

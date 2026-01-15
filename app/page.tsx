@@ -6,9 +6,31 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { 
   Moon, Eye, Sparkles, Lock, 
-  Palette, Layers, Check, Crown, 
-  MessageCircle, Hash, Zap, LogOut, LayoutDashboard, Brain // <-- Brain EKLENDİ
+  Palette, Layers, Check, Crown, Star, X,
+  MessageCircle, Hash, Zap, LogOut, LayoutDashboard, Brain,
+  Image as ImageIcon // <-- 1. HATA ÇÖZÜMÜ: Buraya eklendi
 } from "lucide-react";
+
+// 2. HATA ÇÖZÜMÜ: Tip Tanımlamaları Eklendi
+interface PlanFeature {
+  text: string;
+  included: boolean;
+  icon?: React.ReactNode; 
+}
+
+interface Plan {
+  id: string;
+  name: string;
+  price: string;
+  oldPrice?: string;
+  period?: string;
+  description: string;
+  features: PlanFeature[];
+  color: string;
+  icon: React.ReactNode;
+  buttonText: string;
+  popular: boolean;
+}
 
 export default function Home() {
   const router = useRouter();
@@ -39,13 +61,73 @@ export default function Home() {
   // Paket Seçimi Yönlendirmesi
   const handlePlanSelection = (planType: 'free' | 'paid') => {
     if (user) {
-       // Giriş yapmışsa satın alma ekranına
        router.push('/dashboard/pricing');
     } else {
-       // Yapmamışsa kayıt ekranına
        router.push('/auth'); 
     }
   };
+
+  // PAKET VERİLERİ (Tip tanımlaması ile düzeltildi)
+  const plans: Plan[] = [
+    {
+      id: 'free',
+      name: 'ÇIRAK',
+      price: 'Ücretsiz',
+      description: 'Yolculuğa yeni başlayanlar için temel rehberlik.',
+      features: [
+        { text: 'Sadece Rüya Özeti (Derin Öz)', included: true },
+        { text: 'Reklamlı Deneyim', included: true },
+        { text: 'Psikolojik & Manevi Analiz', included: false },
+        { text: 'Rüya Görselleştirme', included: false },
+        { text: 'Tarot & Şanslı Sayılar', included: false },
+        { text: 'Rüya Sohbeti (AI)', included: false },
+      ],
+      color: 'gray', 
+      icon: <Star className="w-6 h-6" />, 
+      buttonText: 'Mevcut Plan', 
+      popular: false
+    },
+    {
+      id: 'pro',
+      name: 'KAŞİF',
+      price: '119 TL', 
+      oldPrice: '199 TL', 
+      period: '/ay',
+      description: 'Bilinçaltını daha derinden keşfetmek isteyenler.',
+      features: [
+        { text: 'Detaylı Psikolojik & Manevi Analiz', included: true },
+        { text: 'Rüya Görselleştirme (1 Adet/Rüya)', included: true },
+        { text: 'Ruh Hali & Şanslı Sayılar', included: true },
+        { text: 'Haftalık Tarot (3 Hak)', included: true },
+        { text: 'Reklamsız Deneyim', included: true },
+        { text: 'Rüya Sohbeti (AI)', included: false },
+      ],
+      color: 'blue', 
+      icon: <Zap className="w-6 h-6" />, 
+      buttonText: 'Kaşif Ol', 
+      popular: true
+    },
+    {
+      id: 'elite',
+      name: 'KAHİN',
+      price: '299 TL', 
+      oldPrice: '499 TL', 
+      period: '/ay',
+      description: 'Rüyaların hakimi ol ve kaderini şekillendir.',
+      features: [
+        { text: 'SINIRSIZ Rüya Analizi', included: true },
+        { text: 'Rüya Sohbeti (AI ile Konuş)', included: true, icon: <MessageCircle className="w-4 h-4 text-amber-400 inline mr-1"/> },
+        { text: 'Gelişmiş Görsel Stüdyosu (10 Adet)', included: true, icon: <ImageIcon className="w-4 h-4 text-amber-400 inline mr-1"/> },
+        { text: 'Günlük Tarot & İşaretler', included: true },
+        { text: 'Detaylı Ruh Hali Analizi', included: true },
+        { text: 'Öncelikli Destek', included: true },
+      ],
+      color: 'amber', 
+      icon: <Crown className="w-6 h-6" />, 
+      buttonText: 'Kahin Ol', 
+      popular: false
+    }
+  ];
 
   return (
     <main className="min-h-screen bg-[#050510] text-white relative overflow-x-hidden font-sans selection:bg-[#8b5cf6] selection:text-white pb-20">
@@ -74,7 +156,6 @@ export default function Home() {
 
           <div className="flex items-center gap-4">
             {user ? (
-                // --- KULLANICI GİRİŞ YAPMIŞSA ---
                 <>
                    <span className="hidden sm:block text-xs text-gray-400 font-medium">
                       Hoş geldin, <span className="text-white">{user.email?.split('@')[0]}</span>
@@ -94,7 +175,6 @@ export default function Home() {
                    </button>
                 </>
             ) : (
-                // --- KULLANICI GİRİŞ YAPMAMIŞSA ---
                 <>
                    <Link href="/auth" className="text-sm font-medium text-white/80 hover:text-white hidden sm:block">Giriş Yap</Link>
                    <Link 
@@ -132,7 +212,7 @@ export default function Home() {
         </Link>
       </section>
 
-      {/* 4. CANLI DEMO (MÜHÜRLÜ KUTU) */}
+      {/* 4. CANLI DEMO */}
       <section className="relative z-10 max-w-5xl mx-auto px-4 mb-32" id="ornekler">
         <div className="glass-panel rounded-3xl p-1 relative overflow-hidden group hover:border-[#fbbf24]/30 transition-colors duration-500 bg-white/5 backdrop-blur-xl border border-white/10">
            <div className="grid md:grid-cols-2 gap-0 bg-[#050510]/60 rounded-2xl overflow-hidden">
@@ -144,7 +224,7 @@ export default function Home() {
                </span>
              </div>
 
-             {/* Sağ: Analiz (Blur Efektli) */}
+             {/* Sağ: Analiz */}
              <div className="relative p-10 bg-black/40 flex flex-col justify-center min-h-[300px]">
                  <div className="space-y-4 filter blur-[8px] opacity-40 select-none pointer-events-none">
                     <h4 className="text-[#8b5cf6] font-bold text-xl">Psikolojik Analiz:</h4>
@@ -153,7 +233,6 @@ export default function Home() {
                     <p className="text-gray-300">İbni Sirin kayıtlarına göre diş dökülmesi ailenizle ilgili önemli bir değişimin habercisidir...</p>
                  </div>
                  
-                 {/* Kilit Mührü */}
                  <div onClick={handleUnlockMystery} className="absolute inset-0 flex flex-col items-center justify-center z-10 cursor-pointer group/lock">
                     <div className="w-20 h-20 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24] flex items-center justify-center shadow-[0_0_40px_rgba(251,191,36,0.2)] mb-4 backdrop-blur-md group-hover/lock:scale-110 transition-transform duration-300 group-hover/lock:bg-[#fbbf24] group-hover/lock:text-black">
                        <Lock className="w-8 h-8 text-[#fbbf24] group-hover/lock:text-black transition-colors" />
@@ -169,7 +248,6 @@ export default function Home() {
 
       {/* 5. ÖZELLİKLER VİTRİNİ */}
       <section id="ozellikler" className="container mx-auto px-6 py-20 relative z-10 space-y-32">
-         
          <div className="text-center mb-24">
             <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4 text-white">Evrenin Dört Kapısı</h2>
             <p className="text-gray-400">Sadece rüya tabiri değil, tam kapsamlı bir spiritüel rehberlik.</p>
@@ -263,64 +341,92 @@ export default function Home() {
          </div>
       </section>
 
-      {/* 6. FİYATLANDIRMA (YENİLENMİŞ) */}
+      {/* 6. FİYATLANDIRMA (YENİLENMİŞ & UYARLANMIŞ) */}
       <section id="paketler" className="container mx-auto px-6 py-32 relative z-10">
         <div className="text-center mb-16">
           <h2 className="font-serif text-4xl font-bold mb-4 text-white">Kaderini Seç</h2>
           <p className="text-gray-400">Ruhsal yolculuğunuzda size eşlik edecek rehberi belirleyin.</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
-          
-          {/* 1. PAKET: ÇIRAK */}
-          <div className="relative p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
-            <h3 className="font-serif text-2xl font-bold text-gray-300 mb-2">Çırak</h3>
-            <div className="text-3xl font-bold text-white mb-6">Ücretsiz</div>
-            <ul className="space-y-4 mb-8 text-sm text-gray-400">
-              <li className="flex gap-3"><Check className="w-5 h-5 text-gray-500" /> Günde 1 Rüya Özeti</li>
-              <li className="flex gap-3"><Check className="w-5 h-5 text-gray-500" /> Reklamlı Deneyim</li>
-              <li className="flex gap-3 line-through opacity-50"><Brain className="w-5 h-5" /> Detaylı Analiz Yok</li>
-              <li className="flex gap-3 line-through opacity-50"><Layers className="w-5 h-5" /> Tarot Falı Yok</li>
-            </ul>
-            <button onClick={() => handlePlanSelection('free')} className="block w-full py-3 rounded-xl border border-white/20 text-center hover:bg-white/5 transition-colors">
-              Başla
-            </button>
-          </div>
+        <div className="grid md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
+          {plans.map((plan, index) => (
+            <div 
+              key={plan.id}
+              className={`relative p-8 rounded-3xl border transition-all duration-300 flex flex-col h-full group ${
+                plan.popular 
+                  ? 'bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.15)] scale-105 z-10' 
+                  : plan.id === 'elite' 
+                    ? 'bg-gradient-to-b from-[#2a1b05] to-[#0f172a] border-amber-500/30 hover:border-amber-500/60'
+                    : 'bg-white/5 border-white/10 hover:border-white/20'
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> En Çok Tercih Edilen
+                </div>
+              )}
+              
+              <div className="flex items-center gap-4 mb-6">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                  plan.color === 'amber' ? 'bg-amber-500/20 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 
+                  plan.color === 'blue' ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 
+                  'bg-gray-500/20 text-gray-400'
+                }`}>
+                  {plan.icon}
+                </div>
+                <div>
+                  <h3 className={`text-xl font-bold ${plan.color === 'amber' ? 'text-amber-400' : 'text-white'}`}>{plan.name}</h3>
+                  <div className="h-1 w-12 bg-white/10 rounded-full mt-1"></div>
+                </div>
+              </div>
+              
+              <div className="mb-6 p-4 rounded-2xl bg-black/20 border border-white/5">
+                {plan.oldPrice && plan.price !== 'Ücretsiz' && (
+                   <span className="text-gray-500 line-through text-sm block mb-1">Normal Fiyat: {plan.oldPrice}</span>
+                )}
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl md:text-4xl font-serif text-white tracking-tight">{plan.price}</span>
+                  {plan.period && <span className="text-gray-500 text-sm">{plan.period}</span>}
+                </div>
+                <p className="text-gray-400 text-xs mt-2 leading-relaxed">{plan.description}</p>
+              </div>
+              
+              <ul className="space-y-4 mb-8 flex-1">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className={`flex items-start gap-3 text-sm ${feature.included ? 'text-gray-200' : 'text-gray-600'}`}>
+                    {feature.included ? (
+                      <Check className={`w-5 h-5 shrink-0 ${
+                        plan.color === 'amber' ? 'text-amber-400' : 
+                        plan.color === 'blue' ? 'text-blue-400' : 
+                        'text-gray-500'
+                      }`} />
+                    ) : (
+                      <X className="w-5 h-5 shrink-0 text-white/10" />
+                    )}
+                    <span className={feature.included ? '' : 'line-through decoration-white/10'}>
+                      {feature.icon} {feature.text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
 
-          {/* 2. PAKET: KAŞİF (MOR TEMA - EN POPÜLER) */}
-          <div className="relative p-10 rounded-3xl bg-[#1a103c] border-2 border-[#8b5cf6] shadow-[0_0_50px_rgba(139,92,246,0.2)] transform md:scale-110 z-10">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#8b5cf6] text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider shadow-lg">
-              En Popüler
+              <button
+                onClick={() => handlePlanSelection(plan.id === 'free' ? 'free' : 'paid')}
+                className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg ${
+                  plan.id === 'free'
+                    ? 'bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10'
+                    : plan.color === 'amber' 
+                      ? 'bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black hover:shadow-amber-500/20 hover:scale-[1.02]' 
+                    : plan.color === 'blue' 
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-blue-500/20 hover:scale-[1.02]' 
+                    : 'bg-white/10 text-white'
+                }`}
+              >
+                {plan.id === 'free' ? 'Başla' : plan.buttonText}
+                {plan.id !== 'free' && <Crown className="w-4 h-4" />}
+              </button>
             </div>
-            <h3 className="font-serif text-3xl font-bold text-[#a78bfa] mb-2 flex items-center gap-2"><Zap className="w-6 h-6 fill-current"/> Kaşif</h3>
-            <div className="text-4xl font-bold text-white mb-2">₺199<span className="text-sm text-gray-400 font-normal">/ay</span></div>
-            <p className="text-gray-400 text-xs mb-8">Kendini keşfetmek isteyenler için.</p>
-            <ul className="space-y-4 mb-10 text-sm text-gray-300">
-              <li className="flex gap-3"><Check className="w-5 h-5 text-[#a78bfa]" /> <strong>Günde 5 Detaylı Analiz</strong></li>
-              <li className="flex gap-3"><Hash className="w-5 h-5 text-[#a78bfa]" /> Şanslı Sayılar & Rehberlik</li>
-              <li className="flex gap-3"><Layers className="w-5 h-5 text-[#a78bfa]" /> <strong>Haftada 1 Tarot</strong> Hakkı</li>
-              <li className="flex gap-3"><Palette className="w-5 h-5 text-[#a78bfa]" /> Günde 1 AI Görsel</li>
-            </ul>
-            <button onClick={() => handlePlanSelection('paid')} className="w-full py-4 rounded-xl bg-[#8b5cf6] hover:bg-violet-600 text-white font-bold shadow-[0_0_20px_rgba(139,92,246,0.4)] transition-all">
-              Kaşif Ol
-            </button>
-          </div>
-
-          {/* 3. PAKET: KAHİN (ALTIN TEMA) */}
-          <div className="relative p-8 rounded-3xl bg-black border border-[#fbbf24]/50 hover:border-[#fbbf24] transition-colors duration-300">
-            <h3 className="font-serif text-2xl font-bold text-[#fbbf24] mb-2 flex items-center gap-2"><Crown className="w-6 h-6 fill-current"/> Kahin</h3>
-            <div className="text-3xl font-bold text-white mb-6">₺499<span className="text-sm text-gray-400 font-normal">/ay</span></div>
-            <ul className="space-y-4 mb-8 text-sm text-gray-300">
-              <li className="flex gap-3"><Check className="w-5 h-5 text-[#fbbf24]" /> <strong>Sınırsız</strong> Rüya Yorumu</li>
-              <li className="flex gap-3"><Layers className="w-5 h-5 text-[#fbbf24]" /> <strong>Her Gün Tarot</strong> Falı</li>
-              <li className="flex gap-3"><MessageCircle className="w-5 h-5 text-[#fbbf24]" /> Rüya ile Sohbet (Chat)</li>
-              <li className="flex gap-3"><Palette className="w-5 h-5 text-[#fbbf24]" /> Günde 5 HD Görsel</li>
-            </ul>
-            <button onClick={() => handlePlanSelection('paid')} className="w-full py-3 rounded-xl border border-[#fbbf24] text-[#fbbf24] hover:bg-[#fbbf24] hover:text-black font-bold transition-all">
-              Kahin Ol
-            </button>
-          </div>
-
+          ))}
         </div>
       </section>
 
