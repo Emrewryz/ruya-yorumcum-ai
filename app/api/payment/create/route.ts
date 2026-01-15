@@ -15,25 +15,25 @@ export async function GET(req: NextRequest) {
     let price = plan === 'elite' ? 299 : 119;
     let productName = plan === 'elite' ? "RUYA YORUMCUM KAHIN" : "RUYA YORUMCUM KASIF";
 
+    // OSB TESTİNİN GEÇTİĞİ ANAHTARLARI BURAYA YAZ
     const apiKey = "1180c7f5d9c933234b8d4e6c3c8c8847"; 
-    const apiSecret = "4c25c282fe62b5bf9ca9c9f8b2ab5d1f";
+    const apiSecret = "de0af42543c97dba2f102a3bc900f26a"; // OSB testindeki key ile aynı olmalı
     const websiteIndex = 1; 
 
     const orderId = `${Date.now()}`;
     const randomNr = Math.floor(Math.random() * 999999);
     
-    // Shopier fiyatı tam sayı veya .00 formatında bekler
+    // Shopier fiyatı tam sayı string olarak bekler
     const priceStr = price.toString(); 
 
-    // --- KRİTİK: İMZA HESAPLAMA (Eksik olan kısım buydu) ---
-    // Formül: API_SECRET + random_nr + platform_order_id + total_order_value + currency
+    // İMZA FORMÜLÜ: API_SECRET + random_nr + platform_order_id + total_order_value + currency
     const dataToSign = `${apiSecret}${randomNr}${orderId}${priceStr}0`;
     const signature = crypto.createHash("sha256").update(dataToSign).digest("base64");
 
     const htmlForm = `
       <!DOCTYPE html>
       <html>
-      <head><title>Yönlendiriliyor...</title></head>
+      <head><meta charset="UTF-8"><title>Yönlendiriliyor...</title></head>
       <body>
         <form action="https://www.shopier.com/ShowProduct/api_pay4.php" method="post" id="shopier_form">
           <input type="hidden" name="API_key" value="${apiKey}">
