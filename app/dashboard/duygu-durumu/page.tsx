@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Heart, Activity, PieChart, Zap, Sparkles } from "lucide-react";
+import { ArrowLeft, Heart, Activity, PieChart, Zap, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
-// GENİŞLETİLMİŞ RENK PALETİ (Daha fazla çeşit)
+// GENİŞLETİLMİŞ RENK PALETİ
 const MOOD_COLORS: { [key: string]: string } = {
   "Mutlu": "#10b981",      // Zümrüt Yeşili
   "Huzurlu": "#3b82f6",    // Parlak Mavi
@@ -26,7 +26,6 @@ const MOOD_COLORS: { [key: string]: string } = {
   "Yalnız": "#1e40af",     // Koyu Mavi
 };
 
-// Varsayılan renkler (Eğer listede yoksa sırayla bunları kullan)
 const DEFAULT_COLORS = ["#f472b6", "#22d3ee", "#fbbf24", "#a78bfa", "#34d399", "#fb7185"];
 
 export default function MoodPage() {
@@ -39,19 +38,19 @@ export default function MoodPage() {
   const [dominantMood, setDominantMood] = useState("Nötr");
   const [chartData, setChartData] = useState<any[]>([]); 
   const [gradientString, setGradientString] = useState(""); 
-  const [aiInsight, setAiInsight] = useState(""); // YENİ: Dinamik Yorum
+  const [aiInsight, setAiInsight] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { router.push('/auth'); return; }
 
       const { data: dreams } = await supabase
         .from('dreams')
         .select('ai_response')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(50); // Son 50 rüyaya bakıyoruz
+        .limit(50); // Son 50 rüya
 
       if (dreams && dreams.length > 0) {
         
@@ -76,11 +75,9 @@ export default function MoodPage() {
         const processedData = [];
         let colorIndex = 0;
 
-        // Veriyi işle ve renk ata
         for (const [mood, count] of Object.entries(moodCounts)) {
            const percent = (count / totalDreams) * 100;
            
-           // Renk Seçimi: Varsa listeden, yoksa sıradaki varsayılan renkten
            let color = MOOD_COLORS[mood];
            if (!color) {
               color = DEFAULT_COLORS[colorIndex % DEFAULT_COLORS.length];
@@ -89,29 +86,27 @@ export default function MoodPage() {
            
            processedData.push({ mood, percent: Math.round(percent), color, count });
 
-           // CSS Conic Gradient stringini oluştur
            gradientParts.push(`${color} ${cumulativePercent}% ${cumulativePercent + percent}%`);
            cumulativePercent += percent;
         }
 
-        // Büyükten küçüğe sırala
         const sortedData = processedData.sort((a, b) => b.percent - a.percent);
         setChartData(sortedData);
         setGradientString(`conic-gradient(${gradientParts.join(', ')})`);
 
-        // 4. YENİ: DİNAMİK RUHSAL ANALİZ ÜRETİMİ
+        // 4. DİNAMİK ANALİZ
         const topMood = sortedData[0]?.mood || "Nötr";
         const topScore = sortedData[0]?.percent || 0;
         
         let insight = "";
         if (topMood === "Endişeli" || topMood === "Korku") {
-            insight = `Son zamanlarda rüyalarında ${topMood} teması öne çıkıyor (%${topScore}). Bilinçaltın, yüzleşmekten kaçındığın bir konuyu sana hatırlatıyor olabilir. Günlük hayatta kontrol edemediğin durumlara odaklanmak yerine akışa güvenmeyi dene.`;
+           insight = `Son zamanlarda rüyalarında ${topMood} teması öne çıkıyor (%${topScore}). Bilinçaltın, yüzleşmekten kaçındığın bir konuyu sana hatırlatıyor olabilir. Günlük hayatta kontrol edemediğin durumlara odaklanmak yerine akışa güvenmeyi dene.`;
         } else if (topMood === "Mutlu" || topMood === "Huzurlu" || topMood === "Umutlu") {
-            insight = `Harika bir ruhsal dengeye sahipsin! Rüyalarının %${topScore}'u ${topMood} enerjisi taşıyor. Bu dönemde sezgilerin çok güçlü olabilir, yaratıcı projelere başlamak için ideal bir zaman.`;
+           insight = `Harika bir ruhsal dengeye sahipsin! Rüyalarının %${topScore}'u ${topMood} enerjisi taşıyor. Bu dönemde sezgilerin çok güçlü olabilir, yaratıcı projelere başlamak için ideal bir zaman.`;
         } else if (topMood === "Karmasik" || topMood === "Belirsiz") {
-            insight = `Zihnin biraz karışık görünüyor (%${topScore} ${topMood}). Hayatında bir karar aşamasında olabilirsin. Rüyalarındaki sembolleri not almak, bu belirsizliği netleştirmene yardımcı olacaktır.`;
+           insight = `Zihnin biraz karışık görünüyor (%${topScore} ${topMood}). Hayatında bir karar aşamasında olabilirsin. Rüyalarındaki sembolleri not almak, bu belirsizliği netleştirmene yardımcı olacaktır.`;
         } else {
-            insight = `Ruh halin şu aralar ${topMood} ağırlıklı seyrediyor (%${topScore}). Bu duygu, şu anki yaşam döngünde deneyimlemen gereken bir süreç olabilir. Kendine karşı nazik ol ve hislerini bastırma.`;
+           insight = `Ruh halin şu aralar ${topMood} ağırlıklı seyrediyor (%${topScore}). Bu duygu, şu anki yaşam döngünde deneyimlemen gereken bir süreç olabilir. Kendine karşı nazik ol ve hislerini bastırma.`;
         }
         setAiInsight(insight);
 
@@ -120,67 +115,87 @@ export default function MoodPage() {
     };
 
     fetchData();
-  }, [supabase]);
+  }, [router, supabase]);
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white font-sans relative overflow-x-hidden p-6">
+    // APP FIX: min-h-[100dvh] ve pb-24
+    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col pb-32">
       
       {/* Arkaplan */}
-      <div className="bg-noise"></div>
-      <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+      <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
+      <div className="fixed top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-600/10 rounded-full blur-[100px] md:blur-[150px] pointer-events-none"></div>
 
-      {/* Navigasyon */}
-      <nav className="max-w-4xl mx-auto mb-12 flex items-center gap-4">
-         <button onClick={() => router.back()} className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
-            <ArrowLeft className="w-6 h-6" />
-         </button>
-         <h1 className="font-serif text-2xl font-bold">Ruhsal Spektrum</h1>
+      {/* HEADER (Sticky) */}
+      <nav className="sticky top-0 z-30 w-full bg-[#020617]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 mb-8 flex items-center justify-between">
+        <button onClick={() => router.back()} className="p-2 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all border border-white/5">
+          <ArrowLeft className="w-5 h-5 text-gray-300" />
+        </button>
+        <h1 className="font-serif text-sm md:text-xl tracking-[0.2em] text-white flex items-center gap-2">
+            <Activity className="w-4 h-4 text-[#fbbf24]" /> RUHSAL SPEKTRUM
+        </h1>
+        <div className="w-9"></div>
       </nav>
 
-      <main className="max-w-4xl mx-auto">
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-6 relative z-10">
          
          {loading ? (
-            <div className="text-center py-20 text-gray-500 animate-pulse">Ruhsal veriler işleniyor...</div>
+            <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+               <Loader2 className="w-10 h-10 animate-spin mb-4 text-[#fbbf24]" />
+               <p className="text-sm animate-pulse">Ruhsal veriler işleniyor...</p>
+            </div>
          ) : chartData.length === 0 ? (
-            <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10">
-               <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-               <h3 className="text-xl font-bold text-gray-300">Henüz Veri Yok</h3>
-               <p className="text-gray-500 mt-2">Rüya yorumlattıkça duygu haritan burada oluşacak.</p>
+            <div className="text-center py-20 px-6 bg-white/5 rounded-3xl border border-white/10 mx-auto max-w-sm">
+               <Heart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+               <h3 className="text-lg font-bold text-gray-300">Henüz Veri Yok</h3>
+               <p className="text-gray-500 mt-2 text-sm">Rüya yorumlattıkça duygu haritan burada oluşacak.</p>
+               <button onClick={() => router.push('/dashboard')} className="mt-6 px-6 py-2 bg-[#fbbf24] rounded-full text-black font-bold text-xs uppercase tracking-wide hover:scale-105 transition-transform active:scale-95">
+                  İlk Rüyayı Yaz
+               </button>
             </div>
          ) : (
             <>
-               {/* Özet Kartları */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div className="p-6 rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-6">
+               {/* 1. Özet Kartları */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+                  {/* Ruhsal Denge */}
+                  <motion.div 
+                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                     className="p-5 md:p-6 rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-4 md:gap-6"
+                  >
                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent"></div>
-                     <div className="p-4 rounded-full bg-blue-500/20 text-blue-400">
-                        <Activity className="w-8 h-8" />
+                     <div className="p-3 md:p-4 rounded-full bg-blue-500/20 text-blue-400">
+                        <Activity className="w-6 h-6 md:w-8 md:h-8" />
                      </div>
                      <div>
-                        <div className="text-4xl font-bold text-white">%{averageScore}</div>
-                        <div className="text-xs text-blue-200 uppercase tracking-widest">Ruhsal Denge</div>
+                        <div className="text-3xl md:text-4xl font-bold text-white">%{averageScore}</div>
+                        <div className="text-[10px] md:text-xs text-blue-200 uppercase tracking-widest">Ruhsal Denge</div>
                      </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="p-6 rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-6">
+                  {/* Baskın Frekans */}
+                  <motion.div 
+                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                     className="p-5 md:p-6 rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-4 md:gap-6"
+                  >
                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent"></div>
-                     <div className="p-4 rounded-full bg-purple-500/20 text-purple-400">
-                        <Zap className="w-8 h-8" />
+                     <div className="p-3 md:p-4 rounded-full bg-purple-500/20 text-purple-400">
+                        <Zap className="w-6 h-6 md:w-8 md:h-8" />
                      </div>
                      <div>
-                        <div className="text-3xl font-serif font-bold text-white">{dominantMood}</div>
-                        <div className="text-xs text-purple-200 uppercase tracking-widest">Baskın Frekans</div>
+                        <div className="text-2xl md:text-3xl font-serif font-bold text-white line-clamp-1">{dominantMood}</div>
+                        <div className="text-[10px] md:text-xs text-purple-200 uppercase tracking-widest">Baskın Frekans</div>
                      </div>
-                  </div>
+                  </motion.div>
                </div>
 
-               {/* YUVARLAK ANALİZ & LİSTE */}
-               <div className="grid md:grid-cols-3 gap-8 mb-8">
+               {/* 2. Grafik ve Liste */}
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
                   
-                  {/* Sol Taraf: Grafik */}
-                  <div className="md:col-span-1 p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col items-center justify-center relative overflow-hidden">
-                      <div className="relative w-48 h-48 group">
-                        {/* Glow Efekti */}
+                  {/* Grafik */}
+                  <motion.div 
+                     initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
+                     className="md:col-span-1 p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col items-center justify-center relative overflow-hidden"
+                  >
+                     <div className="relative w-40 h-40 md:w-48 md:h-48 group">
                         <div className="absolute inset-0 rounded-full blur-2xl opacity-20 bg-white animate-pulse-slow"></div>
                         
                         {/* Pasta Grafiği */}
@@ -189,64 +204,64 @@ export default function MoodPage() {
                            style={{ background: gradientString }}
                         ></div>
 
-                        {/* Ortadaki Boşluk */}
+                        {/* Orta Boşluk */}
                         <div className="absolute inset-3 bg-[#0b0f19] rounded-full flex flex-col items-center justify-center border border-white/5 shadow-inner">
                            <span className="text-gray-400 text-[10px] uppercase tracking-widest">Toplam</span>
-                           <span className="text-3xl font-bold text-white">{chartData.reduce((acc, curr) => acc + curr.count, 0)}</span>
+                           <span className="text-2xl md:text-3xl font-bold text-white">{chartData.reduce((acc, curr) => acc + curr.count, 0)}</span>
                            <span className="text-gray-500 text-[10px]">Rüya</span>
                         </div>
                      </div>
-                  </div>
+                  </motion.div>
 
-                  {/* Sağ Taraf: Detaylı Liste */}
-                  <div className="md:col-span-2 p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md overflow-y-auto max-h-[400px] scrollbar-thin scrollbar-thumb-white/10">
-                      <div className="flex items-center gap-2 mb-6 text-gray-400">
-                         <PieChart className="w-4 h-4" />
-                         <span className="text-xs font-bold uppercase tracking-widest">Duygu Dağılımı</span>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Liste */}
+                  <motion.div 
+                     initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}
+                     className="md:col-span-2 p-5 md:p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md"
+                  >
+                     <div className="flex items-center gap-2 mb-4 md:mb-6 text-gray-400">
+                        <PieChart className="w-4 h-4" />
+                        <span className="text-xs font-bold uppercase tracking-widest">Duygu Dağılımı</span>
+                     </div>
+                     
+                     <div className="grid grid-cols-1 gap-2 md:gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-2">
                         {chartData.map((item, i) => (
-                           <motion.div 
-                              key={i}
-                              initial={{ opacity: 0, x: 10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: i * 0.05 }}
-                              className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5 hover:bg-white/5 transition-colors group"
-                           >
+                           <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5 hover:bg-white/5 transition-colors">
                               <div className="flex items-center gap-3">
-                                 <div className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: item.color, color: item.color }}></div>
-                                 <span className="text-sm font-medium text-gray-200 group-hover:text-white">{item.mood}</span>
+                                 <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: item.color, color: item.color }}></div>
+                                 <span className="text-xs md:text-sm font-medium text-gray-200">{item.mood}</span>
                               </div>
                               <div className="flex items-center gap-3">
-                                 <span className="text-xs text-gray-500">{item.count} adet</span>
-                                 <span className="text-xs font-bold text-black px-2 py-0.5 rounded-md" style={{ backgroundColor: item.color }}>%{item.percent}</span>
+                                 <span className="text-[10px] md:text-xs text-gray-500">{item.count} adet</span>
+                                 <span className="text-[10px] md:text-xs font-bold text-black px-2 py-0.5 rounded-md min-w-[35px] text-center" style={{ backgroundColor: item.color }}>%{item.percent}</span>
                               </div>
-                           </motion.div>
+                           </div>
                         ))}
-                      </div>
-                  </div>
+                     </div>
+                  </motion.div>
                </div>
 
-               {/* YENİ: KİŞİSEL RUHSAL ANALİZ KUTUSU */}
-               <div className="p-8 rounded-3xl bg-gradient-to-r from-[#1e1b4b] to-[#0f172a] border border-[#8b5cf6]/30 relative overflow-hidden group">
+               {/* 3. Kişisel Analiz */}
+               <motion.div 
+                  initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}
+                  className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-[#1e1b4b] to-[#0f172a] border border-[#8b5cf6]/30 relative overflow-hidden group shadow-lg"
+               >
                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                     <Sparkles className="w-32 h-32 text-[#8b5cf6]" />
+                     <Sparkles className="w-24 h-24 md:w-32 md:h-32 text-[#8b5cf6]" />
                   </div>
                   
                   <div className="relative z-10">
                      <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 rounded-lg bg-[#8b5cf6]/20 text-[#8b5cf6]">
-                           <Sparkles className="w-5 h-5" />
+                           <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                         </div>
-                        <h3 className="font-serif text-lg font-bold text-white">Ruhsal Harita Analizi</h3>
+                        <h3 className="font-serif text-base md:text-lg font-bold text-white">Ruhsal Harita Analizi</h3>
                      </div>
                      
-                     <p className="text-gray-300 leading-relaxed text-lg font-light">
+                     <p className="text-gray-300 leading-relaxed text-sm md:text-lg font-light text-justify">
                         {aiInsight}
                      </p>
                   </div>
-               </div>
+               </motion.div>
 
             </>
          )}

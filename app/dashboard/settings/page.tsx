@@ -4,15 +4,17 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { 
-  User, Edit3, Save, LogOut, Loader2, Sparkles, Heart, Briefcase, Smile, ArrowLeft, BookOpen
+  User, Edit3, Save, LogOut, Loader2, Sparkles, Heart, Briefcase, Smile, ArrowLeft, BookOpen, Crown, Settings
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [userTier, setUserTier] = useState("free");
   
   // Form Verileri
   const [formData, setFormData] = useState({
@@ -21,7 +23,7 @@ export default function ProfilePage() {
     gender: "",
     marital_status: "",
     interest_area: "",
-    bio: "" // YENİ EKLENDİ
+    bio: "" 
   });
 
   // 1. Mevcut Verileri Çek
@@ -43,8 +45,13 @@ export default function ProfilePage() {
           gender: profile.gender || "",
           marital_status: profile.marital_status || "",
           interest_area: profile.interest_area || "",
-          bio: profile.bio || "" // YENİ
+          bio: profile.bio || "" 
         });
+        
+        let tier = profile.subscription_tier?.toLowerCase() || 'free';
+        if (tier === 'explorer') tier = 'pro';
+        if (tier === 'seer') tier = 'elite';
+        setUserTier(tier);
       }
       setLoading(false);
     };
@@ -58,6 +65,9 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Haptik titreşim
+    if (navigator.vibrate) navigator.vibrate(20);
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -66,7 +76,7 @@ export default function ProfilePage() {
         gender: formData.gender,
         marital_status: formData.marital_status,
         interest_area: formData.interest_area,
-        bio: formData.bio, // YENİ
+        bio: formData.bio, 
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id);
@@ -74,10 +84,13 @@ export default function ProfilePage() {
     setSaving(false);
     
     if (error) {
-      alert("Hata: Bilgiler kaydedilemedi.");
+      toast.error("Hata: Bilgiler kaydedilemedi.");
     } else {
-      // Başarılıysa Dashboard'a yönlendir
-      router.push('/dashboard');
+      toast.success("Profilin güncellendi! ✨");
+      // Mobilde klavyeyi kapat
+      if (document.activeElement instanceof HTMLElement) {
+         document.activeElement.blur();
+      }
     }
   };
 
@@ -95,26 +108,29 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white font-sans relative overflow-x-hidden p-6 md:p-12 flex flex-col items-center justify-center">
+    // APP FIX: min-h-[100dvh] ve pb-24 (Mobil menü payı)
+    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden p-4 md:p-12 flex flex-col items-center pb-24">
       
       {/* ATMOSFER */}
       <div className="bg-noise"></div>
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#8b5cf6]/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* GERİ DÖN BUTONU (SOL ÜST) */}
-      <button 
-        onClick={() => router.back()} 
-        className="absolute top-6 left-6 md:top-10 md:left-10 z-50 p-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors flex items-center gap-2 group"
-      >
-         <ArrowLeft className="w-5 h-5 text-gray-400 group-hover:text-white" />
-         <span className="text-sm font-bold text-gray-400 group-hover:text-white hidden md:inline">Geri Dön</span>
-      </button>
+      {/* HEADER (MOBİL İÇİN) */}
+      <nav className="w-full max-w-2xl flex justify-between items-center mb-8 relative z-20">
+        <button onClick={() => router.back()} className="p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors active:scale-90">
+          <ArrowLeft className="w-5 h-5 text-gray-300" />
+        </button>
+        <h1 className="font-serif text-lg tracking-widest text-white flex items-center gap-2">
+            <Settings className="w-4 h-4 text-[#8b5cf6]" /> AYARLAR
+        </h1>
+        <div className="w-9"></div> {/* Dengeleyici */}
+      </nav>
 
       {/* ANA KART */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative z-10 w-full max-w-2xl bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden mt-12 md:mt-0"
+        className="relative z-10 w-full max-w-2xl bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
       >
         
         {/* Üst Kısım: Avatar ve İsim */}
@@ -132,14 +148,27 @@ export default function ProfilePage() {
            </div>
            
            <h2 className="text-2xl font-serif font-bold text-white">{formData.full_name || "İsimsiz Yolcu"}</h2>
-           <p className="text-gray-500 text-xs uppercase tracking-widest mt-1">Rüya Gezgini Profili</p>
+           
+           {/* Paket Rozeti */}
+           <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+              {userTier === 'free' ? (
+                 <span className="text-gray-400 text-xs font-bold uppercase tracking-widest">Çırak (Ücretsiz)</span>
+              ) : (
+                 <>
+                    <Crown className={`w-3 h-3 ${userTier === 'elite' ? 'text-amber-400' : 'text-emerald-400'}`} />
+                    <span className={`text-xs font-bold uppercase tracking-widest ${userTier === 'elite' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {userTier === 'pro' ? 'Kaşif' : 'Kahin'}
+                    </span>
+                 </>
+              )}
+           </div>
         </div>
 
         {/* Form Alanı */}
-        <div className="p-8 space-y-8">
+        <div className="p-6 md:p-8 space-y-6 md:space-y-8">
            
            {/* 1. Satır: İsim & Yaş */}
-           <div className="grid md:grid-cols-2 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                  <label className="text-xs text-gray-400 uppercase font-bold tracking-wider ml-1">Tam İsim</label>
                  <div className="relative group">
@@ -148,7 +177,7 @@ export default function ProfilePage() {
                       type="text" 
                       value={formData.full_name}
                       onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                      className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:border-[#8b5cf6] outline-none transition-all placeholder-gray-600"
+                      className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-base md:text-sm text-white focus:border-[#8b5cf6] outline-none transition-all placeholder-gray-600"
                       placeholder="Adınız Soyadınız"
                     />
                  </div>
@@ -162,7 +191,7 @@ export default function ProfilePage() {
                       type="number" 
                       value={formData.age}
                       onChange={(e) => setFormData({...formData, age: e.target.value})}
-                      className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:border-[#8b5cf6] outline-none transition-all placeholder-gray-600"
+                      className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-base md:text-sm text-white focus:border-[#8b5cf6] outline-none transition-all placeholder-gray-600"
                       placeholder="Örn: 25"
                     />
                  </div>
@@ -170,7 +199,7 @@ export default function ProfilePage() {
            </div>
 
            {/* 2. Satır: Medeni Durum & Cinsiyet */}
-           <div className="grid md:grid-cols-2 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                  <label className="text-xs text-gray-400 uppercase font-bold tracking-wider ml-1">Medeni Durum</label>
                  <div className="relative group">
@@ -178,7 +207,7 @@ export default function ProfilePage() {
                     <select 
                       value={formData.marital_status}
                       onChange={(e) => setFormData({...formData, marital_status: e.target.value})}
-                      className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:border-[#8b5cf6] outline-none transition-all appearance-none cursor-pointer"
+                      className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-base md:text-sm text-white focus:border-[#8b5cf6] outline-none transition-all appearance-none cursor-pointer"
                     >
                        <option value="" className="bg-[#020617]">Seçiniz...</option>
                        <option value="Single" className="bg-[#020617]">Bekar</option>
@@ -196,7 +225,7 @@ export default function ProfilePage() {
                     <select 
                       value={formData.gender}
                       onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                      className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:border-[#8b5cf6] outline-none transition-all appearance-none cursor-pointer"
+                      className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-base md:text-sm text-white focus:border-[#8b5cf6] outline-none transition-all appearance-none cursor-pointer"
                     >
                        <option value="" className="bg-[#020617]">Seçiniz...</option>
                        <option value="Male" className="bg-[#020617]">Erkek</option>
@@ -216,13 +245,13 @@ export default function ProfilePage() {
                    type="text" 
                    value={formData.interest_area}
                    onChange={(e) => setFormData({...formData, interest_area: e.target.value})}
-                   className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:border-[#8b5cf6] outline-none transition-all placeholder-gray-600"
+                   className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-base md:text-sm text-white focus:border-[#8b5cf6] outline-none transition-all placeholder-gray-600"
                    placeholder="Örn: Yazılım, Sanat, Öğrenci..."
                  />
               </div>
            </div>
 
-           {/* 4. Satır: HAYAT HİKAYESİ (YENİ) */}
+           {/* 4. Satır: HAYAT HİKAYESİ */}
            <div className="space-y-2">
               <label className="text-xs text-gray-400 uppercase font-bold tracking-wider ml-1 flex items-center justify-between">
                  <span>Hayatından Bahset (Opsiyonel)</span>
@@ -235,7 +264,7 @@ export default function ProfilePage() {
                  <textarea 
                    value={formData.bio}
                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                   className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:border-[#8b5cf6] outline-none transition-all placeholder-gray-600 min-h-[100px] resize-none"
+                   className="w-full bg-[#020617]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-base md:text-sm text-white focus:border-[#8b5cf6] outline-none transition-all placeholder-gray-600 min-h-[100px] resize-none"
                    placeholder="Şu anki ruh halin, yaşadığın önemli olaylar veya seni sen yapan şeyler..."
                  />
               </div>
@@ -248,7 +277,7 @@ export default function ProfilePage() {
            <div className="pt-6 border-t border-white/5 flex flex-col md:flex-row gap-4">
               <button 
                 onClick={handleLogout}
-                className="flex-1 py-3 rounded-xl border border-red-500/20 text-red-400 font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-3.5 rounded-xl border border-red-500/20 text-red-400 font-bold hover:bg-red-500/10 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                  <LogOut className="w-4 h-4" /> Çıkış Yap
               </button>
@@ -256,13 +285,13 @@ export default function ProfilePage() {
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-[2] py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-[2] py-3.5 rounded-xl bg-[#8b5cf6] text-white font-bold shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                  {saving ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                  ) : (
                     <>
-                       <Save className="w-5 h-5" /> Kaydet ve Devam Et
+                       <Save className="w-5 h-5" /> Kaydet
                     </>
                  )}
               </button>

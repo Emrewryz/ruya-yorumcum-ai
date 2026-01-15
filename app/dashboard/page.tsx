@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { 
   Moon, FileText, User, Mic, Sparkles, 
   Crown, PenLine, PauseCircle, 
-  Share2, MessageCircle, Layers, Brain, Lock, Heart, Trash2, Image as ImageIcon, Eye, Loader2, Download, Check, Palette, X
+  MessageCircle, Layers, Brain, Lock, Heart, Trash2, Image as ImageIcon, Eye, Loader2, Download, Check, Share2, Palette
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { analyzeDream } from "@/app/actions/analyze-dream"; 
@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 type Tier = 'free' | 'pro' | 'elite';
 
-// Daktilo Efekti
+// Daktilo Efekti Bileşeni
 const TypewriterText = ({ text, speed = 20 }: { text: string, speed?: number }) => {
   const [displayedText, setDisplayedText] = useState("");
   useEffect(() => {
@@ -51,28 +51,28 @@ export default function DashboardPage() {
   const [userTier, setUserTier] = useState<Tier>('free'); 
   const [currentDreamId, setCurrentDreamId] = useState<string | null>(null);
   
-  // --- Görsel State'leri (Sadece Gösterim İçin) ---
+  // --- Görsel State'leri ---
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
-  // --- Görünürlük (Kalıcı) ---
+  // --- Görünürlük ---
   const [showPsychological, setShowPsychological] = useState(false);
   const [showSpiritual, setShowSpiritual] = useState(false);
 
   // 1. BAŞLANGIÇ: VERİTABANI SENKRONİZASYONU
   useEffect(() => {
     const initDashboard = async () => {
-        // A) Ay Fazı
+        // Ay Fazı
         setCurrentMoon(getMoonPhase());
 
-        // B) Selamlama
+        // Selamlama
         const hour = new Date().getHours();
         if (hour >= 5 && hour < 12) setGreeting("Günaydın");
         else if (hour >= 12 && hour < 17) setGreeting("Tünaydın");
         else if (hour >= 17 && hour < 23) setGreeting("İyi Akşamlar");
         else setGreeting("İyi Geceler");
 
-        // C) Kullanıcı ve Paket Bilgisi
+        // Kullanıcı Bilgisi
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return; 
 
@@ -90,9 +90,8 @@ export default function DashboardPage() {
             setUserTier(tier as Tier);
         }
 
-        // D) RÜYAYI VE RESMİ GERİ GETİRME
+        // Rüyayı Geri Yükle (Varsa)
         const savedDreamId = localStorage.getItem('saved_dream_id');
-        
         if (savedDreamId) {
             const { data: dreamData, error } = await supabase
                 .from('dreams')
@@ -105,11 +104,7 @@ export default function DashboardPage() {
                 setAnalysisResult(dreamData.ai_response);
                 setCurrentDreamId(dreamData.id);
                 setStatus('COMPLETED');
-                if (dreamData.image_url) {
-                    setGeneratedImage(dreamData.image_url);
-                } else {
-                    setGeneratedImage(null);
-                }
+                if (dreamData.image_url) setGeneratedImage(dreamData.image_url);
             } else {
                 clearLocalStorage();
             }
@@ -125,15 +120,13 @@ export default function DashboardPage() {
     initDashboard();
   }, [supabase]);
 
-  // 2. STATE DEĞİŞİKLİKLERİNİ KAYDET
+  // 2. STATE KAYDET
   useEffect(() => {
     if (dreamText) localStorage.setItem('saved_dream_text', dreamText);
-    
     if (status === 'COMPLETED' && currentDreamId) {
         localStorage.setItem('saved_status', 'COMPLETED');
         localStorage.setItem('saved_dream_id', currentDreamId);
     }
-
     localStorage.setItem('show_psychological', String(showPsychological));
     localStorage.setItem('show_spiritual', String(showSpiritual));
   }, [dreamText, status, currentDreamId, showPsychological, showSpiritual]);
@@ -186,12 +179,12 @@ export default function DashboardPage() {
           setAnalysisResult(result.data.ai_response);
           setCurrentDreamId(result.data.id);
           setStatus('COMPLETED');
-          
           toast.success("Rüyanız başarıyla analiz edildi! ✨");
-          // Mobilde klavyeyi kapatmak için focus'u kaldır
+          
           if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
           }
+          
           setTimeout(() => {
             resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }, 100);
@@ -202,6 +195,7 @@ export default function DashboardPage() {
     }
   };
 
+  // --- EKSİK OLAN FONKSİYONLAR EKLENDİ ---
   const handleDownloadImage = async () => {
     if (!generatedImage) return;
     try {
@@ -250,13 +244,14 @@ export default function DashboardPage() {
     return currentLevel >= requiredLevel;
   };
 
+  // Kilitli Özellik Bileşenleri
   const LockedFeature = ({ title }: { title: string }) => (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md rounded-3xl border border-white/10 p-6 text-center group cursor-pointer transition-all hover:bg-black/70 active:scale-95">
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md rounded-3xl border border-white/10 p-6 text-center group cursor-pointer transition-all hover:bg-black/70 active:scale-95" onClick={(e) => { e.stopPropagation(); router.push('/dashboard/pricing'); }}>
        <div className="p-3 rounded-full bg-white/5 border border-white/10 mb-3 group-hover:scale-110 transition-transform shadow-[0_0_30px_rgba(251,191,36,0.2)]">
           <Lock className="w-5 h-5 text-[#fbbf24]" />
        </div>
        <h3 className="text-white font-serif text-sm mb-2">{title}</h3>
-       <button onClick={() => router.push('/dashboard/pricing')} className="px-4 py-2 rounded-full bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-transform">
+       <button className="px-4 py-2 rounded-full bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-transform">
          Yükselt
        </button>
     </div>
@@ -275,18 +270,19 @@ export default function DashboardPage() {
   const loadingMessages = [ "Bilinçaltı taranıyor...", "Semboller çözülüyor...", "Yıldız haritası hizalanıyor...", "Gizli mesajlar okunuyor...", "Analiz Tamamlandı." ];
 
   return (
-    // APP FIX: pb-24 ekledik (Mobil menü için boşluk)
-    <div className="min-h-screen bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col md:flex-row pb-24 md:pb-0">
-      <div className="bg-noise"></div>
+    // MAIN WRAPPER
+    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col md:flex-row pb-24 md:pb-0">
+      
+      {/* Arkaplan Efektleri */}
+      <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[800px] h-[300px] md:h-[800px] bg-[#4c1d95] rounded-full blur-[100px] md:blur-[150px] opacity-10 animate-pulse-slow pointer-events-none z-0"></div>
 
-      {/* --- MASAÜSTÜ SIDEBAR (Soldaki 3 İkon ve Çıkış Butonu) --- */}
-      {/* Sadece MD ve üstü ekranlarda görünür */}
+      {/* --- MASAÜSTÜ SIDEBAR (DÜZELTİLDİ: Arşiv Eklendi, Çıkış Ayrıldı) --- */}
       <motion.aside 
         initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}
         className="fixed left-8 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-6 p-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/5 shadow-2xl"
       >
-          {/* Rüyadan Çıkış / Yeni Rüya Butonu */}
+          {/* 1. Rüyadan Çıkış / Yeni Rüya Butonu (En Üstte) */}
           <button 
             onClick={clearDashboard} 
             className="relative p-3 rounded-full bg-[#8b5cf6]/20 text-[#8b5cf6] shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:scale-110 transition-transform group" 
@@ -298,16 +294,17 @@ export default function DashboardPage() {
              </span>
           </button>
 
-          {/* Diğer Navigasyon İkonları */}
-          {[
-            { icon: FileText, label: "Sözlük", path: "/sozluk" },
-            { icon: User, label: "Ayarlar", path: "/dashboard/settings" }
-          ].map((item, idx) => (
-            <button key={idx} onClick={() => handleNavigation(item.path)} className="p-3 text-gray-500 hover:text-white transition-colors relative group">
-              <item.icon className="w-6 h-6" />
-              <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-black/90 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none">{item.label}</span>
-            </button>
-          ))}
+          {/* 2. Rüya Arşivi (Geri Geldi!) */}
+          <button onClick={() => handleNavigation("/dashboard/gunluk")} className="p-3 text-gray-500 hover:text-white transition-colors relative group">
+              <FileText className="w-6 h-6" />
+              <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-black/90 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none">Rüya Arşivi</span>
+          </button>
+
+          {/* 3. Ayarlar */}
+          <button onClick={() => handleNavigation("/dashboard/settings")} className="p-3 text-gray-500 hover:text-white transition-colors relative group">
+              <User className="w-6 h-6" />
+              <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-black/90 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none">Profil & Ayarlar</span>
+          </button>
       </motion.aside>
 
       {/* --- ANA İÇERİK --- */}
@@ -323,9 +320,9 @@ export default function DashboardPage() {
                     <p className="text-gray-500 text-xs md:text-sm mt-1 font-light">Bilinçaltın bugün neler fısıldadı?</p>
                 </motion.div>
 
-                {/* Mobilde "Rüyadan Çık" butonu header'da görünür (Sadece analiz bitince) */}
                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 md:gap-4 z-20">
-                    {/* MOBİL İÇİN ÇIKIŞ BUTONU */}
+                    
+                    {/* MOBİL İÇİN ÇIKIŞ BUTONU (Sadece mobilde ve analiz bitince görünür) */}
                     {status === 'COMPLETED' && (
                         <button 
                             onClick={clearDashboard}
@@ -350,10 +347,9 @@ export default function DashboardPage() {
                 </motion.div>
             </header>
 
-            {/* RÜYA GİRİŞ ALANI */}
+            {/* RÜYA GİRİŞ ALANI (Input) */}
             <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto relative transition-all duration-700 mb-12">
                 
-                {/* Ay Fazı Göstergesi */}
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 cursor-pointer group active:scale-95 transition-transform" onClick={() => router.push('/dashboard/ay-takvimi')}>
                     <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md px-4 py-2 md:px-6 md:py-2 rounded-full border border-white/5 shadow-lg group-hover:border-[#fbbf24]/30 transition-all">
                         <div className="w-6 h-6 flex items-center justify-center text-lg filter drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">{currentMoon ? currentMoon.icon : "🌕"}</div>
@@ -370,7 +366,6 @@ export default function DashboardPage() {
                       onChange={(e) => setDreamText(e.target.value)}
                       disabled={status === 'LOADING'} 
                       placeholder="Dün gece ne gördün? Detayları hatırla..."
-                      // APP FIX: Mobilde font boyutu ve touch-manipulation
                       className={`w-full bg-transparent text-lg md:text-xl text-white placeholder-gray-600 font-medium font-sans border-none outline-none resize-none h-[220px] leading-relaxed tracking-wide scrollbar-thin scrollbar-thumb-[#8b5cf6]/20 scrollbar-track-transparent p-4 selection:bg-[#8b5cf6]/30 transition-all duration-500 touch-manipulation ${status !== 'IDLE' ? 'opacity-50 blur-[1px]' : 'opacity-100'}`}
                       autoFocus
                     ></textarea>
@@ -395,6 +390,7 @@ export default function DashboardPage() {
             </div>
          </div>
 
+         {/* SONUÇ ALANI */}
          <div ref={resultRef} className="w-full">
             <AnimatePresence>
                {status === 'LOADING' && (
@@ -415,7 +411,7 @@ export default function DashboardPage() {
                           <div className="h-[1px] w-12 md:w-20 bg-gradient-to-l from-transparent to-[#fbbf24]"></div>
                       </div>
 
-                      {/* 1. ÖZET (HERKESE AÇIK) */}
+                      {/* 1. ÖZET */}
                       <div className="p-6 md:p-10 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md mb-12 relative overflow-hidden">
                           <div className="absolute top-0 left-0 w-1 h-full bg-[#fbbf24]"></div>
                           <div className="flex items-center gap-3 mb-6">
@@ -425,8 +421,9 @@ export default function DashboardPage() {
                           <TypewriterText text={analysisResult.summary} speed={10} />
                       </div>
 
-                      {/* 2. DETAYLAR (PSİKOLOJİK & MANEVİ) - FREE İÇİN KİLİTLİ */}
+                      {/* 2. DETAYLAR */}
                       <div className="grid md:grid-cols-2 gap-6 md:gap-8 mb-12">
+                          {/* Psikolojik Analiz */}
                           <div className="relative p-6 md:p-8 rounded-3xl bg-[#0f172a] border border-blue-500/20 shadow-[0_0_30px_rgba(59,130,246,0.05)] overflow-hidden min-h-[300px] flex flex-col">
                              <h3 className="font-serif text-lg md:text-xl text-blue-400 mb-4 flex items-center gap-3"><Brain className="w-6 h-6" /> Bilinçaltı Analizi</h3>
                              {!hasAccess('pro') && <LockedFeature title="Psikolojik Derinlik" />}
@@ -444,6 +441,7 @@ export default function DashboardPage() {
                              )}
                           </div>
 
+                          {/* Manevi Analiz */}
                           <div className="relative p-6 md:p-8 rounded-3xl bg-[#022c22] border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.05)] overflow-hidden min-h-[300px] flex flex-col">
                              <h3 className="font-serif text-lg md:text-xl text-emerald-400 mb-4 flex items-center gap-3"><Moon className="w-6 h-6" /> Manevi Mesaj</h3>
                              {!hasAccess('pro') && <LockedFeature title="Manevi Tabir" />}
@@ -525,7 +523,7 @@ export default function DashboardPage() {
                           )}
                       </div>
 
-                      {/* 4. WIDGETLAR (RUH HALİ, ŞANS, TAROT) */}
+                      {/* 4. WIDGETLAR */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                           {/* RUH HALİ WIDGET */}
                           <div className="relative p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-[#fbbf24]/50 cursor-pointer transition-all group overflow-hidden active:scale-95">
@@ -568,7 +566,7 @@ export default function DashboardPage() {
                           </div>
                       </div>
 
-                      {/* 5. SOHBET BUTONU (ELITE) */}
+                      {/* 5. SOHBET BUTONU */}
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-8">
                         {hasAccess('elite') ? (
                            <button onClick={() => currentDreamId && router.push(`/dashboard/sohbet/${currentDreamId}`)} className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black font-bold flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-transform shadow-lg relative overflow-hidden group">
@@ -578,6 +576,7 @@ export default function DashboardPage() {
                         ) : (
                            <div className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-gray-500 font-bold flex items-center justify-center gap-3 opacity-50 cursor-not-allowed group relative">
                               <Lock className="w-4 h-4" /> <span>Rüya Sohbeti (Kahin Paketi)</span>
+                              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Rüyanızla ilgili sorular sormak için yükseltin.</div>
                            </div>
                         )}
                       </motion.div>
