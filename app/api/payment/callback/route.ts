@@ -1,58 +1,57 @@
-export const dynamic = 'force-dynamic'; 
+export const dynamic = 'force-dynamic';
 
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Admin yetkisiyle profil güncellemek için gerekli
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function GET(req: NextRequest) {
-  return new NextResponse('Shopier Callback Aktif', { status: 200 });
-}
-
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const customId = formData.get('custom_param')?.toString(); // Supabase User ID
-    const status = formData.get('status')?.toString().toLowerCase(); // 'success'
-    const paymentLink = formData.get('product_link')?.toString() || "";
+    const resData = formData.get('res')?.toString(); // PHP örneğindeki $_POST['res']
 
-    console.log("💳 Shopier Sinyali Alındı:", { status, customId });
-
-    // 1. Shopier Test Botu Kontrolü: Test sinyallerine 200 OK dönmeliyiz
-    if (!customId) return new NextResponse('OK', { status: 200 });
-
-    // 2. Ödeme Başarısızsa İşlem Yapma
-    if (status !== 'success') return new NextResponse('OK', { status: 200 });
-
-    // 3. Alınan Paketi Belirle (Link ID veya Fiyat Üzerinden)
-    let newTier = 'pro';
-    if (paymentLink.includes('43213110') || formData.get('total_order_value') === '299.00') {
-      newTier = 'elite';
+    if (!resData) {
+      return new NextResponse('missing parameter', { status: 200 });
     }
 
-    // 4. Veritabanında Kullanıcıyı Yükselt
-    const { error } = await supabaseAdmin
-      .from('profiles')
-      .update({ 
-        subscription_tier: newTier,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', customId);
+    // 1. Veriyi Çöz (Base64 Decode) - PHP'deki base64_decode karşılığı
+    const decodedJson = Buffer.from(resData, 'base64').toString('utf-8');
+    const result = JSON.parse(decodedJson); // PHP'deki json_decode karşılığı
 
-    if (error) {
-      console.error("❌ Veritabanı Güncellenemedi:", error.message);
-      return new NextResponse('OK', { status: 200 });
+    // 2. Verileri Al
+    const customId = result.custom_param; // Bizim gönderdiğimiz User ID
+    const orderId = result.orderid;
+    const price = result.price;
+
+    console.log("🔔 Shopier OSB Alındı. Sipariş No:", orderId);
+
+    // 3. Veritabanı Güncelleme (Sadece geçerli bir User ID varsa)
+    if (customId) {
+      let newTier = 'pro';
+      if (price === '299.00' || price === '299') {
+        newTier = 'elite';
+      }
+
+      await supabaseAdmin
+        .from('profiles')
+        .update({ 
+          subscription_tier: newTier,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customId);
     }
 
-    console.log(`✅ Kullanıcı ${customId} artık ${newTier} paketinde!`);
-    return new NextResponse('OK', { status: 200 });
+    // 4. KRİTİK: PHP örneğindeki gibi sadece "success" dön
+    return new NextResponse('success', { 
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' }
+    });
 
   } catch (error) {
-    console.error("💥 Callback Hatası:", error);
-    return new NextResponse('OK', { status: 200 });
+    console.error("Callback Hatası:", error);
+    return new NextResponse('success', { status: 200 }); // Hata olsa da success dönüyoruz
   }
 }
