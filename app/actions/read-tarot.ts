@@ -3,7 +3,11 @@ import { checkUsageLimit } from "@/utils/gatekeeper";
 import { createClient } from "@/utils/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = process.env.GOOGLE_API_KEY || "AIzaSyAITyMtx4UYzdkOJoF4nFStVKrz4BB3ipc"; 
+const apiKey = process.env.GEMINI_API_KEY; 
+
+if (!apiKey) {
+   throw new Error("API Key bulunamadı! .env dosyasını kontrol et.");
+}
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const MODELS_TO_TRY = ["gemini-2.5-flash"];

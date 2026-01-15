@@ -5,7 +5,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getMoonPhase } from "@/utils/moon"; // Ay fazını da dinamik yapalım
 
 // 1. API Anahtarını Alıyoruz
-const apiKey = process.env.GOOGLE_API_KEY || "AIzaSyAITyMtx4UYzdkOJoF4nFStVKrz4BB3ipc"; 
+// process.env kısmını tamamen siliyoruz, şifreyi direkt yapıştırıyoruz:
+const apiKey = process.env.GEMINI_API_KEY; 
+
+if (!apiKey) {
+   throw new Error("API Key bulunamadı! .env dosyasını kontrol et.");
+}
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // MODEL ÖNCELİK LİSTESİ

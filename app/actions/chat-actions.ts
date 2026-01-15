@@ -5,7 +5,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkUsageLimit } from "@/utils/gatekeeper";
 
 // 1. DÜZELTME: API Anahtarı buraya eklendi
-const apiKey = process.env.GOOGLE_API_KEY || "AIzaSyAITyMtx4UYzdkOJoF4nFStVKrz4BB3ipc";
+const apiKey = process.env.GEMINI_API_KEY; 
+
+if (!apiKey) {
+   throw new Error("API Key bulunamadı! .env dosyasını kontrol et.");
+}
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // Yedekli Model Listesi

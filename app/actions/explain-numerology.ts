@@ -4,7 +4,11 @@ import { createClient } from "@/utils/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // 1. API Anahtarını Sabitliyoruz (Hata almamak için)
-const apiKey = process.env.GOOGLE_API_KEY || "AIzaSyAITyMtx4UYzdkOJoF4nFStVKrz4BB3ipc"; 
+const apiKey = process.env.GEMINI_API_KEY; 
+
+if (!apiKey) {
+   throw new Error("API Key bulunamadı! .env dosyasını kontrol et.");
+}
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // Model Listesi (Yedekli)
