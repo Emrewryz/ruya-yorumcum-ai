@@ -6,10 +6,9 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { 
   Moon, Eye, Sparkles, Lock, 
-  Brain, Palette, Layers, Check, Crown, Star, 
-  MessageCircle, Hash, Zap, LogOut, LayoutDashboard, ArrowRight
+  Palette, Layers, Check, Crown, 
+  MessageCircle, Hash, Zap, LogOut, LayoutDashboard, Brain // <-- Brain EKLENDİ
 } from "lucide-react";
-import { motion } from "framer-motion";
 
 export default function Home() {
   const router = useRouter();
@@ -40,14 +39,16 @@ export default function Home() {
   // Paket Seçimi Yönlendirmesi
   const handlePlanSelection = (planType: 'free' | 'paid') => {
     if (user) {
+       // Giriş yapmışsa satın alma ekranına
        router.push('/dashboard/pricing');
     } else {
+       // Yapmamışsa kayıt ekranına
        router.push('/auth'); 
     }
   };
 
   return (
-    <main className="min-h-screen bg-[#050510] text-white relative overflow-x-hidden font-sans selection:bg-[#8b5cf6] selection:text-white">
+    <main className="min-h-screen bg-[#050510] text-white relative overflow-x-hidden font-sans selection:bg-[#8b5cf6] selection:text-white pb-20">
       
       {/* 1. ATMOSFER & ZEMİN */}
       <div className="bg-noise"></div>
@@ -166,7 +167,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. ÖZELLİKLER VİTRİNİ (YENİ ZIG-ZAG TASARIM) */}
+      {/* 5. ÖZELLİKLER VİTRİNİ */}
       <section id="ozellikler" className="container mx-auto px-6 py-20 relative z-10 space-y-32">
          
          <div className="text-center mb-24">
@@ -174,17 +175,15 @@ export default function Home() {
             <p className="text-gray-400">Sadece rüya tabiri değil, tam kapsamlı bir spiritüel rehberlik.</p>
          </div>
 
-         {/* 1. Numeroloji (Sol Görsel - Sağ Metin) */}
+         {/* 1. Numeroloji */}
          <div className="flex flex-col md:flex-row items-center gap-12 lg:gap-24">
             <div className="flex-1 w-full relative group">
-               {/* Görsel Mockup: Sayı Kartı */}
                <div className="relative aspect-video bg-[#0f172a] border border-[#fbbf24]/20 rounded-3xl p-8 flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(251,191,36,0.1)] group-hover:border-[#fbbf24]/50 transition-colors">
                   <div className="absolute inset-0 bg-gradient-to-br from-[#fbbf24]/5 to-transparent"></div>
                   <div className="text-center z-10">
                      <div className="text-8xl font-mono font-bold text-[#fbbf24] drop-shadow-[0_0_20px_rgba(251,191,36,0.5)] animate-pulse">7</div>
                      <div className="text-[#fbbf24] text-xs font-bold tracking-[0.3em] uppercase mt-2">Ruhsal Uyanış</div>
                   </div>
-                  {/* Dekoratif Sayılar */}
                   <div className="absolute top-4 left-4 text-gray-800 font-mono text-2xl">3</div>
                   <div className="absolute bottom-4 right-4 text-gray-800 font-mono text-2xl">12</div>
                </div>
@@ -204,10 +203,9 @@ export default function Home() {
             </div>
          </div>
 
-         {/* 2. Tarot (Sağ Görsel - Sol Metin) */}
+         {/* 2. Tarot */}
          <div className="flex flex-col md:flex-row-reverse items-center gap-12 lg:gap-24">
             <div className="flex-1 w-full relative group">
-               {/* Görsel Mockup: Tarot Kartları */}
                <div className="relative aspect-video bg-[#0f172a] border border-pink-500/20 rounded-3xl p-8 flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(236,72,153,0.1)] group-hover:border-pink-500/50 transition-colors">
                   <div className="flex gap-4 items-center">
                      <div className="w-20 h-32 rounded-lg bg-pink-900/20 border border-pink-500/30 transform -rotate-6 translate-y-4"></div>
@@ -234,12 +232,10 @@ export default function Home() {
             </div>
          </div>
 
-         {/* 3. AI Vizyon (Sol Görsel - Sağ Metin) */}
+         {/* 3. AI Vizyon */}
          <div className="flex flex-col md:flex-row items-center gap-12 lg:gap-24">
             <div className="flex-1 w-full relative group">
-               {/* Görsel Mockup: AI Resim */}
                <div className="relative aspect-video bg-[#0f172a] border border-emerald-500/20 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.1)] group-hover:border-emerald-500/50 transition-colors">
-                  {/* Soyut Arkaplan */}
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 to-black"></div>
                   <div className="absolute inset-0 opacity-50 blur-2xl bg-[radial-gradient(circle_at_50%_50%,_rgba(16,185,129,0.4),transparent_50%)] animate-pulse-slow"></div>
                   
@@ -265,10 +261,9 @@ export default function Home() {
                </ul>
             </div>
          </div>
-
       </section>
 
-      {/* 6. FİYATLANDIRMA */}
+      {/* 6. FİYATLANDIRMA (YENİLENMİŞ) */}
       <section id="paketler" className="container mx-auto px-6 py-32 relative z-10">
         <div className="text-center mb-16">
           <h2 className="font-serif text-4xl font-bold mb-4 text-white">Kaderini Seç</h2>
@@ -292,27 +287,26 @@ export default function Home() {
             </button>
           </div>
 
-          {/* 2. PAKET: KAŞİF (HERO) */}
-          <div className="relative p-10 rounded-3xl bg-[#0f172a] border-2 border-[#8b5cf6] shadow-[0_0_50px_rgba(139,92,246,0.2)] transform md:scale-110 z-10">
+          {/* 2. PAKET: KAŞİF (MOR TEMA - EN POPÜLER) */}
+          <div className="relative p-10 rounded-3xl bg-[#1a103c] border-2 border-[#8b5cf6] shadow-[0_0_50px_rgba(139,92,246,0.2)] transform md:scale-110 z-10">
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#8b5cf6] text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider shadow-lg">
               En Popüler
             </div>
-            <h3 className="font-serif text-3xl font-bold text-[#8b5cf6] mb-2 flex items-center gap-2"><Zap className="w-6 h-6 fill-current"/> Kaşif</h3>
+            <h3 className="font-serif text-3xl font-bold text-[#a78bfa] mb-2 flex items-center gap-2"><Zap className="w-6 h-6 fill-current"/> Kaşif</h3>
             <div className="text-4xl font-bold text-white mb-2">₺199<span className="text-sm text-gray-400 font-normal">/ay</span></div>
             <p className="text-gray-400 text-xs mb-8">Kendini keşfetmek isteyenler için.</p>
             <ul className="space-y-4 mb-10 text-sm text-gray-300">
-              <li className="flex gap-3"><Check className="w-5 h-5 text-[#8b5cf6]" /> <strong>Günde 5 Detaylı Analiz</strong></li>
-              <li className="flex gap-3"><Hash className="w-5 h-5 text-[#8b5cf6]" /> Şanslı Sayılar & Rehberlik</li>
-              <li className="flex gap-3"><Layers className="w-5 h-5 text-[#8b5cf6]" /> <strong>Haftada 1 Tarot</strong> Hakkı</li>
-              <li className="flex gap-3"><Palette className="w-5 h-5 text-[#8b5cf6]" /> Günde 1 AI Görsel</li>
+              <li className="flex gap-3"><Check className="w-5 h-5 text-[#a78bfa]" /> <strong>Günde 5 Detaylı Analiz</strong></li>
+              <li className="flex gap-3"><Hash className="w-5 h-5 text-[#a78bfa]" /> Şanslı Sayılar & Rehberlik</li>
+              <li className="flex gap-3"><Layers className="w-5 h-5 text-[#a78bfa]" /> <strong>Haftada 1 Tarot</strong> Hakkı</li>
+              <li className="flex gap-3"><Palette className="w-5 h-5 text-[#a78bfa]" /> Günde 1 AI Görsel</li>
             </ul>
             <button onClick={() => handlePlanSelection('paid')} className="w-full py-4 rounded-xl bg-[#8b5cf6] hover:bg-violet-600 text-white font-bold shadow-[0_0_20px_rgba(139,92,246,0.4)] transition-all">
               Kaşif Ol
             </button>
-            <div className="absolute inset-0 bg-[#8b5cf6]/5 rounded-3xl z-[-1] animate-pulse-slow"></div>
           </div>
 
-          {/* 3. PAKET: KAHİN */}
+          {/* 3. PAKET: KAHİN (ALTIN TEMA) */}
           <div className="relative p-8 rounded-3xl bg-black border border-[#fbbf24]/50 hover:border-[#fbbf24] transition-colors duration-300">
             <h3 className="font-serif text-2xl font-bold text-[#fbbf24] mb-2 flex items-center gap-2"><Crown className="w-6 h-6 fill-current"/> Kahin</h3>
             <div className="text-3xl font-bold text-white mb-6">₺499<span className="text-sm text-gray-400 font-normal">/ay</span></div>
@@ -330,44 +324,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. FOOTER */}
-      <footer className="border-t border-white/10 bg-black pt-16 pb-8 relative overflow-hidden">
-         <div className="absolute top-0 left-0 w-full h-12 flex justify-between items-center opacity-10 select-none overflow-hidden whitespace-nowrap text-2xl text-white font-serif tracking-[2em]">
-           ♈ ♉ ♊ ♋ ♌ ♍ ♎ ♏ ♐ ♑ ♒ ♓ ♈ ♉ ♊ ♋
-         </div>
-         <div className="container mx-auto px-6 grid md:grid-cols-4 gap-12 text-sm">
-            <div className="col-span-1 md:col-span-2">
-               <div className="flex items-center gap-2 mb-6">
-                  <Moon className="w-6 h-6 text-[#fbbf24]" />
-                  <span className="font-serif text-xl font-bold">RüyaYorumcum AI</span>
-               </div>
-               <p className="text-gray-500 leading-relaxed max-w-xs">
-                 Bilinçaltınızın derinliklerindeki sembolleri, modern teknoloji ve kadim bilgelikle aydınlatıyoruz.
-               </p>
-            </div>
-            <div>
-               <h4 className="font-bold text-white mb-4">Popüler Rüyalar</h4>
-               <ul className="space-y-2 text-gray-500">
-                  <li><Link href="/sozluk/ruyada-yilan-gormek" className="hover:text-[#fbbf24]">Rüyada Yılan Görmek</Link></li>
-                  <li><Link href="/sozluk/ruyada-dis-dokulmesi" className="hover:text-[#fbbf24]">Rüyada Diş Dökülmesi</Link></li>
-                  <li><Link href="/sozluk/ruyada-ucmak" className="hover:text-[#fbbf24]">Rüyada Uçmak</Link></li>
-                  <li><Link href="/sozluk/ruyada-deniz-gormek" className="hover:text-[#fbbf24]">Rüyada Deniz Görmek</Link></li>
-               </ul>
-            </div>
-            <div>
-               <h4 className="font-bold text-white mb-4">Kurumsal</h4>
-               <ul className="space-y-2 text-gray-500">
-                  <li><Link href="#" className="hover:text-[#fbbf24]">Hakkımızda</Link></li>
-                  <li><Link href="#" className="hover:text-[#fbbf24]">Gizlilik Politikası</Link></li>
-                  <li><Link href="#" className="hover:text-[#fbbf24]">Kullanım Şartları</Link></li>
-                  <li><Link href="#" className="hover:text-[#fbbf24]">İletişim</Link></li>
-               </ul>
-            </div>
-         </div>
-         <div className="container mx-auto px-6 mt-16 pt-8 border-t border-white/5 text-center text-gray-600 text-xs">
-            <p>© 2026 Rüya Yorumcum AI - Bilinçaltınızın Dijital Rehberi.</p>
-         </div>
-      </footer>
+      {/* FOOTER: Global Footer Layout'tan geleceği için buradan kaldırıldı */}
     </main>
   );
 }

@@ -3,9 +3,28 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Check, Star, Zap, Crown, ArrowLeft, Loader2 } from "lucide-react";
+import { Check, X, Star, Zap, Crown, ArrowLeft, Loader2, Sparkles, MessageCircle, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+
+// Tip Tanımlamaları
+interface PlanFeature {
+  text: string;
+  included: boolean;
+  icon?: React.ReactNode; 
+}
+
+interface Plan {
+  id: string;
+  name: string;
+  price: string;
+  period?: string;
+  description?: string;
+  features: PlanFeature[];
+  theme: 'dark' | 'purple' | 'gold'; // Görseldeki temalar
+  buttonText: string;
+  popular: boolean;
+}
 
 export default function PricingPage() {
   const router = useRouter();
@@ -29,35 +48,61 @@ export default function PricingPage() {
     getUser();
   }, [supabase]);
 
-  const handlePurchase = (tier: string) => {
-    // Ödeme sistemi kaldırıldığı için bilgilendirme mesajı gösteriyoruz
-    toast.info(`${tier.toUpperCase()} paketi yakında aktif edilecektir. Şu an sadece manuel işlem yapılmaktadır.`);
+  const handlePurchase = (planName: string) => {
+    toast.info(`Ödeme altyapısı (PayTR) entegrasyon sürecindedir. ${planName} paketi çok yakında aktif olacaktır.`, {
+      duration: 5000,
+      icon: <Loader2 className="w-5 h-5 animate-spin" />,
+    });
   };
 
-  const plans = [
+  // GÖRSELDEKİ VERİLERE GÖRE GÜNCELLENMİŞ PLANLAR
+  const plans: Plan[] = [
     {
       id: 'free',
       name: 'Çırak',
       price: 'Ücretsiz',
-      description: 'Yolculuğa yeni başlayanlar için.',
-      features: ['Günde 1 Rüya Analizi', 'Kısa Rüya Özeti', 'Reklamlı Deneyim'],
-      color: 'gray', icon: <Star className="w-6 h-6" />, buttonText: 'Mevcut Plan', popular: false
+      description: '',
+      theme: 'dark',
+      features: [
+        { text: 'Günde 1 Rüya Özeti', included: true },
+        { text: 'Reklamlı Deneyim', included: true },
+        { text: 'Detaylı Analiz Yok', included: false },
+        { text: 'Tarot Falı Yok', included: false },
+      ],
+      buttonText: 'Başla', 
+      popular: false
     },
     {
       id: 'pro',
-      name: 'KAŞİF',
-      price: '119 TL', oldPrice: '199 TL', period: '/ay',
-      description: 'Bilinçaltını keşfetmek isteyenler.',
-      features: ['Günde 5 Rüya Analizi', 'Psikolojik Analiz', 'Haftada 1 Tarot', 'Reklamsız'],
-      color: 'blue', icon: <Zap className="w-6 h-6" />, buttonText: 'Kaşif Ol', popular: true
+      name: 'Kaşif',
+      price: '₺199', 
+      period: '/ay',
+      description: 'Kendini keşfetmek isteyenler için.',
+      theme: 'purple',
+      features: [
+        { text: 'Günde 5 Detaylı Analiz', included: true },
+        { text: 'Şanslı Sayılar & Rehberlik', included: true, icon: <Sparkles className="w-4 h-4 mr-1 text-purple-300"/> },
+        { text: 'Haftada 1 Tarot Hakkı', included: true },
+        { text: 'Günde 1 AI Görsel', included: true },
+      ],
+      buttonText: 'Kaşif Ol', 
+      popular: true
     },
     {
       id: 'elite',
-      name: 'KAHİN',
-      price: '299 TL', oldPrice: '499 TL', period: '/ay',
-      description: 'Rüyaların hakimi olmak isteyenler.',
-      features: ['SINIRSIZ Analiz', 'Manevi Mesajlar', 'Her Gün Tarot', 'Öncelikli Destek'],
-      color: 'amber', icon: <Crown className="w-6 h-6" />, buttonText: 'Kahin Ol', popular: false
+      name: 'Kahin',
+      price: '₺499', 
+      period: '/ay',
+      description: '',
+      theme: 'gold',
+      features: [
+        { text: 'Sınırsız Rüya Yorumu', included: true },
+        { text: 'Her Gün Tarot Falı', included: true },
+        { text: 'Rüya ile Sohbet (Chat)', included: true, icon: <MessageCircle className="w-4 h-4 mr-1 text-amber-400"/> },
+        { text: 'Günde 5 HD Görsel', included: true, icon: <ImageIcon className="w-4 h-4 mr-1 text-amber-400"/> },
+      ],
+      buttonText: 'Kahin Ol', 
+      popular: false
     }
   ];
 
@@ -68,83 +113,113 @@ export default function PricingPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-[#020617] text-white font-sans relative overflow-hidden flex flex-col">
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
       
-      <nav className="p-6 relative z-20">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-5 h-5" /> <span>Geri Dön</span>
+      {/* Navbar */}
+      <nav className="p-6 relative z-20 w-full max-w-7xl mx-auto">
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group">
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> <span>Geri Dön</span>
         </button>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 pb-20 relative z-10">
+      {/* Main Content */}
+      <div className="flex-grow w-full max-w-7xl mx-auto px-6 pb-20 relative z-10 flex flex-col items-center">
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-serif text-[#fbbf24] mb-4">Kaderini Seç</h1>
-          <p className="text-gray-400 text-lg">Açılışa özel fiyatlarla bilinçaltının kapılarını arala.</p>
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+            <h1 className="text-4xl md:text-5xl font-serif text-white mb-4 tracking-wide">Kaderini Seç</h1>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Ruhsal yolculuğunuzda size eşlik edecek rehberi belirleyin.
+            </p>
+          </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl items-center">
           {plans.map((plan, index) => (
             <motion.div 
               key={plan.id}
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ delay: index * 0.1 }}
-              className={`relative p-8 rounded-3xl border transition-all duration-300 flex flex-col h-full ${
-                plan.popular ? 'bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.15)] scale-105 z-10' : 'bg-white/5 border-white/10 hover:border-white/20'
+              className={`relative p-8 rounded-[2rem] border flex flex-col h-full transition-transform duration-300 ${
+                plan.theme === 'purple' 
+                  ? 'bg-[#1a103c] border-[#8b5cf6] shadow-[0_0_50px_rgba(139,92,246,0.2)] md:scale-110 z-10' 
+                  : plan.theme === 'gold' 
+                    ? 'bg-black border-[#fbbf24]/50'
+                    : 'bg-[#121212] border-white/10'
               }`}
             >
+              {/* En Popüler Etiketi */}
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">
-                  En Popüler
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#8b5cf6] text-white text-xs font-bold px-6 py-2 rounded-full uppercase tracking-widest shadow-lg z-20 whitespace-nowrap">
+                  EN POPÜLER
                 </div>
               )}
-              
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${
-                plan.color === 'amber' ? 'bg-amber-500/20 text-amber-400' : 
-                plan.color === 'blue' ? 'bg-blue-500/20 text-blue-400' : 
-                'bg-gray-500/20 text-gray-400'
-              }`}>
-                {plan.icon}
+
+              {/* Başlık ve İkon */}
+              <div className="mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                   {plan.theme === 'purple' && <Zap className="w-6 h-6 text-[#a78bfa] fill-[#a78bfa]" />}
+                   {plan.theme === 'gold' && <Crown className="w-6 h-6 text-[#fbbf24] fill-[#fbbf24]" />}
+                   <h3 className={`text-2xl font-bold ${
+                     plan.theme === 'purple' ? 'text-[#a78bfa]' : 
+                     plan.theme === 'gold' ? 'text-[#fbbf24]' : 'text-gray-400'
+                   }`}>{plan.name}</h3>
+                </div>
+                
+                <div className="flex items-baseline gap-1">
+                  <span className="text-5xl font-bold text-white tracking-tight">{plan.price}</span>
+                  {plan.period && <span className="text-gray-400 text-lg">{plan.period}</span>}
+                </div>
+                {plan.description && <p className="text-gray-400 text-sm mt-3">{plan.description}</p>}
               </div>
 
-              <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-              
-              <div className="mb-8">
-                {plan.oldPrice && <span className="text-gray-500 line-through text-sm block mb-1">{plan.oldPrice}</span>}
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-serif text-white">{plan.price}</span>
-                  {plan.period && <span className="text-gray-500 text-sm">{plan.period}</span>}
-                </div>
-              </div>
-              
+              {/* Özellikler */}
               <ul className="space-y-4 mb-8 flex-1">
                 {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
-                    <Check className={`w-5 h-5 shrink-0 ${
-                      plan.color === 'amber' ? 'text-amber-400' : 
-                      plan.color === 'blue' ? 'text-blue-400' : 
-                      'text-gray-500'
-                    }`} />
-                    <span>{feature}</span>
+                  <li key={i} className={`flex items-start gap-3 text-sm ${
+                    !feature.included ? 'text-gray-600 line-through decoration-gray-700' : 'text-gray-300'
+                  }`}>
+                    {feature.included ? (
+                      <Check className={`w-5 h-5 shrink-0 ${
+                        plan.theme === 'purple' ? 'text-[#a78bfa]' : 
+                        plan.theme === 'gold' ? 'text-[#fbbf24]' : 'text-gray-500'
+                      }`} />
+                    ) : (
+                      <Check className="w-5 h-5 shrink-0 text-transparent" /> // Hizalama için boşluk
+                    )}
+                    <span className="flex items-center">
+                      {feature.icon} {feature.text}
+                    </span>
                   </li>
                 ))}
               </ul>
 
+              {/* Buton */}
               <button
-                onClick={() => plan.id !== 'free' && handlePurchase(plan.id)}
+                onClick={() => plan.id !== 'free' && handlePurchase(plan.name)}
                 disabled={currentTier === plan.id}
-                className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
-                  currentTier === plan.id ? 'bg-white/10 text-gray-400 cursor-not-allowed' : 
-                  plan.color === 'amber' ? 'bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black hover:scale-[1.02]' : 
-                  plan.color === 'blue' ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-[1.02]' : 
-                  'bg-white/10 text-white'
+                className={`w-full py-4 rounded-xl font-bold transition-all ${
+                  currentTier === plan.id 
+                    ? 'bg-white/10 text-gray-500 cursor-default' 
+                    : plan.theme === 'purple' 
+                      ? 'bg-[#8b5cf6] text-white hover:bg-[#7c3aed] shadow-lg shadow-purple-900/50' 
+                      : plan.theme === 'gold' 
+                        ? 'bg-transparent border border-[#fbbf24] text-[#fbbf24] hover:bg-[#fbbf24] hover:text-black' 
+                        : 'bg-transparent border border-white/20 text-white hover:bg-white/10'
                 }`}
               >
-                {currentTier === plan.id ? 'Mevcut Planın' : plan.buttonText}
+                {currentTier === plan.id ? 'Mevcut Plan' : plan.buttonText}
               </button>
             </motion.div>
           ))}
+        </div>
+        
+        {/* Footer Güvenlik Logoları (Dashboard içinde değil, layout'tan gelecek ama burada da ekstra güven için tutulabilir) */}
+        <div className="mt-20 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+           <img src="https://www.paytr.com/img/brand/paytr-logo.svg" alt="PayTR" className="h-6 inline-block mx-2" />
+           <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-8 inline-block mx-2" />
+           <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-6 inline-block mx-2" />
         </div>
       </div>
     </div>
