@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Moon, Mail } from "lucide-react"; // Instagram ve Twitter importlarını kaldırdık
+import { Moon, Mail } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -24,7 +24,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Hızlı Linkler - "Rüya Yorumla" Kaldırıldı */}
+          {/* Hızlı Linkler */}
           <div>
             <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-1 h-4 bg-[#fbbf24] rounded-full"></span> Keşfet
@@ -48,7 +48,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* İletişim - Mail Güncellendi, Sosyal Medya Kaldırıldı */}
+          {/* İletişim */}
           <div>
             <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-1 h-4 bg-blue-500 rounded-full"></span> İletişim
@@ -70,13 +70,12 @@ export default function Footer() {
             © {currentYear} Fikri Emre Topçu - Rüya Yorumcum AI. Tüm Hakları Saklıdır.
           </p>
           
-          {/* PayTR Logoları */}
+          {/* Ödeme Logoları (PayTR Kaldırıldı) */}
           <div className="flex items-center gap-6 opacity-50 grayscale hover:grayscale-0 transition-all duration-300">
             <div className="flex items-center gap-2 text-[10px] text-green-500 font-bold tracking-widest border border-green-500/20 px-2 py-1 rounded bg-green-500/5">
                SSL SECURE
             </div>
-            <img src="https://www.paytr.com/img/brand/paytr-logo.svg" alt="PayTR" className="h-5" />
-            <div className="h-4 w-[1px] bg-white/10"></div>
+            {/* PayTR Logo ve ayırıcı çizgi kaldırıldı */}
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4" />
           </div>

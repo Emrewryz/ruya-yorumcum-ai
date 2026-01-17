@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Check, Star, Zap, Crown, ArrowLeft, Loader2, X, MessageCircle, Image as ImageIcon, Sparkles, ShieldCheck } from "lucide-react";
+import { Check, Star, Zap, Crown, ArrowLeft, Loader2, X, MessageCircle, Image as ImageIcon, Sparkles, ShieldCheck, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -50,13 +50,15 @@ export default function PricingPage() {
     getUser();
   }, [supabase]);
 
+  // SATIN ALMA İŞLEMİ (GÜNCELLENDİ)
   const handlePurchase = (planName: string) => {
-    // Haptik titreşim
+    // Haptik titreşim (Telefonda hisiyat için)
     if (navigator.vibrate) navigator.vibrate(50);
     
-    toast.info(`Sanal ödeme şirketiyle (PayTR) anlaşma süreci bekleniyor. ${planName} paketi çok yakında aktif olacaktır.`, {
-      duration: 5000,
-      icon: <Loader2 className="w-5 h-5 animate-spin text-[#fbbf24]" />,
+    // PayTR ibaresi kaldırıldı, genel bir mesaj eklendi
+    toast.info(`Ödeme altyapısı güncelleniyor. ${planName} paketi çok yakında aktif olacaktır.`, {
+      duration: 4000,
+      icon: <Lock className="w-5 h-5 text-[#fbbf24]" />,
     });
   };
 
@@ -128,7 +130,6 @@ export default function PricingPage() {
   );
 
   return (
-    // APP FIX: min-h-[100dvh] mobil tarayıcı çubuğu için. pb-32 alt menü payı.
     <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col pb-32">
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
       
@@ -153,7 +154,7 @@ export default function PricingPage() {
           </motion.div>
         </div>
 
-        {/* PAKETLER GRID (Mobilde tek kolon, Masaüstünde 3) */}
+        {/* PAKETLER GRID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
           {plans.map((plan, index) => (
             <motion.div 
@@ -175,7 +176,6 @@ export default function PricingPage() {
                 </div>
               )}
               
-              {/* Başlık ve İkon */}
               <div className="flex items-center gap-4 mb-6">
                 <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0 ${
                   plan.color === 'amber' ? 'bg-amber-500/20 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 
@@ -190,7 +190,6 @@ export default function PricingPage() {
                 </div>
               </div>
               
-              {/* Fiyat Alanı */}
               <div className="mb-6 p-4 rounded-2xl bg-black/20 border border-white/5">
                 {plan.oldPrice && plan.price !== 'Ücretsiz' && (
                    <span className="text-gray-500 line-through text-xs md:text-sm block mb-1">Normal: {plan.oldPrice}</span>
@@ -202,7 +201,6 @@ export default function PricingPage() {
                 <p className="text-gray-400 text-xs mt-2 leading-relaxed">{plan.description}</p>
               </div>
               
-              {/* Özellikler Listesi */}
               <ul className="space-y-3 md:space-y-4 mb-8 flex-1">
                 {plan.features.map((feature, i) => (
                   <li key={i} className={`flex items-start gap-3 text-xs md:text-sm ${feature.included ? 'text-gray-200' : 'text-gray-600'}`}>
@@ -222,7 +220,6 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              {/* Satın Al Butonu */}
               <button
                 onClick={() => plan.id !== 'free' && handlePurchase(plan.name)}
                 disabled={currentTier === plan.id || plan.id === 'free'}
@@ -245,13 +242,13 @@ export default function PricingPage() {
           ))}
         </div>
         
-        {/* Güvenlik Logoları */}
+        {/* Güvenlik Logoları (PayTR Kaldırıldı) */}
         <div className="mt-12 md:mt-16 flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 pb-10">
            <div className="flex items-center gap-2 text-xs text-gray-400 border border-white/10 px-4 py-2 rounded-full bg-white/5">
               <ShieldCheck className="w-4 h-4 text-green-500" /> SSL ile Güvenli Ödeme
            </div>
            <div className="flex items-center gap-4">
-               <img src="https://www.paytr.com/img/brand/paytr-logo.svg" alt="PayTR" className="h-4 md:h-5" />
+               {/* PayTR Logo Kaldırıldı */}
                <div className="h-4 w-[1px] bg-white/20"></div>
                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6 md:h-8" />
                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4 md:h-5" />
