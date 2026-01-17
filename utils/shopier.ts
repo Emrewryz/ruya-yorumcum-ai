@@ -15,13 +15,23 @@ export function generateShopierForm(data: {
   userPhone: string;
   productName: string;
 }) {
+  // 1. Verileri Hazırla ve Temizle
+  // Türkçe karakterler imza hatasına sebep olabilir, İngilizceye çeviriyoruz.
+  const sanitize = (str: string) => str
+    .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+    .replace(/ü/g, 'u').replace(/Ü/g, 'U')
+    .replace(/ş/g, 's').replace(/Ş/g, 'S')
+    .replace(/ı/g, 'i').replace(/İ/g, 'I')
+    .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+    .replace(/ç/g, 'c').replace(/Ç/g, 'C');
+
   const args = {
     API_KEY: SHOPIER_CONFIG.apiKey,
     WEBSITE_INDEX: SHOPIER_CONFIG.websiteIndex,
     PLATFORM_ORDER_ID: data.orderId,
-    PRODUCT_NAME: data.productName,
-    PRODUCT_TYPE: 1, // Dijital Ürün
-    BUYER_NAME_LASTNAME: data.userName,
+    PRODUCT_NAME: sanitize(data.productName), // İsmi temizle (Örn: Kaşif -> Kasif)
+    PRODUCT_TYPE: 1, // 1: Dijital Ürün
+    BUYER_NAME_LASTNAME: sanitize(data.userName), // Kullanıcı adını da temizle
     BUYER_EMAIL: data.userEmail,
     BUYER_PHONE: data.userPhone,
     BUYER_ADDRESS_LINE1: 'Dijital Teslimat',
@@ -29,25 +39,36 @@ export function generateShopierForm(data: {
     BUYER_COUNTRY: 'Turkiye',
     BUYER_POSTAL_CODE: '07000',
     PRODUCT_PRICE: data.price,
-    CURRENCY: 0, // TL
+    CURRENCY: 0, // 0: TL
     MODUL_VERSION: '1.0.4',
     CALLBACK_URL: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payment/callback`
   };
 
+  // 2. İmza Oluşturma (Sıralama Çok Önemli)
+  // Değerleri String'e çevirerek birleştiriyoruz, sayı/string hatasını önler.
   const signatureData = [
-    args.API_KEY, args.WEBSITE_INDEX, args.PLATFORM_ORDER_ID,
-    args.PRODUCT_TYPE, args.PRODUCT_NAME, args.PRODUCT_PRICE, args.CURRENCY
+    args.API_KEY,
+    String(args.WEBSITE_INDEX),
+    args.PLATFORM_ORDER_ID,
+    String(args.PRODUCT_TYPE),
+    args.PRODUCT_NAME,
+    String(args.PRODUCT_PRICE),
+    String(args.CURRENCY)
   ];
   
-  const signature = crypto.createHmac('sha256', SHOPIER_CONFIG.apiSecret!).update(signatureData.join('')).digest('base64');
+  const signature = crypto
+    .createHmac('sha256', SHOPIER_CONFIG.apiSecret!)
+    .update(signatureData.join(''))
+    .digest('base64');
 
+  // 3. Formu Döndür
   return `
     <!doctype html>
     <html lang="tr">
     <head><meta charset="UTF-8"><title>Ödeme Yönlendiriliyor...</title></head>
     <body>
       <div style="text-align:center;margin-top:50px;"><h3>Güvenli ödeme sayfasına yönlendiriliyorsunuz...</h3></div>
-      <form action="${SHOPIER_CONFIG.isLive ? 'https://www.shopier.com/ShowProduct/api_pay4.php' : 'https://www.shopier.com/ShowProduct/api_pay4.php'}" method="post" id="shopier_form">
+      <form action="https://www.shopier.com/ShowProduct/api_pay4.php" method="post" id="shopier_form">
         <input type="hidden" name="API_KEY" value="${args.API_KEY}">
         <input type="hidden" name="WEBSITE_INDEX" value="${args.WEBSITE_INDEX}">
         <input type="hidden" name="PLATFORM_ORDER_ID" value="${args.PLATFORM_ORDER_ID}">
