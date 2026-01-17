@@ -43,12 +43,25 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
+  // AuthPage.tsx içindeki fonksiyonu güncelle:
+
+const handleGoogleLogin = async () => {
+    // Tarayıcıda olduğumuzdan emin olalım
+    if (typeof window === 'undefined') return;
+    
+    // O anki adres neyse (localhost veya vercel) onu al
+    const origin = window.location.origin;
+
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback` },
+      options: { 
+        // URL sonuna 'next' parametresi ekleyerek dashboard'a gitmesini garantiliyoruz
+        redirectTo: `${origin}/auth/callback?next=/dashboard`,
+      },
     });
-  };
+    
+    if (error) alert(error.message);
+};
 
   return (
     // APP FIX: min-h-screen yerine min-h-[100dvh] (Mobil tarayıcı çubuğu sorunu için)
