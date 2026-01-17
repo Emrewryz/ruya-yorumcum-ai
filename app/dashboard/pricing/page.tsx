@@ -51,15 +51,24 @@ export default function PricingPage() {
   }, [supabase]);
 
   // SATIN ALMA İŞLEMİ (GÜNCELLENDİ)
+  // SATIN ALMA İŞLEMİ (GÜNCELLENMİŞ HALİ)
   const handlePurchase = (planName: string) => {
-    // Haptik titreşim (Telefonda hisiyat için)
+    // Haptik titreşim
     if (navigator.vibrate) navigator.vibrate(50);
     
-    // PayTR ibaresi kaldırıldı, genel bir mesaj eklendi
-    toast.info(`Ödeme altyapısı güncelleniyor. ${planName} paketi çok yakında aktif olacaktır.`, {
-      duration: 4000,
-      icon: <Lock className="w-5 h-5 text-[#fbbf24]" />,
+    // Plan ismini API'nin anlayacağı formata çevir
+    let planType = "";
+    if (planName === "KAŞİF") planType = "pro";
+    if (planName === "KAHİN") planType = "elite";
+
+    if (!planType) return;
+
+    toast.loading("Ödeme sayfasına yönlendiriliyorsunuz...", {
+      duration: 2000,
     });
+
+    // Direkt API'ye yönlendiriyoruz. API HTML form döndürüp Shopier'e atacak.
+    window.location.href = `/api/payment/start?plan=${planType}`;
   };
 
   const plans: Plan[] = [
