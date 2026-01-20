@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Check, Star, Zap, Crown, ArrowLeft, Loader2, X, MessageCircle, Image as ImageIcon, Sparkles, ShieldCheck, Lock } from "lucide-react";
+import { Check, Star, Zap, Crown, ArrowLeft, Loader2, X, MessageCircle, Image as ImageIcon, Sparkles, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -50,25 +50,38 @@ export default function PricingPage() {
     getUser();
   }, [supabase]);
 
-  // SATIN ALMA İŞLEMİ (GÜNCELLENDİ)
-  // SATIN ALMA İŞLEMİ (GÜNCELLENMİŞ HALİ)
+  // --- GÜNCELLENEN SATIN ALMA FONKSİYONU ---
   const handlePurchase = (planName: string) => {
-    // Haptik titreşim
+    // 1. Titreşim (Mobil hissi)
     if (navigator.vibrate) navigator.vibrate(50);
     
-    // Plan ismini API'nin anlayacağı formata çevir
-    let planType = "";
-    if (planName === "KAŞİF") planType = "pro";
-    if (planName === "KAHİN") planType = "elite";
+    // 2. Paket Linklerini Belirle
+    let paymentLink = "";
 
-    if (!planType) return;
+    // KULLANICININ VERDİĞİ LİNKLER:
+    if (planName === "KAŞİF") {
+        // Kaşif Paketi Linki
+        paymentLink = "https://www.shopier.com/s/checkout/ruyayorumcumai/625438779";
+    }
+    if (planName === "KAHİN") {
+        // Kahin Paketi (Checkout) Linki
+        paymentLink = "https://www.shopier.com/s/checkout/ruyayorumcumai/625438779";
+    }
 
-    toast.loading("Ödeme sayfasına yönlendiriliyorsunuz...", {
-      duration: 2000,
+    // Link kontrolü
+    if (!paymentLink) {
+        toast.error("Bu paket için ödeme linki tanımlanmamış.");
+        return;
+    }
+
+    // 3. Kullanıcıya bilgi ver
+    toast.loading("Shopier güvenli ödeme sayfasına yönlendiriliyorsunuz...", {
+      duration: 1500,
     });
 
-    // Direkt API'ye yönlendiriyoruz. API HTML form döndürüp Shopier'e atacak.
-    window.location.href = `/api/payment/start?plan=${planType}`;
+    // 4. YÖNLENDİRME (En Hatasız Yöntem)
+    // Form post yerine direkt linke gitmek bu link tipleri için en sağlıklısıdır.
+    window.location.href = paymentLink;
   };
 
   const plans: Plan[] = [
@@ -251,13 +264,12 @@ export default function PricingPage() {
           ))}
         </div>
         
-        {/* Güvenlik Logoları (PayTR Kaldırıldı) */}
+        {/* Güvenlik Logoları */}
         <div className="mt-12 md:mt-16 flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 pb-10">
            <div className="flex items-center gap-2 text-xs text-gray-400 border border-white/10 px-4 py-2 rounded-full bg-white/5">
               <ShieldCheck className="w-4 h-4 text-green-500" /> SSL ile Güvenli Ödeme
            </div>
            <div className="flex items-center gap-4">
-               {/* PayTR Logo Kaldırıldı */}
                <div className="h-4 w-[1px] bg-white/20"></div>
                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6 md:h-8" />
                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4 md:h-5" />
