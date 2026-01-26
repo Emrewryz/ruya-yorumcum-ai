@@ -66,7 +66,7 @@ export default function PricingPage() {
     // 2. Linki Seç
     let paymentLink = "";
     if (planName === "KAŞİF") paymentLink = "https://www.shopier.com/ruyayorumcumai/43369308";
-    if (planName === "KAHİN") paymentLink = "https://www.shopier.com/s/checkout/ruyayorumcumai/625438779";
+    if (planName === "KAHİN") paymentLink = "https://www.shopier.com/ruyayorumcumai/43369409";
 
     if (!paymentLink) return;
 
