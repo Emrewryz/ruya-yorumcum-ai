@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Bu işlem hassas olduğu için Service Role Key kullanıyoruz
+// Service Role Key ile yetkili işlem
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -9,11 +9,14 @@ const supabase = createClient(
 
 export async function POST(request: Request) {
   try {
-    const { email, plan } = await request.json();
+    const body = await request.json();
+    const { email, plan } = body;
 
     if (!email || !plan) {
-      return NextResponse.json({ error: 'Email ve Plan gerekli' }, { status: 400 });
+      return NextResponse.json({ error: 'Email ve Plan zorunludur' }, { status: 400 });
     }
+
+    console.log(`Admin İşlemi Başladı: ${email} -> ${plan}`);
 
     // 1. Kullanıcıyı Bul
     const { data: userProfile, error: userError } = await supabase
@@ -23,18 +26,17 @@ export async function POST(request: Request) {
         .single();
 
     if (userError || !userProfile) {
-        return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
+        console.error("Kullanıcı bulunamadı hatası:", userError);
+        return NextResponse.json({ error: 'Bu email ile kayıtlı kullanıcı yok.' }, { status: 404 });
     }
 
     const userId = userProfile.id;
 
-    // 2. Eski Abonelikleri Kapat
-    await supabase
-        .from('subscriptions')
-        .update({ is_active: false })
-        .eq('user_id', userId);
+    // 2. Subscriptions Tablosuna Ekle (Tarihler BURAYA yazılmalı)
+    // Önce eskileri pasif yap
+    await supabase.from('subscriptions').update({ is_active: false }).eq('user_id', userId);
 
-    // 3. Yeni Abonelik Ekle (Subscriptions Tablosuna)
+    // Yeni abonelik
     const { error: subError } = await supabase
         .from('subscriptions')
         .insert({
@@ -46,20 +48,27 @@ export async function POST(request: Request) {
             is_active: true
         });
 
-    if (subError) throw subError;
+    if (subError) {
+        console.error("Subscription Yazma Hatası:", subError);
+        return NextResponse.json({ error: 'Abonelik tablosu güncellenemedi: ' + subError.message }, { status: 500 });
+    }
 
-    // 4. Profili Güncelle (Sadece Tier)
+    // 3. Profiles Tablosunu Güncelle (SADECE TIER)
+    // DİKKAT: Burada start_date veya end_date ASLA olmamalı.
     const { error: profileError } = await supabase
         .from('profiles')
         .update({ subscription_tier: plan })
         .eq('id', userId);
 
-    if (profileError) throw profileError;
+    if (profileError) {
+        console.error("Profile Yazma Hatası:", profileError);
+        return NextResponse.json({ error: 'Profil güncellenemedi' }, { status: 500 });
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Paket tanımlandı' });
 
   } catch (error: any) {
-    console.error('Admin API Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Kritik Sunucu Hatası:', error);
+    return NextResponse.json({ error: error.message || 'Sunucu hatası' }, { status: 500 });
   }
 }
