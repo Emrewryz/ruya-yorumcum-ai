@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { ShieldCheck, Zap, Crown, UserCheck } from "lucide-react";
+import { ShieldCheck, Zap, Crown, Loader2 } from "lucide-react";
 
 export default function AdminPanel() {
   const supabase = createClient();
@@ -10,7 +10,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Sadece SEN girebil (Kendi emailini buraya yaz)
+  // Kendi Emailin
   const ADMIN_EMAIL = "fikriemretopcu07@gmail.com";
 
   useEffect(() => {
@@ -20,36 +20,26 @@ export default function AdminPanel() {
   }, []);
 
   const manuelActivate = async (plan: 'pro' | 'elite') => {
-    if(!targetEmail) return;
+    if(!targetEmail) return toast.error("Mail adresi giriniz");
     setLoading(true);
 
     try {
-        // API Route'a istek atıyoruz çünkü Client tarafında RLS engeli olabilir
-        // Ama şimdilik basit bir RPC veya Update deniyoruz.
-        // NOT: Burası Client-side update. Eğer RLS izin vermezse çalışmaz.
-        // En doğrusu bu işlemi de bir API route üzerinden yapmaktır ama
-        // hızlı çözüm için veritabanında "Profiles tablosunu herkes update edebilir"
-        // dersen güvenlik açığı olur.
-        
-        // GÜVENLİ YOL: Bu işlemi de üstteki webhook mantığıyla bir API'ye bağlamak.
-        // Ama şimdilik Supabase panelinden manuel yapmak en kolayıdır.
-        // Biz burada basit bir UI koyalım, eğer RLS izin verirse çalışır.
-        
-        const { error } = await supabase
-            .from('profiles')
-            .update({
-                subscription_tier: plan,
-                subscription_start_date: new Date().toISOString(),
-                subscription_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-            })
-            .eq('email', targetEmail);
+        // ARTIK DİREKT VERİTABANI YOK -> API ÇAĞIRIYORUZ
+        const response = await fetch('/api/admin/assign-plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: targetEmail, plan }),
+        });
 
-        if (error) throw error;
-        toast.success(`${targetEmail} için ${plan} tanımlandı!`);
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || 'İşlem başarısız');
+
+        toast.success(`${targetEmail} başarıyla ${plan.toUpperCase()} yapıldı!`);
+        setTargetEmail(""); // Temizle
         
     } catch (e: any) {
         toast.error("Hata: " + e.message);
-        toast.info("Supabase RLS ayarlarını kontrol et veya panelden yap.");
     } finally {
         setLoading(false);
     }
@@ -64,24 +54,35 @@ export default function AdminPanel() {
              <ShieldCheck /> Acil Durum Paneli
           </h1>
           <p className="text-gray-400 mb-6 text-sm">
-             Kullanıcı yanlış mail ile ödeme yaparsa buradan düzelt.
+             Kullanıcı yanlış mail ile ödeme yaparsa veya sistem çalışmazsa buradan düzelt.
              Kullanıcının <b>sitedeki</b> mailini gir.
           </p>
 
           <input 
             type="email" 
             placeholder="Kullanıcının Sitedeki Maili (örn: ahmet@gmail.com)"
-            className="w-full bg-black/50 border border-white/20 p-4 rounded-xl mb-6 text-white"
+            className="w-full bg-black/50 border border-white/20 p-4 rounded-xl mb-6 text-white focus:border-[#fbbf24] outline-none transition"
             value={targetEmail}
             onChange={(e) => setTargetEmail(e.target.value)}
           />
 
           <div className="grid grid-cols-2 gap-4">
-             <button onClick={() => manuelActivate('pro')} disabled={loading} className="bg-blue-900/50 border border-blue-500/50 p-4 rounded-xl hover:bg-blue-900 transition flex items-center justify-center gap-2">
-                <Zap className="text-blue-400"/> KAŞİF VER
+             <button 
+                onClick={() => manuelActivate('pro')} 
+                disabled={loading} 
+                className="bg-blue-900/20 border border-blue-500/50 p-6 rounded-xl hover:bg-blue-900/40 transition flex flex-col items-center justify-center gap-2 group disabled:opacity-50"
+            >
+                {loading ? <Loader2 className="animate-spin"/> : <Zap className="w-8 h-8 text-blue-400 group-hover:scale-110 transition"/>}
+                <span className="font-bold text-blue-200">KAŞİF VER</span>
              </button>
-             <button onClick={() => manuelActivate('elite')} disabled={loading} className="bg-amber-900/50 border border-amber-500/50 p-4 rounded-xl hover:bg-amber-900 transition flex items-center justify-center gap-2">
-                <Crown className="text-amber-400"/> KAHİN VER
+
+             <button 
+                onClick={() => manuelActivate('elite')} 
+                disabled={loading} 
+                className="bg-amber-900/20 border border-amber-500/50 p-6 rounded-xl hover:bg-amber-900/40 transition flex flex-col items-center justify-center gap-2 group disabled:opacity-50"
+            >
+                {loading ? <Loader2 className="animate-spin"/> : <Crown className="w-8 h-8 text-amber-400 group-hover:scale-110 transition"/>}
+                <span className="font-bold text-amber-200">KAHİN VER</span>
              </button>
           </div>
        </div>

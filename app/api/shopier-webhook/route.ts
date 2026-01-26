@@ -19,27 +19,17 @@ export async function POST(request: Request) {
     
     // --- ÖZEL DURUM: SHOPIER PANEL TESTİ ---
     const testRes = formData.get('res');
-    
     if (testRes) {
         console.log("🧪 BU BİR PANEL TEST SİNYALİDİR.");
-        // Shopier sadece 200 kodu bekler, body çok önemli değildir ama
-        // 'text/plain' olarak basit bir string dönmek en garantisidir.
-        return new Response('OK', { 
-            status: 200,
-            headers: { 'Content-Type': 'text/plain' }
-        });
+        return new Response('OK', { status: 200, headers: { 'Content-Type': 'text/plain' } });
     }
     // ----------------------------------------
 
-    // ... (Kodun geri kalanı aynı: Gerçek Sipariş İşlemleri) ...
-    
     const status = formData.get('status_type');
     const email = formData.get('buyer_email_protected');
     const price = formData.get('price');
     const randomNr = formData.get('random_nr');
     const signature = formData.get('signature');
-
-    console.log("📩 Gerçek Sipariş Verisi:", { email, price, status });
 
     // İmza Doğrulama
     const osbSecret = "a1baa98593ff1af8aad67cee252ab5d6"; 
@@ -68,33 +58,60 @@ export async function POST(request: Request) {
         return new Response('Unknown Plan', { status: 200 });
     }
 
-    // DB Güncelleme
-    console.log(`🔄 Güncelleme: ${email} -> ${planType}`);
+    console.log(`🔄 İşlem Başlıyor: ${email} -> ${planType}`);
 
-    const { data, error } = await supabase
+    // ADIM 1: Email'den Kullanıcının ID'sini Bul
+    // (Profiles tablosunda email sütunu olduğunu varsayıyoruz)
+    const { data: userProfile, error: userError } = await supabase
         .from('profiles')
-        .update({ 
-            subscription_tier: planType,
-            subscription_start_date: new Date().toISOString(),
-            subscription_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        })
+        .select('id')
         .eq('email', String(email))
-        .select();
+        .single();
 
-    if (error || !data || data.length === 0) {
-        console.error("❌ DB Hatası veya Kullanıcı Yok");
-        // Hata olsa bile Shopier'e 200 dönüyoruz ki tekrar denemesin
-        // Çünkü sorun bizde, Shopier'in tekrar denemesi bir şeyi çözmeyecek.
-        return new Response('Error handled', { status: 200 });
+    if (userError || !userProfile) {
+        console.error("❌ KULLANICI BULUNAMADI! Email: " + email);
+        return new Response('User Not Found', { status: 200 });
     }
 
-    console.log("✅ BAŞARILI!");
-    
-    // FİNAL CEVAP (Önemli Değişiklik Burası)
-    return new Response('OK', { 
-        status: 200,
-        headers: { 'Content-Type': 'text/plain' }
-    });
+    const userId = userProfile.id;
+
+    // ADIM 2: Subscriptions Tablosuna Yeni Kayıt Ekle
+    // Eski aktif abonelikleri pasife çekelim (Temizlik)
+    await supabase
+        .from('subscriptions')
+        .update({ is_active: false })
+        .eq('user_id', userId);
+
+    // Yeni aboneliği ekle
+    const { error: subError } = await supabase
+        .from('subscriptions')
+        .insert({
+            user_id: userId,
+            provider: 'shopier',
+            package_key: planType,
+            start_date: new Date().toISOString(),
+            end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // +30 Gün
+            is_active: true
+        });
+
+    if (subError) {
+        console.error("❌ Subscription Insert Hatası:", subError.message);
+        return new Response('DB Insert Error', { status: 500 });
+    }
+
+    // ADIM 3: Profiles Tablosunu Güncelle (Frontend Hızı İçin)
+    // Sadece 'subscription_tier' güncelliyoruz, tarihleri subscriptions tablosunda tuttuk.
+    const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ subscription_tier: planType })
+        .eq('id', userId);
+
+    if (profileError) {
+        console.error("❌ Profile Update Hatası:", profileError.message);
+    }
+
+    console.log("✅ BAŞARILI! Abonelik tablosuna işlendi.");
+    return new Response('OK', { status: 200, headers: { 'Content-Type': 'text/plain' } });
 
   } catch (err: any) {
     console.error("🔥 SUNUCU HATASI:", err.message);
