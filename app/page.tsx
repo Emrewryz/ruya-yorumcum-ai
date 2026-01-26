@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { 
   Moon, Eye, Sparkles, Lock, 
-  Palette, Layers, Check, Crown, Star, X,
+  Palette, Layers, Check, Crown, Star, X, BookOpen, ArrowRight,
   MessageCircle, Hash, Zap, LogOut, LayoutDashboard, 
   Image as ImageIcon 
 } from "lucide-react";
@@ -124,7 +124,6 @@ export default function Home() {
   ];
 
   return (
-    // APP FIX: pb-32 ekledik. Mobilde alt menü (MobileNav) içeriğin üstüne binmesin diye.
     <main className="min-h-screen bg-[#050510] text-white relative overflow-x-hidden font-sans selection:bg-[#8b5cf6] selection:text-white pb-32 md:pb-20">
       
       {/* 1. ATMOSFER & ZEMİN */}
@@ -132,9 +131,8 @@ export default function Home() {
       <div className="fixed top-[-10%] right-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-[#4c1d95]/20 rounded-full blur-[80px] md:blur-[128px] animate-pulse-slow pointer-events-none z-0"></div>
       <div className="fixed bottom-[-10%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-[#1e1b4b]/20 rounded-full blur-[80px] md:blur-[128px] animate-pulse-slow delay-1000 pointer-events-none z-0"></div>
 
-      {/* 2. ÜST MENÜ (AKILLI NAVBAR) */}
+      {/* 2. ÜST MENÜ */}
       <div className="fixed top-4 md:top-6 left-0 right-0 z-40 flex justify-center px-4">
-        {/* APP FIX: Mobilde padding'i azalttık (py-2) ve butonları sadeleştirdik */}
         <nav className="glass-pill rounded-full px-4 md:px-6 py-2 md:py-3 flex items-center justify-between w-full max-w-5xl border border-white/10 bg-white/5 backdrop-blur-md shadow-2xl">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
             <div className="relative w-8 h-8 flex items-center justify-center">
@@ -144,27 +142,20 @@ export default function Home() {
             <span className="font-serif font-bold text-lg tracking-wide text-white">RüyaYorumcum</span>
           </div>
 
-          {/* APP FIX: Mobilde orta menüyü tamamen gizledik. Çünkü altta MobileNav var. */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
             <Link href="#ozellikler" className="hover:text-[#fbbf24] transition-colors">Özellikler</Link>
-            <Link href="#ornekler" className="hover:text-[#fbbf24] transition-colors">Örnekler</Link>
+            <Link href="#sozluk" className="hover:text-[#fbbf24] transition-colors">Sözlük</Link>
             <Link href="#paketler" className="hover:text-[#fbbf24] transition-colors">Paketler</Link>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
             {user ? (
-                <>
-                   <span className="hidden sm:block text-xs text-gray-400 font-medium">
-                      Hoş geldin, <span className="text-white">{user.email?.split('@')[0]}</span>
-                   </span>
-                   {/* Mobilde sadece Panel ikonu görünsün, yazı gizlensin */}
-                   <Link 
-                     href="/dashboard" 
-                     className="flex items-center gap-2 px-3 md:px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-xs font-bold active:scale-95"
-                   >
-                      <LayoutDashboard className="w-4 h-4" /> <span className="hidden md:inline">PANEL</span>
-                   </Link>
-                </>
+                <Link 
+                  href="/dashboard" 
+                  className="flex items-center gap-2 px-3 md:px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-xs font-bold active:scale-95"
+                >
+                   <LayoutDashboard className="w-4 h-4" /> <span className="hidden md:inline">PANEL</span>
+                </Link>
             ) : (
                 <>
                    <Link href="/auth" className="text-sm font-medium text-white/80 hover:text-white hidden sm:block">Giriş Yap</Link>
@@ -181,7 +172,6 @@ export default function Home() {
       </div>
 
       {/* 3. HERO BÖLÜMÜ */}
-      {/* APP FIX: pt-48 yerine mobilde pt-32 yaptık. İçerik yukarı kaydı. */}
       <section className="relative z-10 pt-32 md:pt-48 pb-12 md:pb-20 text-center px-4">
         <h1 className="font-serif text-4xl md:text-[80px] font-bold mb-4 md:mb-6 leading-[1.1] max-w-5xl mx-auto tracking-tight">
           <span className="bg-clip-text text-transparent bg-gradient-to-b from-gray-100 via-gray-200 to-[#8b5cf6]">
@@ -193,7 +183,6 @@ export default function Home() {
           Modern psikoloji, kadim İslami bilgelik ve yapay zeka teknolojisiyle <br className="hidden md:block"/> bilinçaltınızın haritasını çıkarın.
         </p>
 
-        {/* APP FIX: active:scale-95 ekledik. Mobilde basınca tepki verecek. */}
         <Link 
           href="/dashboard"
           className="group relative inline-flex items-center justify-center px-8 md:px-10 py-4 md:py-5 text-lg font-bold text-black transition-all duration-300 bg-gradient-to-r from-[#fcd34d] via-[#fbbf24] to-[#f59e0b] rounded-full hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(251,191,36,0.3)]"
@@ -206,10 +195,9 @@ export default function Home() {
       </section>
 
       {/* 4. CANLI DEMO */}
-      <section className="relative z-10 max-w-5xl mx-auto px-4 mb-20 md:mb-32" id="ornekler">
+      <section className="relative z-10 max-w-5xl mx-auto px-4 mb-20 md:mb-32">
         <div className="glass-panel rounded-3xl p-1 relative overflow-hidden group bg-white/5 backdrop-blur-xl border border-white/10">
            <div className="grid md:grid-cols-2 gap-0 bg-[#050510]/60 rounded-2xl overflow-hidden">
-             {/* Sol: Rüya Metni */}
              <div className="p-6 md:p-10 border-b md:border-b-0 md:border-r border-white/5 font-serif text-gray-300 italic text-lg leading-relaxed flex items-center">
                <span className="animate-pulse opacity-80">
                  "Rüyamda dişlerimin döküldüğünü gördüm ve ağzımdan kan yerine kum aktığını hissettim..."
@@ -217,7 +205,6 @@ export default function Home() {
                </span>
              </div>
 
-             {/* Sağ: Analiz */}
              <div className="relative p-6 md:p-10 bg-black/40 flex flex-col justify-center min-h-[250px] md:min-h-[300px]">
                  <div className="space-y-4 filter blur-[8px] opacity-40 select-none pointer-events-none">
                     <h4 className="text-[#8b5cf6] font-bold text-xl">Psikolojik Analiz:</h4>
@@ -226,7 +213,6 @@ export default function Home() {
                     <p className="text-gray-300">İbni Sirin kayıtlarına göre diş dökülmesi...</p>
                  </div>
                  
-                 {/* APP FIX: active:scale-95 ile tıklama hissi */}
                  <div onClick={handleUnlockMystery} className="absolute inset-0 flex flex-col items-center justify-center z-10 cursor-pointer active:scale-95 transition-transform">
                     <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24] flex items-center justify-center shadow-[0_0_40px_rgba(251,191,36,0.2)] mb-4 backdrop-blur-md">
                        <Lock className="w-6 h-6 md:w-8 md:h-8 text-[#fbbf24]" />
@@ -242,11 +228,7 @@ export default function Home() {
 
       {/* 5. ÖZELLİKLER VİTRİNİ */}
       <section id="ozellikler" className="container mx-auto px-6 py-12 md:py-20 relative z-10 space-y-24 md:space-y-32">
-         <div className="text-center mb-12 md:mb-24">
-            <h2 className="font-serif text-3xl md:text-5xl font-bold mb-4 text-white">Evrenin Dört Kapısı</h2>
-            <p className="text-gray-400 text-sm md:text-base">Sadece rüya tabiri değil, tam kapsamlı bir spiritüel rehberlik.</p>
-         </div>
-
+         {/* ... (Numeroloji, Tarot ve AI Vizyon aynı kalacak, sadece görsellerin yerini korudum) ... */}
          {/* 1. Numeroloji */}
          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-24">
             <div className="flex-1 w-full relative">
@@ -275,7 +257,7 @@ export default function Home() {
             </div>
          </div>
 
-         {/* 2. Tarot (Aynı mantıkla düzenlendi) */}
+         {/* 2. Tarot */}
          <div className="flex flex-col md:flex-row-reverse items-center gap-8 md:gap-24">
             <div className="flex-1 w-full relative">
                <div className="relative aspect-video bg-[#0f172a] border border-pink-500/20 rounded-3xl p-8 flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(236,72,153,0.1)]">
@@ -324,6 +306,68 @@ export default function Home() {
                </p>
             </div>
          </div>
+      </section>
+
+      {/* --- YENİ EKLENEN BÖLÜM: SEMBOLLER KÜTÜPHANESİ (GÖRSELDEKİ TASARIM) --- */}
+     {/* --- YENİ EKLENEN BÖLÜM: SEMBOLLER KÜTÜPHANESİ --- */}
+      <section id="sozluk" className="container mx-auto px-4 md:px-6 py-20 relative z-10 border-t border-white/5 bg-[#050510]">
+        
+        {/* Başlık Alanı */}
+        <div className="text-center mb-16">
+          <h2 className="font-serif text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Semboller Kütüphanesi</h2>
+          <p className="text-gray-400 text-lg font-light">Kadim işaretlerin dilini çöz. Rüyandaki sembolü arat ve anlamını keşfet.</p>
+        </div>
+
+        {/* Kartlar Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          {/* Kart 1: Altın */}
+          {/* DÜZELTME: Link 'ruyada-altin-gormek' yapıldı */}
+          <Link href="/sozluk/ruyada-altin-gormek" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-[#fbbf24]/30 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
+             <div className="w-12 h-12 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center mb-6 text-[#fbbf24] group-hover:scale-110 transition-transform">
+                <Sparkles className="w-6 h-6" />
+             </div>
+             <h3 className="font-serif text-xl font-bold text-[#fbbf24] mb-4 group-hover:text-white transition-colors">Rüyada Altın Görmek</h3>
+             <p className="text-gray-400 text-sm leading-relaxed">Rüyada altın görmek, zenginlik, neşe ve dileklerin kabul olması anlamına gelir. Manevi aydınlanmayı da simgeler.</p>
+          </Link>
+
+          {/* Kart 2: Deniz */}
+          {/* DÜZELTME: Link 'ruyada-deniz-gormek' yapıldı */}
+          <Link href="/sozluk/ruyada-deniz-gormek" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-white/20 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
+             <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gray-400 group-hover:text-white transition-colors group-hover:scale-110">
+                <Sparkles className="w-6 h-6" />
+             </div>
+             <h3 className="font-serif text-xl font-bold text-white mb-4">Rüyada Deniz Görmek</h3>
+             <p className="text-gray-400 text-sm leading-relaxed">Rüyada deniz görmek, büyük bir kısmet, devlet kapısında iş veya derin duygusal dünyayı ifade eder.</p>
+          </Link>
+
+          {/* Kart 3: Diş */}
+          {/* DÜZELTME: Link 'ruyada-dis-dokulmesi' yapıldı */}
+          <Link href="/sozluk/ruyada-dis-dokulmesi" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-white/20 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
+             <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gray-400 group-hover:text-white transition-colors group-hover:scale-110">
+                <Sparkles className="w-6 h-6" />
+             </div>
+             <h3 className="font-serif text-xl font-bold text-white mb-4">Rüyada Diş Dökülmesi</h3>
+             <p className="text-gray-400 text-sm leading-relaxed">Rüyada diş dökülmesi, güç kaybı, aile büyükleriyle ilgili endişeler veya hayatınızdaki köklü değişimleri simgeler.</p>
+          </Link>
+
+          {/* Kart 4: Uçmak */}
+          {/* DÜZELTME: Link 'ruyada-ucmak' yapıldı */}
+          <Link href="/sozluk/ruyada-ucmak" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-white/20 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
+             <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gray-400 group-hover:text-white transition-colors group-hover:scale-110">
+                <Sparkles className="w-6 h-6" />
+             </div>
+             <h3 className="font-serif text-xl font-bold text-white mb-4">Rüyada Uçmak</h3>
+             <p className="text-gray-400 text-sm leading-relaxed">Rüyada uçmak, özgürlük isteği, ruhsal yükseliş ve engelleri aşma başarısı olarak yorumlanır.</p>
+          </Link>
+
+        </div>
+
+        <div className="text-center mt-12">
+           <Link href="/sozluk" className="inline-flex items-center gap-2 text-sm font-bold text-[#fbbf24] hover:text-[#f59e0b] transition-colors border-b border-[#fbbf24]/30 pb-1 hover:border-[#fbbf24]">
+              Tüm Sözlüğü İncele <ArrowRight className="w-4 h-4" />
+           </Link>
+        </div>
       </section>
 
       {/* 6. FİYATLANDIRMA */}
@@ -395,7 +439,6 @@ export default function Home() {
                 ))}
               </ul>
 
-              {/* APP FIX: active:scale-95 ile mobil dokunma hissi */}
               <button
                 onClick={() => handlePlanSelection(plan.id === 'free' ? 'free' : 'paid')}
                 className={`w-full py-3 md:py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${

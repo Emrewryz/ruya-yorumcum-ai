@@ -1,7 +1,15 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, PenLine, BookOpen, Search } from "lucide-react";
+import { ArrowLeft, Sparkles, PenLine, BookOpen, Search, Quote, AlignLeft } from "lucide-react";
 import type { Metadata } from 'next';
+
+// --- TİP TANIMLAMALARI ---
+// Veritabanındaki JSON yapısını burada tanıtıyoruz
+type ContentBlock = 
+  | { type: 'heading'; text: string }
+  | { type: 'paragraph'; text: string }
+  | { type: 'quote'; title?: string; text: string }
+  | { type: 'list'; items: string[] };
 
 // SEO Metadata
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -23,7 +31,6 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function DictionaryDetailPage({ params }: { params: { slug: string } }) {
   const supabase = createClient();
   
-  // Veritabanından çek
   const { data: item } = await supabase
     .from('dream_dictionary')
     .select('*')
@@ -33,102 +40,168 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
   // TERİM BULUNAMAZSA
   if (!item) {
     return (
-      <div className="min-h-[100dvh] bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-        <div className="bg-noise fixed inset-0 opacity-20"></div>
-        <div className="relative z-10 max-w-sm">
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
-                <Search className="w-8 h-8 text-gray-500" />
-            </div>
-            <h1 className="text-2xl font-serif text-[#fbbf24] mb-2">Henüz Bu Terimi Yazmadık...</h1>
-            <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-                Sözlüğümüz her gün genişliyor. Ancak yapay zeka kahinimiz bu sembolü senin için özel olarak yorumlayabilir.
-            </p>
-            <div className="flex flex-col gap-3">
-                <Link href="/dashboard" className="w-full px-6 py-4 bg-[#fbbf24] text-black rounded-xl font-bold text-sm tracking-wide uppercase hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2">
-                    <Sparkles className="w-4 h-4" /> Rüya Yorumla
-                </Link>
-                <Link href="/sozluk" className="w-full px-6 py-4 bg-white/5 text-white rounded-xl font-bold text-sm hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center gap-2">
-                    <ArrowLeft className="w-4 h-4" /> Sözlüğe Dön
-                </Link>
-            </div>
+      <div className="min-h-[100dvh] bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden font-sans">
+        <div className="relative z-10 max-w-sm p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
+            <h1 className="text-xl font-serif font-bold text-[#fbbf24] mb-3">Henüz Bu Terimi Yazmadık</h1>
+            <p className="text-gray-400 text-sm mb-6">Yapay zeka kahinimiz bu sembolü senin için yorumlayabilir.</p>
+            <Link href="/dashboard" className="w-full px-6 py-3 bg-[#fbbf24] text-black rounded-xl font-bold text-sm hover:scale-105 transition-transform flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4" /> Rüya Yorumla
+            </Link>
         </div>
       </div>
     );
   }
 
-  // search_count'u artır (Popülerlik için - Hata verirse sayfayı bozmasın diye try-catch yok ama safe call)
+  // search_count artır
   await supabase.rpc('increment_search_count', { row_id: item.id });
 
+  // --- İÇERİK AYRIŞTIRMA (PARSING) ---
+  // Eğer veritabanında JSON varsa onu kullan, yoksa boş array döndür.
+  let contentBlocks: ContentBlock[] = [];
+  try {
+    // Veritabanındaki 'content' alanının JSON formatında olduğunu varsayıyoruz.
+    // Eğer veritabanında hala eski HTML duruyorsa, bu kod hata vermez ama boş içerik gösterebilir.
+    // Lütfen veritabanındaki veriyi yukarıdaki JSON formatına güncelle.
+    if (typeof item.content === 'string' && item.content.startsWith('[')) {
+        contentBlocks = JSON.parse(item.content);
+    } else {
+        // Eski format (HTML) ise geçici olarak tek paragraf yap (Fallback)
+        contentBlocks = [{ type: 'paragraph', text: 'Bu içerik eski formatta. Lütfen veritabanını güncelleyiniz.' }];
+    }
+  } catch (e) {
+    contentBlocks = [];
+  }
+
   return (
-    // APP FIX: min-h-[100dvh] ve pb-32
-    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden selection:bg-purple-500/30 pb-32">
+    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden selection:bg-[#fbbf24]/30 selection:text-[#fbbf24] pb-32">
       
-      {/* Arkaplan */}
+      {/* ATMOSFER */}
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-[#8b5cf6]/10 blur-[150px] rounded-full pointer-events-none"></div>
+      <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#4c1d95]/20 blur-[150px] rounded-full pointer-events-none"></div>
 
-      {/* --- STICKY HEADER --- */}
-      <nav className="sticky top-0 z-30 w-full bg-[#020617]/90 backdrop-blur-xl border-b border-white/5 px-4 py-3 md:py-6 flex items-center justify-between">
-         <Link href="/sozluk" className="p-2 -ml-2 rounded-full hover:bg-white/10 active:scale-90 transition-all text-gray-400 group">
-            <ArrowLeft className="w-6 h-6 group-hover:text-white" />
+      {/* HEADER */}
+      <nav className="sticky top-0 z-40 w-full bg-[#020617]/90 backdrop-blur-xl border-b border-white/5 px-4 md:px-8 py-4 flex items-center justify-between transition-all">
+         <Link href="/sozluk" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group px-3 py-1.5 rounded-full hover:bg-white/5 active:scale-95 border border-transparent hover:border-white/10">
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">Sözlüğe Dön</span>
          </Link>
-         
-         <div className="flex flex-col items-center">
-            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-0.5">Rüya Tabiri</span>
-            <span className="font-serif font-bold text-white text-base md:text-lg">{item.term}</span>
+         <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-[#fbbf24]" />
+            <span className="text-xs md:text-sm text-gray-300 font-serif italic">Rüya Sembolleri</span>
          </div>
-
-         <div className="w-9"></div> {/* Dengeleyici */}
+         <div className="w-10"></div>
       </nav>
 
-      {/* --- İÇERİK --- */}
-      <main className="w-full max-w-3xl mx-auto px-4 md:px-6 pt-8 md:pt-12 relative z-10">
+      {/* ANA İÇERİK */}
+      <main className="w-full max-w-3xl mx-auto px-6 py-12 md:py-20 relative z-10">
          
          <article>
-            <header className="text-center mb-8 md:mb-12">
-               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 text-[#8b5cf6] text-[10px] md:text-xs font-bold tracking-widest uppercase mb-4 md:mb-6">
-                  <BookOpen className="w-3 h-3" /> Sözlük Kaydı
+            {/* 1. HERO BÖLÜMÜ (Başlık ve Özet) */}
+            <header className="mb-16 border-b border-white/5 pb-10">
+               <div className="mb-6 flex items-center gap-3">
+                  <span className="w-12 h-12 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center text-[#fbbf24] font-serif font-bold text-2xl shadow-[0_0_15px_rgba(251,191,36,0.1)]">
+                     {item.term.charAt(0)}
+                  </span>
+                  <span className="text-sm text-[#fbbf24] font-bold tracking-[0.2em] uppercase opacity-80">Rüya Tabiri</span>
                </div>
-               <h1 className="text-3xl md:text-6xl font-serif font-bold text-white mb-4 md:mb-6 leading-tight">
+
+               <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8 leading-[1.1] tracking-tight">
                   {item.term}
                </h1>
-               <p className="text-base md:text-xl text-gray-400 font-light leading-relaxed max-w-2xl mx-auto">
-                  {item.description}
-               </p>
+               
+               {/* Description Alanı */}
+               <div className="pl-6 border-l-4 border-[#fbbf24] py-1">
+                  <p className="text-xl text-gray-300 font-light leading-relaxed italic">
+                     {item.description}
+                  </p>
+               </div>
             </header>
 
-            {/* İçerik Metni (Prose) */}
-            {/* APP FIX: prose-sm mobilde daha okunaklıdır */}
-            <div 
-               className="prose prose-invert prose-sm md:prose-lg max-w-none prose-headings:font-serif prose-headings:text-[#fbbf24] prose-p:text-gray-300 prose-p:leading-loose prose-strong:text-white prose-li:text-gray-300"
-               dangerouslySetInnerHTML={{ __html: item.content || "<p>İçerik hazırlanıyor...</p>" }} 
-            />
+            {/* 2. DİNAMİK İÇERİK BLOKLARI (JSON RENDERER) */}
+            <div className="space-y-10">
+                {contentBlocks.map((block, index) => {
+                    
+                    // A) BAŞLIKLAR (Heading)
+                    if (block.type === 'heading') {
+                        return (
+                            <h2 key={index} className="text-2xl md:text-3xl font-serif font-bold text-[#fbbf24] pt-8 border-b border-white/10 pb-4">
+                                {block.text}
+                            </h2>
+                        );
+                    }
 
-            {/* --- CTA KARTI (Alt Kısım) --- */}
-            <div className="mt-12 md:mt-20 p-6 md:p-12 rounded-3xl bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] border border-[#fbbf24]/30 text-center relative overflow-hidden group shadow-2xl">
-               {/* Arkaplan Deseni */}
-               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fbbf24_1px,transparent_1px)] [background-size:16px_16px]"></div>
-               
-               <div className="relative z-10">
-                   <h3 className="text-xl md:text-3xl font-serif font-bold text-white mb-3 md:mb-4">
-                      Bu Senin Rüyanda Ne Anlama Geliyor?
-                   </h3>
-                   <p className="text-sm md:text-base text-gray-400 mb-6 md:mb-8 max-w-lg mx-auto leading-relaxed">
-                      Sözlükteki anlamlar geneldir. Senin rüyanın sana özel mesajını, kişisel durumuna göre yapay zeka ile analiz et.
-                   </p>
+                    // B) PARAGRAFLAR (Paragraph)
+                    if (block.type === 'paragraph') {
+                        return (
+                            <p key={index} className="text-lg text-gray-300 font-light leading-loose">
+                                {block.text}
+                            </p>
+                        );
+                    }
+
+                    // C) ÖZEL KUTULAR (Quote / İslami Tabir)
+                    if (block.type === 'quote') {
+                        return (
+                            <div key={index} className="my-8 p-6 md:p-8 rounded-2xl bg-[#0f172a] border border-white/10 relative overflow-hidden group">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+                                <div className="relative z-10">
+                                    {block.title && (
+                                        <h3 className="text-purple-400 font-bold text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            <Quote className="w-4 h-4" /> {block.title}
+                                        </h3>
+                                    )}
+                                    <p className="text-white text-lg font-serif italic leading-relaxed">
+                                        "{block.text}"
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    // D) LİSTELER (List)
+                    if (block.type === 'list') {
+                        return (
+                            <ul key={index} className="space-y-4 my-6">
+                                {block.items.map((li, i) => (
+                                    <li key={i} className="flex items-start gap-3 text-gray-300 text-lg leading-relaxed">
+                                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-[#fbbf24] shrink-0"></span>
+                                        <span>{li}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )
+                    }
+
+                    return null;
+                })}
+            </div>
+
+            {/* 3. CTA KARTI */}
+            <div className="mt-20 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0f172a] shadow-2xl">
+               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
+               <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-[#fbbf24]/10 to-transparent"></div>
+
+               <div className="relative z-10 p-10 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
+                   <div className="max-w-md">
+                       <h3 className="text-2xl font-serif font-bold text-white mb-3">
+                          Bu Sembolü Rüyanda mı Gördün?
+                       </h3>
+                       <p className="text-base text-gray-400 font-light leading-relaxed">
+                          Sözlük geneldir. Kendi rüyanın sana özel mesajını yapay zeka ile çöz.
+                       </p>
+                   </div>
                    
                    <Link 
                       href="/dashboard"
-                      className="inline-flex items-center gap-3 px-6 py-3 md:px-8 md:py-4 rounded-full bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black font-bold text-xs md:text-sm tracking-widest uppercase hover:scale-105 active:scale-95 transition-transform shadow-[0_0_30px_rgba(251,191,36,0.3)]"
+                      className="whitespace-nowrap px-8 py-4 rounded-xl bg-[#fbbf24] text-black font-bold text-sm tracking-widest uppercase hover:bg-[#f59e0b] hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-3"
                    >
-                      <PenLine className="w-4 h-4 md:w-5 md:h-5" /> Rüyanı Yorumla
+                      <PenLine className="w-5 h-5" /> Rüyamı Yorumla
                    </Link>
                </div>
             </div>
 
          </article>
       </main>
-
     </div>
   );
 }

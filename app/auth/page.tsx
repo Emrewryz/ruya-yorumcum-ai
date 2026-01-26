@@ -45,23 +45,36 @@ export default function AuthPage() {
 
   // AuthPage.tsx içindeki fonksiyonu güncelle:
 
-const handleGoogleLogin = async () => {
-    // Tarayıcıda olduğumuzdan emin olalım
+// AuthPage.tsx içindeki güncel fonksiyon
+  const handleGoogleLogin = async () => {
+    // Tarayıcı ortamı kontrolü
     if (typeof window === 'undefined') return;
     
-    // O anki adres neyse (localhost veya vercel) onu al
-    const origin = window.location.origin;
+    // Yükleniyor durumunu aç (isteğe bağlı)
+    setLoading(true);
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { 
-        // URL sonuna 'next' parametresi ekleyerek dashboard'a gitmesini garantiliyoruz
-        redirectTo: `${origin}/auth/callback?next=/dashboard`,
-      },
-    });
-    
-    if (error) alert(error.message);
-};
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          // ÖNEMLİ: Adresi dinamik alıyoruz ama sonuna /auth/callback ekliyoruz.
+          // Bu adres yukarıda oluşturduğumuz route.ts dosyasına gidecek.
+          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) throw error;
+      
+    } catch (error: any) {
+      alert("Google girişi sırasında hata: " + error.message);
+      setLoading(false);
+    }
+    // Başarılı olursa Google sayfasına gideceği için setLoading(false) yapmaya gerek yok.
+  };
 
   return (
     // APP FIX: min-h-screen yerine min-h-[100dvh] (Mobil tarayıcı çubuğu sorunu için)

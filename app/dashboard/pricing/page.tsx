@@ -61,11 +61,11 @@ export default function PricingPage() {
     // KULLANICININ VERDİĞİ LİNKLER:
     if (planName === "KAŞİF") {
         // Kaşif Paketi Linki
-        paymentLink = "https://www.shopier.com/s/checkout/ruyayorumcumai/625438779";
+        paymentLink = "https://www.shopier.com/ruyayorumcumai/43369308";
     }
     if (planName === "KAHİN") {
         // Kahin Paketi (Checkout) Linki
-        paymentLink = "https://www.shopier.com/s/checkout/ruyayorumcumai/625438779";
+        paymentLink = "https://www.shopier.com/ruyayorumcumai/43369409";
     }
 
     // Link kontrolü
