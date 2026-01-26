@@ -51,37 +51,62 @@ export default function PricingPage() {
   }, [supabase]);
 
   // --- GÜNCELLENEN SATIN ALMA FONKSİYONU ---
-  const handlePurchase = (planName: string) => {
-    // 1. Titreşim (Mobil hissi)
-    if (navigator.vibrate) navigator.vibrate(50);
+  // ... diğer kodlar aynı
+
+  const handlePurchase = async (planName: string) => {
+    // 1. Kullanıcının Sitedeki Mailini Al
+    const { data: { user } } = await supabase.auth.getUser();
     
-    // 2. Paket Linklerini Belirle
-    let paymentLink = "";
-
-    // KULLANICININ VERDİĞİ LİNKLER:
-    if (planName === "KAŞİF") {
-        // Kaşif Paketi Linki
-        paymentLink = "https://www.shopier.com/ruyayorumcumai/43369308";
-    }
-    if (planName === "KAHİN") {
-        // Kahin Paketi (Checkout) Linki
-        paymentLink = "https://www.shopier.com/ruyayorumcumai/43369409";
-    }
-
-    // Link kontrolü
-    if (!paymentLink) {
-        toast.error("Bu paket için ödeme linki tanımlanmamış.");
+    // Eğer kullanıcı giriş yapmamışsa login'e at
+    if (!user || !user.email) {
+        router.push('/login'); // veya /auth
         return;
     }
 
-    // 3. Kullanıcıya bilgi ver
-    toast.loading("Shopier güvenli ödeme sayfasına yönlendiriliyorsunuz...", {
-      duration: 1500,
-    });
+    // 2. Linki Seç
+    let paymentLink = "";
+    if (planName === "KAŞİF") paymentLink = "https://www.shopier.com/ruyayorumcumai/43369308";
+    if (planName === "KAHİN") paymentLink = "https://www.shopier.com/s/checkout/ruyayorumcumai/625438779";
 
-    // 4. YÖNLENDİRME (En Hatasız Yöntem)
-    // Form post yerine direkt linke gitmek bu link tipleri için en sağlıklısıdır.
-    window.location.href = paymentLink;
+    if (!paymentLink) return;
+
+    // 3. TOAST UYARISI (Kopyala & Git)
+    toast(
+      <div className="flex flex-col gap-3">
+        <div className="font-bold text-amber-400 flex items-center gap-2">
+           ⚠️ ÇOK ÖNEMLİ!
+        </div>
+        <div className="text-sm text-gray-200 leading-tight">
+          Paketinizin anında aktif olması için ödeme ekranında 
+          <span className="text-white font-bold underline mx-1">bu e-posta adresini</span> 
+          kullanmalısınız:
+        </div>
+        
+        {/* Mail Kutusu - Tıklayınca Kopyalar */}
+        <div 
+          onClick={() => {
+             navigator.clipboard.writeText(user.email!);
+             toast.success("E-Posta kopyalandı!");
+          }}
+          className="bg-white/10 p-3 rounded-lg border border-white/20 cursor-pointer hover:bg-white/20 transition-colors flex items-center justify-between group"
+        >
+          <span className="font-mono text-xs md:text-sm text-white truncate">{user.email}</span>
+          <span className="text-[10px] bg-white/20 px-2 py-1 rounded group-hover:bg-white/30">KOPYALA</span>
+        </div>
+
+        <button 
+            onClick={() => window.location.href = paymentLink}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold text-sm transition-colors shadow-lg"
+        >
+            ANLADIM, ÖDEMEYE GİT 👉
+        </button>
+      </div>,
+      {
+        duration: Infinity, // Kullanıcı tıklayana kadar kapanmasın
+        position: 'top-center',
+        style: { background: '#0f172a', border: '1px solid #334155' }
+      }
+    );
   };
 
   const plans: Plan[] = [
