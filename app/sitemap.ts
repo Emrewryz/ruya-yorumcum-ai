@@ -7,13 +7,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 1. Supabase istemcisini oluştur
   const supabase = createClient()
 
-  // 2. Veritabanındaki 'dream_dictionary' tablosundan tüm slugları çek
-  // Not: Eğer tablonuzda 'updated_at' sütunu yoksa sadece 'slug' seçebilirsiniz.
-  const { data: terms } = await supabase
+  // 2. Veritabanındaki 'dream_dictionary' tablosundan slug ve tarih bilgisini çekiyoruz
+  // Not: Senin gönderdiğin CSV'ye göre tablo adının 'dream_dictionary' olduğunu varsayıyorum.
+  // Eğer tablo adın farklıysa (örn: dictionary), aşağıdaki 'dream_dictionary' kısmını değiştir.
+  const { data: terms, error } = await supabase
     .from('dream_dictionary')
-    .select('slug, updated_at')
+    .select('slug, created_at')
 
-  // 3. Statik Sayfalar (Elle eklediklerimiz)
+  if (error) {
+    console.error('Sitemap verisi çekilirken hata:', error)
+  }
+
+  // 3. Statik (Sabit) Sayfalar
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}`,
@@ -42,35 +47,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     {
       url: `${baseUrl}/yasal/gizlilik-politikasi`,
       lastModified: new Date(),
-      changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${baseUrl}/yasal/kullanim-kosullari`,
       lastModified: new Date(),
-      changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${baseUrl}/yasal/mesafeli-satis-sozlesmesi`,
       lastModified: new Date(),
-      changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${baseUrl}/yasal/iptal-ve-iade-kosullari`,
       lastModified: new Date(),
-      changeFrequency: 'monthly',
       priority: 0.5,
     },
   ]
 
-  // 4. Dinamik Rüya Sayfaları (Otomatik oluşturulanlar)
+  // 4. Dinamik Rüya Sayfaları (Veritabanından Gelenler)
+  // Senin gönderdiğin datadaki 'slug' (örn: ruyada-kopek-gormek) ve 'created_at' kullanılıyor.
   const dictionaryPages: MetadataRoute.Sitemap = (terms || []).map((term) => ({
     url: `${baseUrl}/sozluk/${term.slug}`,
-    // Eğer veritabanında tarih varsa onu kullan, yoksa bugünün tarihini at
-    lastModified: term.updated_at ? new Date(term.updated_at) : new Date(),
-    changeFrequency: 'weekly',
+    // Veritabanındaki oluşturulma tarihini kullanıyoruz, yoksa bugünün tarihi
+    lastModified: term.created_at ? new Date(term.created_at) : new Date(),
+    changeFrequency: 'monthly', // Rüya tabirleri çok sık değişmez, monthly idealdir
     priority: 0.7,
   }))
 
