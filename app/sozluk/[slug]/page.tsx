@@ -1,41 +1,108 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, PenLine, BookOpen, Search, Quote, AlignLeft } from "lucide-react";
+import { ArrowLeft, Sparkles, PenLine, BookOpen, Quote } from "lucide-react";
 import type { Metadata } from 'next';
+import { cache } from 'react';
+import Script from 'next/script';
 
 // --- TİP TANIMLAMALARI ---
-// Veritabanındaki JSON yapısını burada tanıtıyoruz
 type ContentBlock = 
   | { type: 'heading'; text: string }
   | { type: 'paragraph'; text: string }
   | { type: 'quote'; title?: string; text: string }
   | { type: 'list'; items: string[] };
 
-// SEO Metadata
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+// --- VERİ ÇEKME (CACHE MEKANİZMASI) ---
+// Bu fonksiyon hem Metadata hem de Sayfa tarafından çağrılır ama Supabase'e tek istek gider.
+const getDreamData = cache(async (slug: string) => {
   const supabase = createClient();
-  const { data: item } = await supabase
-    .from('dream_dictionary')
-    .select('term, description')
-    .eq('slug', params.slug)
-    .single();
-
-  if (!item) return { title: 'Terim Bulunamadı' };
-
-  return {
-    title: `${item.term} Rüyada Görmek - RüyaYorumcum`,
-    description: item.description,
-  };
-}
-
-export default async function DictionaryDetailPage({ params }: { params: { slug: string } }) {
-  const supabase = createClient();
-  
   const { data: item } = await supabase
     .from('dream_dictionary')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .single();
+  return item;
+});
+
+// --- YARDIMCI FONKSİYONLAR ---
+const parseContent = (content: any): ContentBlock[] => {
+  try {
+    if (typeof content === 'string' && content.startsWith('[')) {
+      return JSON.parse(content);
+    }
+    // Eski HTML formatı veya düz metin fallback'i
+    return [{ type: 'paragraph', text: typeof content === 'string' ? content : 'İçerik yüklenemedi.' }];
+  } catch (e) {
+    return [{ type: 'paragraph', text: 'İçerik formatı hatalı.' }];
+  }
+};
+
+// --- SEO METADATA ---
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const item = await getDreamData(params.slug);
+
+  if (!item) return { title: 'Terim Bulunamadı - RüyaYorumcum' };
+
+  return {
+    title: `Rüyada ${item.term} Görmek Ne Anlama Gelir? - RüyaYorumcum`,
+    description: item.description,
+    openGraph: {
+      title: `Rüyada ${item.term} Görmek - RüyaYorumcum`,
+      description: item.description,
+      type: 'article',
+    }
+  };
+}
+
+// --- ALT BİLEŞEN: İÇERİK RENDERLAYICI ---
+const BlockRenderer = ({ block }: { block: ContentBlock }) => {
+  switch (block.type) {
+    case 'heading':
+      return (
+        <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#fbbf24] pt-8 border-b border-white/10 pb-4">
+          {block.text}
+        </h2>
+      );
+    case 'paragraph':
+      return (
+        <p className="text-lg text-gray-300 font-light leading-loose">
+          {block.text}
+        </p>
+      );
+    case 'quote':
+      return (
+        <div className="my-8 p-6 md:p-8 rounded-2xl bg-[#0f172a] border border-white/10 relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+          <div className="relative z-10">
+            {block.title && (
+              <h3 className="text-purple-400 font-bold text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Quote className="w-4 h-4" /> {block.title}
+              </h3>
+            )}
+            <p className="text-white text-lg font-serif italic leading-relaxed">"{block.text}"</p>
+          </div>
+        </div>
+      );
+    case 'list':
+      return (
+        <ul className="space-y-4 my-6">
+          {block.items.map((li, i) => (
+            <li key={i} className="flex items-start gap-3 text-gray-300 text-lg leading-relaxed">
+              <span className="mt-2 w-1.5 h-1.5 rounded-full bg-[#fbbf24] shrink-0"></span>
+              <span>{li}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    default:
+      return null;
+  }
+};
+
+// --- ANA SAYFA COMPONENTİ ---
+export default async function DictionaryDetailPage({ params }: { params: { slug: string } }) {
+  const item = await getDreamData(params.slug);
+  const supabase = createClient();
 
   // TERİM BULUNAMAZSA
   if (!item) {
@@ -52,29 +119,39 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
     );
   }
 
-  // search_count artır
-  await supabase.rpc('increment_search_count', { row_id: item.id });
-
-  // --- İÇERİK AYRIŞTIRMA (PARSING) ---
-  // Eğer veritabanında JSON varsa onu kullan, yoksa boş array döndür.
-  let contentBlocks: ContentBlock[] = [];
-  try {
-    // Veritabanındaki 'content' alanının JSON formatında olduğunu varsayıyoruz.
-    // Eğer veritabanında hala eski HTML duruyorsa, bu kod hata vermez ama boş içerik gösterebilir.
-    // Lütfen veritabanındaki veriyi yukarıdaki JSON formatına güncelle.
-    if (typeof item.content === 'string' && item.content.startsWith('[')) {
-        contentBlocks = JSON.parse(item.content);
-    } else {
-        // Eski format (HTML) ise geçici olarak tek paragraf yap (Fallback)
-        contentBlocks = [{ type: 'paragraph', text: 'Bu içerik eski formatta. Lütfen veritabanını güncelleyiniz.' }];
+  // Arama sayısını artır (Hata olursa sayfayı kırmaması için try-catch veya fire-and-forget)
+  // await kullanıyoruz ama hata yakalayıcı eklemedik, Supabase hatası sayfayı bozmasın diye .catch eklenebilir
+  supabase.rpc('increment_search_count', { row_id: item.id }).then(({ error }) => {
+    if (error) {
+      console.error('Sayaç artırma hatası:', error);
     }
-  } catch (e) {
-    contentBlocks = [];
-  }
+  });
+
+  const contentBlocks = parseContent(item.content);
+
+  // SEO: Yapısal Veri (JSON-LD)
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: `Rüyada ${item.term} Görmek Ne Anlama Gelir?`,
+    description: item.description,
+    datePublished: item.created_at,
+    author: {
+      '@type': 'Organization',
+      name: 'RüyaYorumcum AI'
+    }
+  };
 
   return (
     <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden selection:bg-[#fbbf24]/30 selection:text-[#fbbf24] pb-32">
       
+      {/* SEO Schema */}
+      <Script
+        id="json-ld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* ATMOSFER */}
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
       <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#4c1d95]/20 blur-[150px] rounded-full pointer-events-none"></div>
@@ -94,9 +171,8 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
 
       {/* ANA İÇERİK */}
       <main className="w-full max-w-3xl mx-auto px-6 py-12 md:py-20 relative z-10">
-         
          <article>
-            {/* 1. HERO BÖLÜMÜ (Başlık ve Özet) */}
+            {/* 1. HERO BÖLÜMÜ */}
             <header className="mb-16 border-b border-white/5 pb-10">
                <div className="mb-6 flex items-center gap-3">
                   <span className="w-12 h-12 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center text-[#fbbf24] font-serif font-bold text-2xl shadow-[0_0_15px_rgba(251,191,36,0.1)]">
@@ -109,7 +185,6 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
                   {item.term}
                </h1>
                
-               {/* Description Alanı */}
                <div className="pl-6 border-l-4 border-[#fbbf24] py-1">
                   <p className="text-xl text-gray-300 font-light leading-relaxed italic">
                      {item.description}
@@ -117,63 +192,11 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
                </div>
             </header>
 
-            {/* 2. DİNAMİK İÇERİK BLOKLARI (JSON RENDERER) */}
+            {/* 2. DİNAMİK İÇERİK BLOKLARI */}
             <div className="space-y-10">
-                {contentBlocks.map((block, index) => {
-                    
-                    // A) BAŞLIKLAR (Heading)
-                    if (block.type === 'heading') {
-                        return (
-                            <h2 key={index} className="text-2xl md:text-3xl font-serif font-bold text-[#fbbf24] pt-8 border-b border-white/10 pb-4">
-                                {block.text}
-                            </h2>
-                        );
-                    }
-
-                    // B) PARAGRAFLAR (Paragraph)
-                    if (block.type === 'paragraph') {
-                        return (
-                            <p key={index} className="text-lg text-gray-300 font-light leading-loose">
-                                {block.text}
-                            </p>
-                        );
-                    }
-
-                    // C) ÖZEL KUTULAR (Quote / İslami Tabir)
-                    if (block.type === 'quote') {
-                        return (
-                            <div key={index} className="my-8 p-6 md:p-8 rounded-2xl bg-[#0f172a] border border-white/10 relative overflow-hidden group">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
-                                <div className="relative z-10">
-                                    {block.title && (
-                                        <h3 className="text-purple-400 font-bold text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            <Quote className="w-4 h-4" /> {block.title}
-                                        </h3>
-                                    )}
-                                    <p className="text-white text-lg font-serif italic leading-relaxed">
-                                        "{block.text}"
-                                    </p>
-                                </div>
-                            </div>
-                        );
-                    }
-
-                    // D) LİSTELER (List)
-                    if (block.type === 'list') {
-                        return (
-                            <ul key={index} className="space-y-4 my-6">
-                                {block.items.map((li, i) => (
-                                    <li key={i} className="flex items-start gap-3 text-gray-300 text-lg leading-relaxed">
-                                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-[#fbbf24] shrink-0"></span>
-                                        <span>{li}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        )
-                    }
-
-                    return null;
-                })}
+                {contentBlocks.map((block, index) => (
+                   <BlockRenderer key={index} block={block} />
+                ))}
             </div>
 
             {/* 3. CTA KARTI */}
@@ -184,16 +207,16 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
                <div className="relative z-10 p-10 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
                    <div className="max-w-md">
                        <h3 className="text-2xl font-serif font-bold text-white mb-3">
-                          Bu Sembolü Rüyanda mı Gördün?
+                         Bu Sembolü Rüyanda mı Gördün?
                        </h3>
                        <p className="text-base text-gray-400 font-light leading-relaxed">
-                          Sözlük geneldir. Kendi rüyanın sana özel mesajını yapay zeka ile çöz.
+                         Sözlük geneldir. Kendi rüyanın sana özel mesajını yapay zeka ile çöz.
                        </p>
                    </div>
                    
                    <Link 
-                      href="/dashboard"
-                      className="whitespace-nowrap px-8 py-4 rounded-xl bg-[#fbbf24] text-black font-bold text-sm tracking-widest uppercase hover:bg-[#f59e0b] hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-3"
+                     href="/dashboard"
+                     className="whitespace-nowrap px-8 py-4 rounded-xl bg-[#fbbf24] text-black font-bold text-sm tracking-widest uppercase hover:bg-[#f59e0b] hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-3"
                    >
                       <PenLine className="w-5 h-5" /> Rüyamı Yorumla
                    </Link>
