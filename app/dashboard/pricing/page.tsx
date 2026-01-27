@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Check, Star, Zap, Crown, ArrowLeft, Loader2, X, MessageCircle, Image as ImageIcon, Sparkles, ShieldCheck } from "lucide-react";
+import { 
+  Check, Star, Zap, Crown, ArrowLeft, Loader2, X, MessageCircle, 
+  Image as ImageIcon, Sparkles, ShieldCheck, Copy, Info, Clock 
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -50,16 +53,14 @@ export default function PricingPage() {
     getUser();
   }, [supabase]);
 
-  // --- GÜNCELLENEN SATIN ALMA FONKSİYONU ---
-  // ... diğer kodlar aynı
-
+  // --- GÜNCELLENEN VE PROFESYONELLEŞTİRİLEN SATIN ALMA FONKSİYONU ---
   const handlePurchase = async (planName: string) => {
     // 1. Kullanıcının Sitedeki Mailini Al
     const { data: { user } } = await supabase.auth.getUser();
     
     // Eğer kullanıcı giriş yapmamışsa login'e at
     if (!user || !user.email) {
-        router.push('/login'); // veya /auth
+        router.push('/login'); 
         return;
     }
 
@@ -70,43 +71,83 @@ export default function PricingPage() {
 
     if (!paymentLink) return;
 
-    // 3. TOAST UYARISI (Kopyala & Git)
-    toast(
-      <div className="flex flex-col gap-3">
-        <div className="font-bold text-amber-400 flex items-center gap-2">
-           ⚠️ ÇOK ÖNEMLİ!
-        </div>
-        <div className="text-sm text-gray-200 leading-tight">
-          Paketinizin anında aktif olması için ödeme ekranında 
-          <span className="text-white font-bold underline mx-1">bu e-posta adresini</span> 
-          kullanmalısınız:
-        </div>
-        
-        {/* Mail Kutusu - Tıklayınca Kopyalar */}
-        <div 
-          onClick={() => {
-             navigator.clipboard.writeText(user.email!);
-             toast.success("E-Posta kopyalandı!");
-          }}
-          className="bg-white/10 p-3 rounded-lg border border-white/20 cursor-pointer hover:bg-white/20 transition-colors flex items-center justify-between group"
-        >
-          <span className="font-mono text-xs md:text-sm text-white truncate">{user.email}</span>
-          <span className="text-[10px] bg-white/20 px-2 py-1 rounded group-hover:bg-white/30">KOPYALA</span>
-        </div>
+    // 3. PROFESYONEL BİLGİLENDİRME KARTI (Toast Custom)
+    toast.custom((t) => (
+      <div className="w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden font-sans relative">
+        {/* Arka Plan Efekti */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/10 blur-[60px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-amber-500/5 blur-[50px] pointer-events-none" />
 
-        <button 
-            onClick={() => window.location.href = paymentLink}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold text-sm transition-colors shadow-lg"
-        >
-            ANLADIM, ÖDEMEYE GİT 👉
-        </button>
-      </div>,
-      {
-        duration: Infinity, // Kullanıcı tıklayana kadar kapanmasın
-        position: 'top-center',
-        style: { background: '#0f172a', border: '1px solid #334155' }
-      }
-    );
+        <div className="p-6 relative z-10">
+          {/* Başlık ve Kapatma */}
+          <div className="flex items-start justify-between mb-5">
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                  <ShieldCheck className="w-5 h-5 text-amber-400" />
+               </div>
+               <div>
+                  <h3 className="text-white font-bold text-base leading-none">Güvenli Ödeme Adımı</h3>
+                  <p className="text-gray-400 text-xs mt-1">Lütfen aşağıdaki uyarıyı dikkate alınız.</p>
+               </div>
+            </div>
+            <button 
+              onClick={() => toast.dismiss(t)}
+              className="text-gray-500 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* E-Posta Kopyalama Alanı */}
+          <div 
+             onClick={() => {
+                 navigator.clipboard.writeText(user.email!);
+                 toast.success("E-Posta adresi kopyalandı!");
+             }}
+             className="group cursor-pointer bg-black/40 border border-white/10 hover:border-amber-500/40 rounded-xl p-4 mb-4 transition-all active:scale-[0.98]"
+          >
+             <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold group-hover:text-amber-500 transition-colors">
+                  KULLANMANIZ GEREKEN E-POSTA
+                </span>
+                <span className="text-[10px] bg-white/10 text-gray-300 px-2 py-0.5 rounded flex items-center gap-1 group-hover:bg-amber-500 group-hover:text-black transition-colors">
+                   <Copy className="w-3 h-3" /> KOPYALA
+                </span>
+             </div>
+             <div className="font-mono text-sm text-white truncate group-hover:text-amber-100">
+               {user.email}
+             </div>
+          </div>
+
+          {/* 12 Saat Uyarısı - Profesyonel Bilgilendirme */}
+          <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-3 mb-5 flex gap-3">
+             <div className="mt-0.5 shrink-0">
+                <Clock className="w-4 h-4 text-blue-400" />
+             </div>
+             <div className="text-[11px] leading-relaxed text-gray-300">
+                <span className="font-bold text-blue-200">Farklı bir e-posta adresi girerseniz:</span> <br/>
+                Otomatik tanımlama yapılamaz. Bu durumda paketiniz, güvenlik kontrollerinin ardından <span className="text-white underline decoration-blue-500/30">12 saat içerisinde</span> operatörlerimiz tarafından manuel olarak hesabınıza tanımlanacaktır.
+             </div>
+          </div>
+
+          {/* Aksiyon Butonu */}
+          <button 
+            onClick={() => {
+               toast.dismiss(t);
+               window.location.href = paymentLink;
+            }}
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+          >
+             ANLADIM, GÜVENLİ ÖDEMEYE GİT <ShieldCheck className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    ), { 
+      duration: Infinity, 
+      position: 'top-center',
+      // Mobilde tam ekran kaplamaması için stil ayarı
+      style: { background: 'transparent', border: 'none', boxShadow: 'none' } 
+    });
   };
 
   const plans: Plan[] = [
@@ -239,7 +280,7 @@ export default function PricingPage() {
               
               <div className="mb-6 p-4 rounded-2xl bg-black/20 border border-white/5">
                 {plan.oldPrice && plan.price !== 'Ücretsiz' && (
-                   <span className="text-gray-500 line-through text-xs md:text-sm block mb-1">Normal: {plan.oldPrice}</span>
+                    <span className="text-gray-500 line-through text-xs md:text-sm block mb-1">Normal: {plan.oldPrice}</span>
                 )}
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl md:text-4xl font-serif text-white tracking-tight">{plan.price}</span>
