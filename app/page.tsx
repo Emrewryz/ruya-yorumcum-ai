@@ -70,6 +70,16 @@ export default function Home() {
     setUser(null);
     router.refresh();
   };
+  // Bu fonksiyon kullanıcının durumuna göre yönlendirme yapar
+  const handleDreamInterpret = () => {
+    if (user) {
+      // Kullanıcı giriş yapmışsa panele git
+      router.push('/dashboard');
+    } else {
+      // Giriş yapmamışsa kayıt/giriş sayfasına git
+      router.push('/auth');
+    }
+  };
 
   const handleUnlockMystery = () => {
     router.push('/dashboard');
@@ -206,15 +216,15 @@ export default function Home() {
           Modern psikoloji, kadim İslami bilgelik ve yapay zeka teknolojisiyle <br className="hidden md:block"/> bilinçaltınızın haritasını çıkarın.
         </p>
 
-        <Link 
-          href="/dashboard"
+       <button 
+          onClick={handleDreamInterpret}
           className="group relative inline-flex items-center justify-center px-8 md:px-10 py-4 md:py-5 text-lg font-bold text-black transition-all duration-300 bg-gradient-to-r from-[#fcd34d] via-[#fbbf24] to-[#f59e0b] rounded-full hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(251,191,36,0.3)]"
         >
            <span className="relative flex items-center gap-2 z-10">
              Rüyanı Şimdi Yorumla <Sparkles className="w-5 h-5 fill-black" />
            </span>
            <div className="absolute inset-0 rounded-full blur-md bg-[#fbbf24]/50 group-hover:bg-[#fbbf24]/80 transition-all"></div>
-        </Link>
+        </button>
       </section>
 
       {/* 4. CANLI DEMO */}
