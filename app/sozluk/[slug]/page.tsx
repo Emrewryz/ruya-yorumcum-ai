@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, PenLine, BookOpen, Quote } from "lucide-react";
+import { ArrowLeft, Sparkles, PenLine, BookOpen, Quote, ChevronRight } from "lucide-react";
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import Script from 'next/script';
@@ -13,7 +13,7 @@ type ContentBlock =
   | { type: 'list'; items: string[] };
 
 // --- VERİ ÇEKME (CACHE MEKANİZMASI) ---
-// Bu fonksiyon hem Metadata hem de Sayfa tarafından çağrılır ama Supabase'e tek istek gider.
+// Bu fonksiyon veriyi sadece 1 kere çeker, hem SEO hem Sayfa kullanır.
 const getDreamData = cache(async (slug: string) => {
   const supabase = createClient();
   const { data: item } = await supabase
@@ -30,52 +30,60 @@ const parseContent = (content: any): ContentBlock[] => {
     if (typeof content === 'string' && content.startsWith('[')) {
       return JSON.parse(content);
     }
-    // Eski HTML formatı veya düz metin fallback'i
-    return [{ type: 'paragraph', text: typeof content === 'string' ? content : 'İçerik yüklenemedi.' }];
+    return [{ type: 'paragraph', text: typeof content === 'string' ? content : 'İçerik hazırlanıyor...' }];
   } catch (e) {
-    return [{ type: 'paragraph', text: 'İçerik formatı hatalı.' }];
+    return [{ type: 'paragraph', text: 'İçerik formatı güncelleniyor.' }];
   }
 };
 
-// --- SEO METADATA ---
+// --- SEO METADATA (DİYANET & İSLAMİ TAKTİĞİ BURADA) ---
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const item = await getDreamData(params.slug);
 
-  if (!item) return { title: 'Terim Bulunamadı - RüyaYorumcum' };
+  if (!item) return { title: 'Rüya Tabiri Bulunamadı - RüyaYorumcum' };
+
+  // İnsanların en çok arattığı kelimeleri başlığa ekliyoruz
+  const seoTitle = `Rüyada ${item.term} Ne Anlama Gelir? Diyanet ve İslami Tabiri`;
 
   return {
-    title: `Rüyada ${item.term} Görmek Ne Anlama Gelir? - RüyaYorumcum`,
-    description: item.description,
+    title: seoTitle,
+    description: item.description.substring(0, 160),
+    keywords: [`rüyada ${item.term}`, `${item.term} anlamı`, `islami rüya tabiri ${item.term}`, 'diyanet rüya', ...(item.keywords || [])],
     openGraph: {
-      title: `Rüyada ${item.term} Görmek - RüyaYorumcum`,
+      title: seoTitle,
       description: item.description,
       type: 'article',
+      siteName: 'RüyaYorumcum AI',
+      locale: 'tr_TR',
+    },
+    alternates: {
+      canonical: `https://www.ruyayorumcum.com.tr/sozluk/${params.slug}`
     }
   };
 }
 
-// --- ALT BİLEŞEN: İÇERİK RENDERLAYICI ---
+// --- İÇERİK RENDERLAYICI BİLEŞEN ---
 const BlockRenderer = ({ block }: { block: ContentBlock }) => {
   switch (block.type) {
     case 'heading':
       return (
-        <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#fbbf24] pt-8 border-b border-white/10 pb-4">
+        <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#fbbf24] pt-8 border-b border-white/10 pb-4 mt-4">
           {block.text}
         </h2>
       );
     case 'paragraph':
       return (
-        <p className="text-lg text-gray-300 font-light leading-loose">
+        <p className="text-lg text-gray-300 font-light leading-loose mb-4">
           {block.text}
         </p>
       );
     case 'quote':
       return (
-        <div className="my-8 p-6 md:p-8 rounded-2xl bg-[#0f172a] border border-white/10 relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+        <div className="my-8 p-6 md:p-8 rounded-2xl bg-[#0f172a] border border-white/10 relative overflow-hidden group shadow-lg">
+          <div className="absolute top-0 left-0 w-1 h-full bg-[#fbbf24]"></div>
           <div className="relative z-10">
             {block.title && (
-              <h3 className="text-purple-400 font-bold text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
+              <h3 className="text-[#fbbf24] font-bold text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
                 <Quote className="w-4 h-4" /> {block.title}
               </h3>
             )}
@@ -85,10 +93,10 @@ const BlockRenderer = ({ block }: { block: ContentBlock }) => {
       );
     case 'list':
       return (
-        <ul className="space-y-4 my-6">
+        <ul className="space-y-4 my-6 pl-2">
           {block.items.map((li, i) => (
             <li key={i} className="flex items-start gap-3 text-gray-300 text-lg leading-relaxed">
-              <span className="mt-2 w-1.5 h-1.5 rounded-full bg-[#fbbf24] shrink-0"></span>
+              <span className="mt-2.5 w-1.5 h-1.5 rounded-full bg-[#fbbf24] shrink-0"></span>
               <span>{li}</span>
             </li>
           ))}
@@ -99,12 +107,12 @@ const BlockRenderer = ({ block }: { block: ContentBlock }) => {
   }
 };
 
-// --- ANA SAYFA COMPONENTİ ---
-export default async function DictionaryDetailPage({ params }: { params: { slug: string } }) {
+// --- ANA SAYFA (Page Component) ---
+export default async function Page({ params }: { params: { slug: string } }) {
   const item = await getDreamData(params.slug);
   const supabase = createClient();
 
-  // TERİM BULUNAMAZSA
+  // TERİM BULUNAMAZSA GÖSTERİLECEK EKRAN
   if (!item) {
     return (
       <div className="min-h-[100dvh] bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden font-sans">
@@ -119,17 +127,21 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
     );
   }
 
-  // Arama sayısını artır (Hata olursa sayfayı kırmaması için try-catch veya fire-and-forget)
-  // await kullanıyoruz ama hata yakalayıcı eklemedik, Supabase hatası sayfayı bozmasın diye .catch eklenebilir
+  // Arama sayısını artır (Hata yönetimi ile)
   supabase.rpc('increment_search_count', { row_id: item.id }).then(({ error }) => {
-    if (error) {
-      console.error('Sayaç artırma hatası:', error);
-    }
+    if(error) console.error("Sayaç hatası:", error);
   });
+
+  // BENZER RÜYALARI ÇEK (İÇ LİNKLEME İÇİN)
+  const { data: relatedDreams } = await supabase
+    .from('dream_dictionary')
+    .select('term, slug')
+    .neq('id', item.id) // Kendisi hariç
+    .limit(3); // 3 tane getir
 
   const contentBlocks = parseContent(item.content);
 
-  // SEO: Yapısal Veri (JSON-LD)
+  // JSON-LD (Google için Yapısal Veri)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -145,7 +157,6 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
   return (
     <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden selection:bg-[#fbbf24]/30 selection:text-[#fbbf24] pb-32">
       
-      {/* SEO Schema */}
       <Script
         id="json-ld"
         type="application/ld+json"
@@ -178,7 +189,7 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
                   <span className="w-12 h-12 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center text-[#fbbf24] font-serif font-bold text-2xl shadow-[0_0_15px_rgba(251,191,36,0.1)]">
                      {item.term.charAt(0)}
                   </span>
-                  <span className="text-sm text-[#fbbf24] font-bold tracking-[0.2em] uppercase opacity-80">Rüya Tabiri</span>
+                  <span className="text-sm text-[#fbbf24] font-bold tracking-[0.2em] uppercase opacity-80">İslami Tabiri</span>
                </div>
 
                <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8 leading-[1.1] tracking-tight">
@@ -204,13 +215,13 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
                <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-[#fbbf24]/10 to-transparent"></div>
 
-               <div className="relative z-10 p-10 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
+               <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
                    <div className="max-w-md">
                        <h3 className="text-2xl font-serif font-bold text-white mb-3">
-                         Bu Sembolü Rüyanda mı Gördün?
+                         Bu rüya size özel bir mesaj taşıyor olabilir
                        </h3>
                        <p className="text-base text-gray-400 font-light leading-relaxed">
-                         Sözlük geneldir. Kendi rüyanın sana özel mesajını yapay zeka ile çöz.
+                         Sözlük anlamları geneldir. Yapay zeka ile rüyanızın size özel gizli mesajını hemen çözün.
                        </p>
                    </div>
                    
@@ -222,6 +233,53 @@ export default async function DictionaryDetailPage({ params }: { params: { slug:
                    </Link>
                </div>
             </div>
+
+            {/* 4. SIKÇA SORULAN SORULAR (FAQ) - YENİ ÖZELLİK */}
+            <div className="mt-20 border-t border-white/10 pt-12">
+              <h3 className="text-2xl font-serif font-bold text-[#fbbf24] mb-8 flex items-center gap-3">
+                <Sparkles className="w-6 h-6" />
+                Rüyada {item.term} Görmek Hakkında SSS
+              </h3>
+              
+              <div className="grid gap-4">
+                <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+                  <h4 className="font-bold text-white mb-2 text-lg">Rüyada {item.term.toLowerCase()} görmek iyiye mi işarettir?</h4>
+                  <p className="text-gray-400 font-light leading-relaxed">
+                    İslami kaynaklara ve rüya tabirlerine göre {item.term.toLowerCase()}, genellikle rüyayı gören kişinin niyetine ve rüyanın içeriğine göre değişir. Detaylı analiz için sayfamızdaki İslami yorumları inceleyebilirsiniz.
+                  </p>
+                </div>
+
+                <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+                  <h4 className="font-bold text-white mb-2 text-lg">Bu rüyanın psikolojik anlamı nedir?</h4>
+                  <p className="text-gray-400 font-light leading-relaxed">
+                    Modern psikolojide {item.term.toLowerCase()}, bilinçaltınızdaki bastırılmış duyguların, korkuların veya günlük hayattaki arzuların bir yansıması olarak kabul edilir.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. DİĞER POPÜLER RÜYALAR (İÇ LİNKLEME) - YENİ ÖZELLİK */}
+            {relatedDreams && relatedDreams.length > 0 && (
+              <div className="mt-20">
+                <h3 className="text-xl font-bold text-gray-200 mb-6 uppercase tracking-widest text-sm">Bunları da Gördünüz mü?</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {relatedDreams.map((dream) => (
+                    <Link 
+                      key={dream.slug} 
+                      href={`/sozluk/${dream.slug}`}
+                      className="group p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[#fbbf24]/50 transition-all flex flex-col justify-between h-32"
+                    >
+                      <span className="text-[#fbbf24] font-serif font-bold text-lg group-hover:translate-x-1 transition-transform">
+                        {dream.term}
+                      </span>
+                      <div className="flex items-center text-xs text-gray-500 group-hover:text-gray-300">
+                        Tabiri Oku <ChevronRight className="w-3 h-3 ml-1" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
          </article>
       </main>
