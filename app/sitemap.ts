@@ -7,18 +7,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 1. Supabase istemcisini oluştur
   const supabase = createClient()
 
-  // 2. Veritabanındaki 'dream_dictionary' tablosundan slug ve tarih bilgisini çekiyoruz
-  // Not: Senin gönderdiğin CSV'ye göre tablo adının 'dream_dictionary' olduğunu varsayıyorum.
-  // Eğer tablo adın farklıysa (örn: dictionary), aşağıdaki 'dream_dictionary' kısmını değiştir.
-  const { data: terms, error } = await supabase
+  // --- VERİ ÇEKME İŞLEMLERİ ---
+
+  // A) Rüyaları Çek (Mevcut)
+  const { data: terms, error: dreamsError } = await supabase
     .from('dream_dictionary')
     .select('slug, created_at')
 
-  if (error) {
-    console.error('Sitemap verisi çekilirken hata:', error)
+  if (dreamsError) {
+    console.error('Sitemap (Rüyalar) çekilirken hata:', dreamsError)
   }
 
-  // 3. Statik (Sabit) Sayfalar
+  // B) Blog Yazılarını Çek (YENİ EKLENEN KISIM)
+  // Sadece yayınlanmış (is_published = true) olanları alıyoruz.
+  const { data: posts, error: blogError } = await supabase
+    .from('blog_posts')
+    .select('slug, created_at')
+    .eq('is_published', true)
+
+  if (blogError) {
+    console.error('Sitemap (Blog) çekilirken hata:', blogError)
+  }
+
+  // --- SAYFA LİSTELERİ OLUŞTURMA ---
+
+  // 2. Statik (Sabit) Sayfalar
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}`,
@@ -28,6 +41,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${baseUrl}/sozluk`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      // YENİ: Blog Ana Sayfası
+      url: `${baseUrl}/blog`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
@@ -44,6 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.8,
     },
+    // Yasal Sayfalar
     {
       url: `${baseUrl}/yasal/gizlilik-politikasi`,
       lastModified: new Date(),
@@ -66,16 +87,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // 4. Dinamik Rüya Sayfaları (Veritabanından Gelenler)
-  // Senin gönderdiğin datadaki 'slug' (örn: ruyada-kopek-gormek) ve 'created_at' kullanılıyor.
+  // 3. Dinamik Rüya Sayfaları
   const dictionaryPages: MetadataRoute.Sitemap = (terms || []).map((term) => ({
     url: `${baseUrl}/sozluk/${term.slug}`,
-    // Veritabanındaki oluşturulma tarihini kullanıyoruz, yoksa bugünün tarihi
     lastModified: term.created_at ? new Date(term.created_at) : new Date(),
-    changeFrequency: 'monthly', // Rüya tabirleri çok sık değişmez, monthly idealdir
+    changeFrequency: 'monthly',
     priority: 0.7,
   }))
 
+  // 4. Dinamik Blog Sayfaları (YENİ EKLENEN KISIM)
+  const blogPages: MetadataRoute.Sitemap = (posts || []).map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: post.created_at ? new Date(post.created_at) : new Date(),
+    changeFrequency: 'weekly', // Bloglar yorum vs. ile güncellenebilir
+    priority: 0.8, // Blog yazıları SEO için değerlidir, yüksek puan veriyoruz
+  }))
+
   // 5. Hepsini birleştirip döndür
-  return [...staticPages, ...dictionaryPages]
+  return [...staticPages, ...dictionaryPages, ...blogPages]
 }
