@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 import Footer from "@/components/footer";
 import MobileNav from "@/components/ui/MobileNav";
 import Script from "next/script";
-import CookieConsent from "@/components/CookieConsent"; // Çerez bileşenini import ettik
+import CookieConsent from "@/components/CookieConsent"; 
 
 const cinzel = Cinzel({ 
   subsets: ["latin"], 
@@ -20,9 +20,29 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Rüya Yorumcum AI | Mistik Rehber",
-  description: "Yapay zeka ve kadim bilgelikle rüyalarınızı analiz edin.",
+  // --- SEO GÜNCELLEMESİ BAŞLANGIÇ ---
+  // 1. Canonical URL: Google'a "Benim asıl adresim budur" diyoruz.
+  metadataBase: new URL('https://www.ruyayorumcum.com.tr'),
+
+  // 2. Akıllı Başlık: Alt sayfalarda sadece rüya adını yazsan bile sonuna otomatik marka adını ekler.
+  title: {
+    default: "Rüya Yorumcum AI | Mistik Rehber",
+    template: "%s | Rüya Yorumcum AI", // Örn: "Rüyada Yılan Görmek | Rüya Yorumcum AI" olur
+  },
+  
+  description: "Yapay zeka ve kadim bilgelikle rüyalarınızı analiz edin. İslami ve psikolojik rüya tabirleri.",
   manifest: "/manifest.json",
+  
+  // 3. Sosyal Medya Paylaşım Kartı (Twitter/X ve WhatsApp için varsayılan)
+  openGraph: {
+    title: 'Rüya Yorumcum AI',
+    description: 'Rüyalarınızın gizli mesajlarını yapay zeka ile çözün.',
+    url: 'https://www.ruyayorumcum.com.tr',
+    siteName: 'Rüya Yorumcum AI',
+    locale: 'tr_TR',
+    type: 'website',
+  },
+  // --- SEO GÜNCELLEMESİ BİTİŞ ---
 };
 
 export const viewport: Viewport = {
@@ -71,7 +91,7 @@ export default function RootLayout({
         {/* Gürültü Efekti (Noise) */}
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
         
-        {/* ÇEREZ UYARISI (En alta, body kapanmadan hemen önceye ekledik) */}
+        {/* ÇEREZ UYARISI */}
         <CookieConsent />
 
       </body>
