@@ -3,38 +3,77 @@ import { createClient } from '@/utils/supabase/server'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.ruyayorumcum.com.tr'
-  const supabase = await createClient() // Server client olduğu için await gerekebilir
+  
+  // 1. Supabase istemcisini oluştur
+  const supabase = createClient()
 
-  // 1. Veritabanındaki TÜM rüya sluglarını çekiyoruz
-  // 'ruyalar' tablo adını veritabanındaki gerçek tablo adınla değiştir
-  const { data: ruyalar, error } = await supabase
-    .from('ruyalar') 
+  // 2. Veritabanındaki 'dream_dictionary' tablosundan tüm slugları çek
+  // Not: Eğer tablonuzda 'updated_at' sütunu yoksa sadece 'slug' seçebilirsiniz.
+  const { data: terms } = await supabase
+    .from('dream_dictionary')
     .select('slug, updated_at')
 
-  if (error) {
-    console.error('Sitemap verisi çekilirken hata oluştu:', error)
-  }
+  // 3. Statik Sayfalar (Elle eklediklerimiz)
+  const staticPages: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/sozluk`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/pricing`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/dashboard`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/yasal/gizlilik-politikasi`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/yasal/kullanim-kosullari`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/yasal/mesafeli-satis-sozlesmesi`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/yasal/iptal-ve-iade-kosullari`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+  ]
 
-  // 2. Statik sayfaları tanımla
-  const staticPages = [
-    '',
-    '/sozluk',
-    '/pricing',
-    '/yasal/gizlilik-politikasi',
-    '/yasal/kullanim-kosullari',
-    '/yasal/mesafeli-satis-sozlesmesi',
-    '/yasal/iptal-ve-iade-kosullari'
-  ].map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date(),
+  // 4. Dinamik Rüya Sayfaları (Otomatik oluşturulanlar)
+  const dictionaryPages: MetadataRoute.Sitemap = (terms || []).map((term) => ({
+    url: `${baseUrl}/sozluk/${term.slug}`,
+    // Eğer veritabanında tarih varsa onu kullan, yoksa bugünün tarihini at
+    lastModified: term.updated_at ? new Date(term.updated_at) : new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.7,
   }))
 
-  // 3. Veritabanından gelen rüyaları haritaya dönüştür
-  const rüyaPages = (ruyalar || []).map((ruya) => ({
-    url: `${baseUrl}/sozluk/${ruya.slug}`,
-    lastModified: ruya.updated_at ? new Date(ruya.updated_at) : new Date(),
-  }))
-
-  // Statik ve dinamik sayfaları birleştirip döndür
-  return [...staticPages, ...rüyaPages]
+  // 5. Hepsini birleştirip döndür
+  return [...staticPages, ...dictionaryPages]
 }
