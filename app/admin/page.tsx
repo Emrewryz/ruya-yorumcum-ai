@@ -1,4 +1,6 @@
+// Dosya Konumu: app/admin/page.tsx
 "use client";
+
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
@@ -19,31 +21,25 @@ export default function AdminPanel() {
     });
   }, []);
 
-  // app/dashboard/admin/page.tsx (veya admin panelin nerdeyse)
-
-// app/dashboard/admin/page.tsx (veya admin panelin nerdeyse)
-
-const manuelActivate = async (plan: 'pro' | 'elite') => {
+  const manuelActivate = async (plan: 'pro' | 'elite') => {
     if(!targetEmail) return toast.error("Mail adresi giriniz");
     setLoading(true);
 
     try {
+        // API ADRESİNİ YENİ YAPIYA GÖRE AYARLADIM: /api/admin/assign-plan
         const response = await fetch('/api/admin/assign-plan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: targetEmail, plan }),
         });
 
-        // ÖNCE TEXT OLARAK AL (Hata ayıklama için kritik)
         const rawText = await response.text();
-        
-        console.log("Sunucudan gelen ham cevap:", rawText); // F12 Konsoluna bak
-
         let data;
         try {
-            data = JSON.parse(rawText); // Şimdi JSON'a çevirmeyi dene
-        } catch (e) {
-            throw new Error(`Sunucu JSON döndürmedi: ${rawText.substring(0, 50)}...`);
+             data = JSON.parse(rawText);
+        } catch(e) {
+             console.error("JSON Hatası:", rawText);
+             throw new Error("Sunucu geçerli yanıt vermedi.");
         }
 
         if (!response.ok) throw new Error(data.error || 'İşlem başarısız');
@@ -52,12 +48,12 @@ const manuelActivate = async (plan: 'pro' | 'elite') => {
         setTargetEmail(""); 
         
     } catch (e: any) {
-        console.error(e);
         toast.error("Hata: " + e.message);
     } finally {
         setLoading(false);
     }
-};
+  };
+
   if (!isAdmin) return <div className="p-20 text-center text-white">Yetkisiz Giriş</div>;
 
   return (
