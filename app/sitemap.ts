@@ -1,24 +1,32 @@
 import { MetadataRoute } from 'next'
-// Burada kendi Supabase istemcini veya veri çekme fonksiyonunu kullanmalısın
-// import { getRuyalar } from '@/lib/db' 
+import { createClient } from '@/utils/supabase/server' // Kendi supabase yoluna göre ayarla
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.ruyayorumcum.com.tr'
+  const supabase = createClient()
 
-  // 1. Statik sayfaların (Ana sayfa, Sözlük ana sayfa vb.)
+  // 1. Supabase'deki tüm rüya sluglarını çekiyoruz
+  const { data: ruyalar } = await supabase
+    .from('ruyalar') // Tablo adın neyse onu yaz (örn: dreams veya ruyalar)
+    .select('slug, updated_at')
+
+  // 2. Statik sayfaları tanımla
   const staticPages = [
-    { url: `${baseUrl}/`, lastModified: new Date() },
-    { url: `${baseUrl}/sozluk`, lastModified: new Date() },
-  ]
-
-  // 2. Dinamik sayfaların (Supabase'deki tüm rüya tabirleri)
-  // Örn: const ruyalar = await getRuyalar()
-  const ruyalar = [ { slug: 'ruyada-altin-gormek' }, { slug: 'ruyada-yilan-gormek' } ] // Temsili veri
-
-  const dynamicPages = ruyalar.map((ruya) => ({
-    url: `${baseUrl}/sozluk/${ruya.slug}`,
+    '',
+    '/sozluk',
+    '/pricing',
+    '/yasal/gizlilik-politikasi',
+    '/yasal/kullanim-kosullari'
+  ].map((route) => ({
+    url: `${baseUrl}${route}`,
     lastModified: new Date(),
   }))
 
-  return [...staticPages, ...dynamicPages]
+  // 3. Dinamik rüya sayfalarını haritaya ekle
+  const rüyaPages = (ruyalar || []).map((ruya) => ({
+    url: `${baseUrl}/sozluk/${ruya.slug}`,
+    lastModified: ruya.updated_at || new Date(),
+  }))
+
+  return [...staticPages, ...rüyaPages]
 }
