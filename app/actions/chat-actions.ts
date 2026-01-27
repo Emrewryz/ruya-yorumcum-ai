@@ -1,19 +1,14 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkUsageLimit } from "@/utils/gatekeeper";
+import OpenAI from "openai";
 
-// 1. DÜZELTME: API Anahtarı buraya eklendi
-const apiKey = process.env.GEMINI_API_KEY; 
-
-if (!apiKey) {
-   throw new Error("API Key bulunamadı! .env dosyasını kontrol et.");
-}
-const genAI = new GoogleGenerativeAI(apiKey);
-
-// Yedekli Model Listesi
-const MODELS_TO_TRY = ["gemini-2.5-flash"];
+// 1. DeepSeek İstemcisi
+const openai = new OpenAI({
+  baseURL: 'https://api.deepseek.com',
+  apiKey: process.env.DEEPSEEK_API_KEY 
+});
 
 export async function sendChatMessage(dreamId: string, message: string) {
   const supabase = createClient();
@@ -44,69 +39,67 @@ export async function sendChatMessage(dreamId: string, message: string) {
     .eq('id', user.id)
     .single();
 
-  // 5. Sohbet Geçmişi
+  // 5. Sohbet Geçmişi (Son 20 mesaj)
+  // DeepSeek'e "hatırlaması" için bu geçmişi göndereceğiz.
   const { data: history } = await supabase
     .from('dream_chat_messages')
     .select('role, content')
     .eq('dream_id', dreamId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: true }) // Eskiden yeniye doğru sırala
     .limit(20);
 
-  // 6. AI İsteği (Yedekli Sistem)
-  let responseText = "";
-  let lastError = "";
+  // 6. AI Context (Sistem Mesajı Hazırlığı)
+  const systemPrompt = `
+    SEN BİR RÜYA KAHİNİSİN.
+    Kullanıcının sorularını mistik, bilge, rahatlatıcı ama aynı zamanda psikolojik derinliği olan bir dille cevapla.
+    Kısa, öz ve etkileyici konuş.
 
-  for (const modelName of MODELS_TO_TRY) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      
-      const chat = model.startChat({
-        history: [
-          {
-            role: "user",
-            parts: [{ text: `
-              SEN BİR RÜYA KAHİNİSİN.
-              Aşağıdaki bilgilere dayanarak kullanıcının sorularını mistik, bilge ve rahatlatıcı bir dille cevapla.
-              
-              KULLANICI: ${profile?.full_name}, BİO: ${profile?.bio || "Yok"}
-              
-              ANALİZ EDİLEN RÜYA:
-              Başlık: ${dream.dream_title}
-              Metin: ${dream.dream_text}
-              Önceki Analiz Özeti: ${dream.ai_response?.summary}
-              
-              GÖREVİN: Kullanıcı bu rüya hakkında sana soru soracak. Rüyadaki detayları ve önceki analizi hatırlayarak cevap ver. Kısa ve öz ol.
-            ` }]
-          },
-          {
-            role: "model",
-            parts: [{ text: "Anlaşıldı. Ben senin rüya rehberinim. Rüyandaki sembolleri ve gizli mesajları derinlemesine konuşmak için buradayım. Sorunu sor." }]
-          },
-          ...(history?.map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.content }]
-          })) || [])
-        ] as any
-      });
+    KULLANICI PROFİLİ:
+    - İsim: ${profile?.full_name || "Bilinmiyor"}
+    - Bio: ${profile?.bio || "Yok"}
 
-      const result = await chat.sendMessage(message);
-      responseText = result.response.text();
-      
-      // Başarılıysa çık
-      break; 
+    ANALİZ EDİLEN RÜYA:
+    - Başlık: ${dream.dream_title}
+    - Rüya Metni: ${dream.dream_text}
+    - Senin Önceki Analizin (Özet): ${dream.ai_response?.summary || "Yok"}
 
-    } catch (error: any) {
-      console.warn(`Chat Hatası (${modelName}):`, error.message);
-      lastError = error.message;
-    }
+    GÖREVİN:
+    Kullanıcı bu rüya hakkında sana soru soruyor. Rüyadaki detayları ve önceki analizini hatırla.
+    Sadece rüya yorumcusu rolünde kal.
+  `;
+
+  // 7. Mesaj Zincirini Oluşturma (System + History + New Message)
+  const messages: any[] = [
+    { role: "system", content: systemPrompt }, // Kimlik ve Bağlam
+  ];
+
+  // Geçmiş mesajları ekle (Supabase 'role' verisi ile OpenAI 'role' verisi uyumludur: 'user' | 'assistant')
+  if (history && history.length > 0) {
+    history.forEach((msg) => {
+        // Veritabanındaki rol isimlerini API'nin anladığı formata emin olmak için mapleyebiliriz
+        // Genelde DB'de 'assistant' diye kayıtlıdır ama 'model' ise 'assistant' yapalım.
+        const role = msg.role === 'user' ? 'user' : 'assistant';
+        messages.push({ role: role, content: msg.content });
+    });
   }
 
-  if (!responseText) {
-    return { error: `Kahin şu an cevap veremiyor. Hata: ${lastError}` };
-  }
+  // Yeni kullanıcı mesajını ekle
+  messages.push({ role: "user", content: message });
 
-  // 7. Mesajları Kaydet
   try {
+    // 8. DeepSeek'e Gönder
+    const completion = await openai.chat.completions.create({
+        messages: messages,
+        model: "deepseek-chat", // V3 Chat Modeli
+        temperature: 1.0, // Sohbet olduğu için akıcılık önemli
+    });
+
+    const responseText = completion.choices[0].message.content;
+
+    if (!responseText) throw new Error("Boş cevap döndü.");
+
+    // 9. Mesajları Kaydet
+    // Önce kullanıcının mesajını kaydet
     await supabase.from('dream_chat_messages').insert({
       user_id: user.id,
       dream_id: dreamId,
@@ -114,17 +107,18 @@ export async function sendChatMessage(dreamId: string, message: string) {
       content: message
     });
 
+    // Sonra AI cevabını kaydet
     await supabase.from('dream_chat_messages').insert({
       user_id: user.id,
       dream_id: dreamId,
-      role: 'assistant',
+      role: 'assistant', // OpenAI standardı 'assistant'tır
       content: responseText
     });
 
     return { success: true, message: responseText };
 
-  } catch (dbError) {
-    console.error("DB Hatası:", dbError);
-    return { error: "Mesaj kaydedilemedi." };
+  } catch (error: any) {
+    console.error("DeepSeek Chat Hatası:", error);
+    return { error: "Kahin şu an bağlantı kuramıyor. Lütfen tekrar dene." };
   }
 }

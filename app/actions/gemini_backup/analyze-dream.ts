@@ -1,16 +1,22 @@
-"use server";
-
+/*"use server";
 import { checkUsageLimit } from "@/utils/gatekeeper";
 import { createClient } from "@/utils/supabase/server";
-import { getMoonPhase } from "@/utils/moon";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getMoonPhase } from "@/utils/moon"; // Ay fazını da dinamik yapalım
 
-// 1. DeepSeek İstemcisini Başlatıyoruz
-// API anahtarını .env dosyasından alacak (DEEPSEEK_API_KEY)
-const openai = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY 
-});
+// 1. API Anahtarını Alıyoruz
+// process.env kısmını tamamen siliyoruz, şifreyi direkt yapıştırıyoruz:
+const apiKey = process.env.GEMINI_API_KEY; 
+
+if (!apiKey) {
+   throw new Error("API Key bulunamadı! .env dosyasını kontrol et.");
+}
+const genAI = new GoogleGenerativeAI(apiKey);
+
+// MODEL ÖNCELİK LİSTESİ
+const MODELS_TO_TRY = [
+  "gemini-2.5-flash-lite", // Daha stabil model (2.5 henüz herkese açık olmayabilir, hata alırsan bunu kulla
+];
 
 export async function analyzeDream(dreamText: string) {
   const supabase = createClient();
@@ -47,14 +53,18 @@ export async function analyzeDream(dreamText: string) {
   `;
 
   // Şu anki Ay Evresini Al
-  const currentMoon = getMoonPhase(); 
+  const currentMoon = getMoonPhase(); // Senin utils/moon.ts dosyanı kullanır
 
   let aiData = null;
+  let errorLog = [];
 
-  try {
-    // 4. DEEPSEEK ANALİZ İSTEĞİ
-    // Gemini'deki promptun aynısı, sadece JSON garantisi için ufak bir ekleme yaptık.
-    const prompt = `
+  // 4. YEDEKLİ MODEL SİSTEMİ
+  for (const modelName of MODELS_TO_TRY) {
+    try {
+      // console.log(`Model deneniyor: ${modelName}...`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+
+      const prompt = `
         Sen mistik güçleri olan, psikolojiye hakim ve kadim rüya ilimlerini bilen usta bir rüya kahinisin.
         Aşağıdaki rüyayı, KULLANICI PROFİLİ'ni baz alarak analiz et. Yorumların genel geçer değil, tamamen bu kişiye özel olmalı.
 
@@ -63,7 +73,7 @@ export async function analyzeDream(dreamText: string) {
         RÜYA METNİ: "${dreamText}"
 
         KURALLAR VE İSTENEN ÇIKTI (SADECE JSON):
-        Bana aşağıdaki JSON formatında cevap ver. Başka hiçbir metin ekleme.
+        Bana aşağıdaki JSON formatında cevap ver. Markdown, backtick veya ekstra metin kullanma.
 
         {
           "title": "Rüyaya verilecek gizemli, kısa ve çarpıcı bir başlık",
@@ -76,34 +86,37 @@ export async function analyzeDream(dreamText: string) {
           
           "mood": "Rüyanın baskın duygusu (Tek kelime: Örn: Kaygılı, Umutlu, Kararsız)",
           
-          "mood_score": 0 ile 100 arası bir duygu puanı (Sayı),
+          "mood_score": 0 ile 100 arası bir duygu puanı (100 çok pozitif, 0 çok negatif),
           
           "lucky_numbers": [Buraya rüyanın sembollerinden ve kullanıcının yaş/doğum tarihine uygun hesaplanmış 3 adet şanslı sayı yaz]
         }
-    `;
+      `;
 
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { role: "system", content: "Sen JSON formatında çıktı veren bir rüya tabircisisin." },
-        { role: "user", content: prompt }
-      ],
-      model: "deepseek-chat", // DeepSeek V3 Chat Modeli
-      temperature: 1.2, // Yaratıcılık için biraz yüksek
-      response_format: { type: "json_object" } // JSON formatını garantiye alır
-    });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      let text = response.text();
+      
+      // Temizlik (Bazen AI ```json ... ``` şeklinde döner, onu temizliyoruz)
+      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      
+      aiData = JSON.parse(text);
 
-    const resultText = completion.choices[0].message.content;
+      console.log(`✅ BAŞARILI! ${modelName} kişiselleştirilmiş analiz yaptı.`);
+      break; 
 
-    if (!resultText) throw new Error("DeepSeek boş yanıt döndü.");
-
-    aiData = JSON.parse(resultText);
-
-  } catch (err: any) {
-    console.error("DeepSeek Hatası:", err);
-    return { error: "Kâhinler şu an transa geçemiyor (AI Hatası). Lütfen az sonra tekrar dene." };
+    } catch (err: any) {
+      console.warn(`⚠️ ${modelName} hatası: ${err.message}`);
+      errorLog.push(`${modelName}: ${err.message}`);
+    }
   }
 
-  // 5. VERİTABANINA KAYIT
+  // 5. HATA YÖNETİMİ
+  if (!aiData) {
+    console.error("Modeller başarısız:", errorLog);
+    return { error: "Kâhinler şu an transa geçemiyor (AI Servis Hatası). Lütfen az sonra tekrar dene." };
+  }
+
+  // 6. VERİTABANINA KAYIT
   try {
     const { data: dreamData, error: dbError } = await supabase
       .from("dreams")
@@ -112,7 +125,7 @@ export async function analyzeDream(dreamText: string) {
         dream_text: dreamText,
         dream_title: aiData.title,
         ai_response: aiData,
-        moon_phase: currentMoon.phase,
+        moon_phase: currentMoon.phase, // Artık dinamik!
         status: "completed",
         visibility: "private"
       })
@@ -130,3 +143,4 @@ export async function analyzeDream(dreamText: string) {
     return { error: "Veritabanı bağlantı hatası: " + dbErr.message };
   }
 }
+  */

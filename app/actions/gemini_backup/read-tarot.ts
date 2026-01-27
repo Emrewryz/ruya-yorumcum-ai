@@ -1,16 +1,18 @@
-"use server";
-
+/*"use server";
 import { checkUsageLimit } from "@/utils/gatekeeper";
 import { createClient } from "@/utils/supabase/server";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// 1. DeepSeek İstemcisi
-const openai = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY 
-});
+const apiKey = process.env.GEMINI_API_KEY; 
 
-// Parametreler: dreamId opsiyonel, eğer varsa rüya üzerine tarot açılıyor demektir
+if (!apiKey) {
+   throw new Error("API Key bulunamadı! .env dosyasını kontrol et.");
+}
+const genAI = new GoogleGenerativeAI(apiKey);
+
+const MODELS_TO_TRY = ["gemini-2.5-flash-lite"];
+
+// Parametreleri güncelledik: dreamId opsiyonel eklendi
 export async function readTarot(question: string, cards: string[], dreamId?: string) {
   const supabase = createClient();
 
@@ -50,71 +52,59 @@ export async function readTarot(question: string, cards: string[], dreamId?: str
           `;
       }
   } else {
-      // Rüya yoksa, kullanıcının sorduğu soruya odaklan
       intent = `SORU: "${question}"`;
   }
 
   let aiResponse = null;
 
   // 3. AI İsteği
-  try {
-    const prompt = `
-        Sen mistik bir tarot yorumcususun. Kartların enerjisini hissediyor ve kullanıcının ruhuna dokunuyorsun.
-        
+  for (const modelName of MODELS_TO_TRY) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      
+      const prompt = `
+        Sen mistik bir tarot yorumcususun.
         ${context}
         
         ${intent}
         
-        ÇEKİLEN KARTLAR (3 Kart Açılımı):
+        Çekilen Kartlar:
         1. GEÇMİŞ (Kökler): ${cards[0]}
         2. ŞİMDİ (Durum): ${cards[1]}
         3. GELECEK (Sonuç): ${cards[2]}
 
-        KURALLAR VE FORMAT:
-        Bana SADECE şu JSON formatında cevap ver. Başka hiçbir metin ekleme.
+        Bana SADECE geçerli bir JSON formatında cevap ver. Markdown yok.
         {
-          "interpretation": "Kartların sentezi ve duruma özel detaylı, mistik bir cevap. Kullanıcıyla konuşur gibi yaz.",
-          "advice": "Kullanıcıya kısa, net ve uygulanabilir bir tavsiye.",
-          "keywords": ["AnahtarKelime1", "AnahtarKelime2", "AnahtarKelime3"]
+          "interpretation": "Kartların sentezi ve duruma özel detaylı, mistik bir cevap.",
+          "advice": "Kullanıcıya kısa ve net bir tavsiye.",
+          "keywords": ["Kelime1", "Kelime2", "Kelime3"]
         }
-    `;
+      `;
 
-    const completion = await openai.chat.completions.create({
-        messages: [
-            { role: "system", content: "Sen JSON formatında çıktı veren mistik bir tarot yorumcususun." },
-            { role: "user", content: prompt }
-        ],
-        model: "deepseek-chat",
-        temperature: 1.1, // Tarot için biraz mistik rastgelelik iyidir
-        response_format: { type: "json_object" }
-    });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      let text = response.text();
+      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      aiResponse = JSON.parse(text);
+      break; 
 
-    const resultText = completion.choices[0].message.content;
-
-    if (!resultText) throw new Error("Kartlar sessiz kaldı (Boş cevap).");
-
-    aiResponse = JSON.parse(resultText);
-
-  } catch (e: any) {
-    console.error("DeepSeek Tarot Hatası:", e);
-    return { error: "Kartların enerjisi şu an okunamıyor. Lütfen tekrar dene." };
+    } catch (e: any) {
+      console.warn(`AI Hatası:`, e.message);
+    }
   }
 
-  // 4. Veritabanına Kayıt
+  if (!aiResponse) return { error: "Kartların enerjisi okunamıyor." };
+
+  // 4. Kayıt
   const { error: dbError } = await supabase
     .from("tarot_readings")
     .insert({
       user_id: user.id,
       card_name: cards.join(", "),
       card_image_url: "standard-deck",
-      interpretation: JSON.stringify(aiResponse), // JSON olarak saklıyoruz
+      interpretation: JSON.stringify(aiResponse),
       dream_id: dreamId || null
     });
 
-  if (dbError) {
-      console.error("DB Kayıt Hatası:", dbError);
-      // Hata olsa bile kullanıcıya sonucu gösterelim
-  }
-
   return { success: true, data: aiResponse };
-}
+}*/

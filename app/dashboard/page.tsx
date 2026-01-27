@@ -9,7 +9,7 @@ import {
   MessageCircle, Layers, Brain, Lock, Heart, Trash2, Image as ImageIcon, Eye, Loader2, Download, Check, Share2, Palette
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { analyzeDream } from "@/app/actions/analyze-dream"; 
+import { analyzeDream } from "@/app/actions/gemini_backup/analyze-dream"; 
 import { getMoonPhase } from "@/utils/moon"; 
 import { toast } from "sonner"; 
 
