@@ -4,7 +4,8 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import Footer from "@/components/footer";
 import MobileNav from "@/components/ui/MobileNav";
-import Script from "next/script"; // <-- YENİ EKLENDİ
+import Script from "next/script";
+import CookieConsent from "@/components/CookieConsent"; // Çerez bileşenini import ettik
 
 const cinzel = Cinzel({ 
   subsets: ["latin"], 
@@ -39,13 +40,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      {/* GOOGLE ADSENSE ALANI */}
       <head>
+        {/* GOOGLE ADSENSE KODU */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
           crossOrigin="anonymous"
-          strategy="afterInteractive" // Sayfa yüklendikten sonra çalışır, hızı etkilemez
+          strategy="afterInteractive"
         />
       </head>
 
@@ -56,7 +57,7 @@ export default function RootLayout({
           {children}
         </main>
 
-        {/* Masaüstü Footer */}
+        {/* Masaüstü Footer (Mobilde gizli) */}
         <div className="hidden md:block">
           <Footer />
         </div>
@@ -64,10 +65,15 @@ export default function RootLayout({
         {/* Mobil Alt Menü */}
         <MobileNav />
 
+        {/* Bildirimler (Toaster) */}
         <Toaster position="top-center" richColors theme="dark" /> 
         
-        {/* Gürültü Efekti */}
+        {/* Gürültü Efekti (Noise) */}
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+        
+        {/* ÇEREZ UYARISI (En alta, body kapanmadan hemen önceye ekledik) */}
+        <CookieConsent />
+
       </body>
     </html>
   );

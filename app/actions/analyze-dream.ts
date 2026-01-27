@@ -5,11 +5,15 @@ import { createClient } from "@/utils/supabase/server";
 import { getMoonPhase } from "@/utils/moon";
 import OpenAI from "openai";
 
-// 1. DeepSeek İstemcisini Başlatıyoruz
-// API anahtarını .env dosyasından alacak (DEEPSEEK_API_KEY)
+// 1. OpenRouter Bağlantısı
+// .env.local dosyasında OPENROUTER_API_KEY olduğundan emin ol.
 const openai = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY 
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY, 
+  defaultHeaders: {
+    "HTTP-Referer": "https://ruyayorumcum.com", 
+    "X-Title": "Rüya Yorumcum",
+  },
 });
 
 export async function analyzeDream(dreamText: string) {
@@ -28,7 +32,7 @@ export async function analyzeDream(dreamText: string) {
     return { error: usageCheck.message || "Limit doldu. Paketini yükseltmelisin." };
   }
 
-  // --- 3. KULLANICI PROFİLİNİ ÇEK (BİO VE DEMOGRAFİK) ---
+  // --- 3. KULLANICI PROFİLİNİ ÇEK ---
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name, age, gender, marital_status, interest_area, bio')
@@ -52,8 +56,7 @@ export async function analyzeDream(dreamText: string) {
   let aiData = null;
 
   try {
-    // 4. DEEPSEEK ANALİZ İSTEĞİ
-    // Gemini'deki promptun aynısı, sadece JSON garantisi için ufak bir ekleme yaptık.
+    // 4. TEST ETTİĞİMİZ VE ÇALIŞAN MODEL İLE ANALİZ
     const prompt = `
         Sen mistik güçleri olan, psikolojiye hakim ve kadim rüya ilimlerini bilen usta bir rüya kahinisin.
         Aşağıdaki rüyayı, KULLANICI PROFİLİ'ni baz alarak analiz et. Yorumların genel geçer değil, tamamen bu kişiye özel olmalı.
@@ -63,7 +66,7 @@ export async function analyzeDream(dreamText: string) {
         RÜYA METNİ: "${dreamText}"
 
         KURALLAR VE İSTENEN ÇIKTI (SADECE JSON):
-        Bana aşağıdaki JSON formatında cevap ver. Başka hiçbir metin ekleme.
+        Bana aşağıdaki JSON formatında cevap ver. Başka hiçbir metin ekleme. JSON dışında bir giriş veya kapanış cümlesi kurma.
 
         {
           "title": "Rüyaya verilecek gizemli, kısa ve çarpıcı bir başlık",
@@ -84,23 +87,28 @@ export async function analyzeDream(dreamText: string) {
 
     const completion = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: "Sen JSON formatında çıktı veren bir rüya tabircisisin." },
+        { role: "system", content: "Sen JSON formatında çıktı veren bir rüya tabircisisin. Sadece saf JSON döndür." },
         { role: "user", content: prompt }
       ],
-      model: "deepseek-chat", // DeepSeek V3 Chat Modeli
-      temperature: 1.2, // Yaratıcılık için biraz yüksek
-      response_format: { type: "json_object" } // JSON formatını garantiye alır
+      // İŞTE ÇALIŞAN MODEL ID'Sİ:
+      model: "google/gemini-2.0-flash-lite-001", 
+      
+      temperature: 1.0, 
+      response_format: { type: "json_object" } 
     });
 
     const resultText = completion.choices[0].message.content;
 
-    if (!resultText) throw new Error("DeepSeek boş yanıt döndü.");
+    if (!resultText) throw new Error("Yapay zeka boş yanıt döndü.");
 
-    aiData = JSON.parse(resultText);
+    // Temizlik (Bazen AI ```json ... ``` şeklinde döner, onu temizliyoruz)
+    const cleanedText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    aiData = JSON.parse(cleanedText);
 
   } catch (err: any) {
-    console.error("DeepSeek Hatası:", err);
-    return { error: "Kâhinler şu an transa geçemiyor (AI Hatası). Lütfen az sonra tekrar dene." };
+    console.error("OpenRouter Hatası:", err);
+    return { error: "Kâhinler şu an transa geçemiyor. Lütfen az sonra tekrar dene." };
   }
 
   // 5. VERİTABANINA KAYIT

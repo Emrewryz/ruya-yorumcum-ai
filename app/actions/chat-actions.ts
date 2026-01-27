@@ -4,10 +4,15 @@ import { createClient } from "@/utils/supabase/server";
 import { checkUsageLimit } from "@/utils/gatekeeper";
 import OpenAI from "openai";
 
-// 1. DeepSeek İstemcisi
+// 1. OpenRouter İstemcisi
+// .env.local dosyasındaki OPENROUTER_API_KEY'i kullanır
 const openai = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY 
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY,
+  defaultHeaders: {
+    "HTTP-Referer": "https://ruyayorumcum.com",
+    "X-Title": "Rüya Yorumcum",
+  },
 });
 
 export async function sendChatMessage(dreamId: string, message: string) {
@@ -20,7 +25,7 @@ export async function sendChatMessage(dreamId: string, message: string) {
   // 2. Limit Kontrolü
   const usageCheck = await checkUsageLimit(user.id, 'chat');
   if (!usageCheck.allowed) {
-     return { error: "Sohbet hakkınız doldu veya paketiniz yetersiz." };
+      return { error: "Sohbet hakkınız doldu veya paketiniz yetersiz." };
   }
 
   // 3. Rüya Verisi
@@ -40,19 +45,18 @@ export async function sendChatMessage(dreamId: string, message: string) {
     .single();
 
   // 5. Sohbet Geçmişi (Son 20 mesaj)
-  // DeepSeek'e "hatırlaması" için bu geçmişi göndereceğiz.
   const { data: history } = await supabase
     .from('dream_chat_messages')
     .select('role, content')
     .eq('dream_id', dreamId)
-    .order('created_at', { ascending: true }) // Eskiden yeniye doğru sırala
+    .order('created_at', { ascending: true }) 
     .limit(20);
 
   // 6. AI Context (Sistem Mesajı Hazırlığı)
   const systemPrompt = `
     SEN BİR RÜYA KAHİNİSİN.
     Kullanıcının sorularını mistik, bilge, rahatlatıcı ama aynı zamanda psikolojik derinliği olan bir dille cevapla.
-    Kısa, öz ve etkileyici konuş.
+    Kısa, öz ve etkileyici konuş. Çok uzun paragraflar yazma.
 
     KULLANICI PROFİLİ:
     - İsim: ${profile?.full_name || "Bilinmiyor"}
@@ -65,19 +69,17 @@ export async function sendChatMessage(dreamId: string, message: string) {
 
     GÖREVİN:
     Kullanıcı bu rüya hakkında sana soru soruyor. Rüyadaki detayları ve önceki analizini hatırla.
-    Sadece rüya yorumcusu rolünde kal.
+    Sadece rüya yorumcusu rolünde kal. Asla yapay zeka olduğunu söyleme.
   `;
 
-  // 7. Mesaj Zincirini Oluşturma (System + History + New Message)
+  // 7. Mesaj Zincirini Oluşturma
   const messages: any[] = [
-    { role: "system", content: systemPrompt }, // Kimlik ve Bağlam
+    { role: "system", content: systemPrompt }, 
   ];
 
-  // Geçmiş mesajları ekle (Supabase 'role' verisi ile OpenAI 'role' verisi uyumludur: 'user' | 'assistant')
   if (history && history.length > 0) {
     history.forEach((msg) => {
-        // Veritabanındaki rol isimlerini API'nin anladığı formata emin olmak için mapleyebiliriz
-        // Genelde DB'de 'assistant' diye kayıtlıdır ama 'model' ise 'assistant' yapalım.
+        // Veritabanındaki rol isimlerini API formatına uygun hale getiriyoruz
         const role = msg.role === 'user' ? 'user' : 'assistant';
         messages.push({ role: role, content: msg.content });
     });
@@ -87,11 +89,13 @@ export async function sendChatMessage(dreamId: string, message: string) {
   messages.push({ role: "user", content: message });
 
   try {
-    // 8. DeepSeek'e Gönder
+    // 8. OpenRouter (Gemini Lite) İle Cevap Üretme
     const completion = await openai.chat.completions.create({
         messages: messages,
-        model: "deepseek-chat", // V3 Chat Modeli
-        temperature: 1.0, // Sohbet olduğu için akıcılık önemli
+        // TEST EDİP ONAYLADIĞIMIZ MODEL:
+        model: "google/gemini-2.0-flash-lite-001", 
+        
+        temperature: 1.0, // Yaratıcı ve mistik olması için 1.0 ideal
     });
 
     const responseText = completion.choices[0].message.content;
@@ -111,14 +115,14 @@ export async function sendChatMessage(dreamId: string, message: string) {
     await supabase.from('dream_chat_messages').insert({
       user_id: user.id,
       dream_id: dreamId,
-      role: 'assistant', // OpenAI standardı 'assistant'tır
+      role: 'assistant',
       content: responseText
     });
 
     return { success: true, message: responseText };
 
   } catch (error: any) {
-    console.error("DeepSeek Chat Hatası:", error);
+    console.error("Sohbet Hatası:", error);
     return { error: "Kahin şu an bağlantı kuramıyor. Lütfen tekrar dene." };
   }
 }

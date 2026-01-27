@@ -4,10 +4,14 @@ import { checkUsageLimit } from "@/utils/gatekeeper";
 import { createClient } from "@/utils/supabase/server";
 import OpenAI from "openai";
 
-// 1. DeepSeek İstemcisi
+// 1. OpenRouter İstemcisi
 const openai = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY 
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY,      // .env.local dosyasındaki OpenRouter anahtarın
+  defaultHeaders: {
+    "HTTP-Referer": "https://ruyayorumcum.com",
+    "X-Title": "Rüya Yorumcum",
+  },
 });
 
 // Parametreler: dreamId opsiyonel, eğer varsa rüya üzerine tarot açılıyor demektir
@@ -56,7 +60,7 @@ export async function readTarot(question: string, cards: string[], dreamId?: str
 
   let aiResponse = null;
 
-  // 3. AI İsteği
+  // 3. AI İsteği (OpenRouter - Gemini 2.0 Flash Lite)
   try {
     const prompt = `
         Sen mistik bir tarot yorumcususun. Kartların enerjisini hissediyor ve kullanıcının ruhuna dokunuyorsun.
@@ -71,7 +75,7 @@ export async function readTarot(question: string, cards: string[], dreamId?: str
         3. GELECEK (Sonuç): ${cards[2]}
 
         KURALLAR VE FORMAT:
-        Bana SADECE şu JSON formatında cevap ver. Başka hiçbir metin ekleme.
+        Bana SADECE şu JSON formatında cevap ver. Başka hiçbir metin ekleme. JSON dışında bir giriş veya kapanış cümlesi kurma.
         {
           "interpretation": "Kartların sentezi ve duruma özel detaylı, mistik bir cevap. Kullanıcıyla konuşur gibi yaz.",
           "advice": "Kullanıcıya kısa, net ve uygulanabilir bir tavsiye.",
@@ -81,11 +85,13 @@ export async function readTarot(question: string, cards: string[], dreamId?: str
 
     const completion = await openai.chat.completions.create({
         messages: [
-            { role: "system", content: "Sen JSON formatında çıktı veren mistik bir tarot yorumcususun." },
+            { role: "system", content: "Sen JSON formatında çıktı veren mistik bir tarot yorumcususun. Sadece saf JSON döndür." },
             { role: "user", content: prompt }
         ],
-        model: "deepseek-chat",
-        temperature: 1.1, // Tarot için biraz mistik rastgelelik iyidir
+        // ONAYLADIĞIMIZ HIZLI MODEL:
+        model: "google/gemini-2.0-flash-lite-001", 
+        
+        temperature: 1.0, // Yaratıcı ve mistik olması için
         response_format: { type: "json_object" }
     });
 
@@ -93,10 +99,13 @@ export async function readTarot(question: string, cards: string[], dreamId?: str
 
     if (!resultText) throw new Error("Kartlar sessiz kaldı (Boş cevap).");
 
-    aiResponse = JSON.parse(resultText);
+    // Temizlik (JSON bloklarını kaldır)
+    const cleanedText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    aiResponse = JSON.parse(cleanedText);
 
   } catch (e: any) {
-    console.error("DeepSeek Tarot Hatası:", e);
+    console.error("OpenRouter Tarot Hatası:", e);
     return { error: "Kartların enerjisi şu an okunamıyor. Lütfen tekrar dene." };
   }
 
@@ -113,7 +122,6 @@ export async function readTarot(question: string, cards: string[], dreamId?: str
 
   if (dbError) {
       console.error("DB Kayıt Hatası:", dbError);
-      // Hata olsa bile kullanıcıya sonucu gösterelim
   }
 
   return { success: true, data: aiResponse };
