@@ -8,7 +8,7 @@ import {
   Moon, Eye, Sparkles, Lock, 
   Palette, Layers, Check, Crown, Star, X, BookOpen, ArrowRight,
   MessageCircle, Hash, Zap, LogOut, LayoutDashboard, 
-  Image as ImageIcon 
+  Image as ImageIcon, Calendar 
 } from "lucide-react";
 
 interface PlanFeature {
@@ -31,17 +31,38 @@ interface Plan {
   popular: boolean;
 }
 
+// Blog verisi için tip tanımı
+interface BlogPost {
+  title: string;
+  slug: string;
+  excerpt: string;
+  image_url: string;
+  created_at: string;
+}
+
 export default function Home() {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<any>(null);
+  const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
 
   useEffect(() => {
-    const checkUser = async () => {
+    const initData = async () => {
+      // 1. Kullanıcıyı kontrol et
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+
+      // 2. Son 3 Blog yazısını çek (Blog Vitrini için)
+      const { data: posts } = await supabase
+        .from('blog_posts')
+        .select('title, slug, excerpt, image_url, created_at')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(3);
+      
+      if (posts) setLatestPosts(posts);
     };
-    checkUser();
+    initData();
   }, [supabase]);
 
   const handleLogout = async () => {
@@ -145,6 +166,8 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
             <Link href="#ozellikler" className="hover:text-[#fbbf24] transition-colors">Özellikler</Link>
             <Link href="#sozluk" className="hover:text-[#fbbf24] transition-colors">Sözlük</Link>
+            {/* BLOG LINKI EKLENDİ */}
+            <Link href="/blog" className="hover:text-[#fbbf24] transition-colors">Blog</Link>
             <Link href="#paketler" className="hover:text-[#fbbf24] transition-colors">Paketler</Link>
           </div>
 
@@ -207,10 +230,10 @@ export default function Home() {
 
              <div className="relative p-6 md:p-10 bg-black/40 flex flex-col justify-center min-h-[250px] md:min-h-[300px]">
                  <div className="space-y-4 filter blur-[8px] opacity-40 select-none pointer-events-none">
-                    <h4 className="text-[#8b5cf6] font-bold text-xl">Psikolojik Analiz:</h4>
-                    <p className="text-gray-300">Bu rüya, hayatınızdaki güç kaybı korkusunu simgeliyor...</p>
-                    <h4 className="text-[#fbbf24] font-bold text-xl mt-6">Manevi Mesaj:</h4>
-                    <p className="text-gray-300">İbni Sirin kayıtlarına göre diş dökülmesi...</p>
+                   <h4 className="text-[#8b5cf6] font-bold text-xl">Psikolojik Analiz:</h4>
+                   <p className="text-gray-300">Bu rüya, hayatınızdaki güç kaybı korkusunu simgeliyor...</p>
+                   <h4 className="text-[#fbbf24] font-bold text-xl mt-6">Manevi Mesaj:</h4>
+                   <p className="text-gray-300">İbni Sirin kayıtlarına göre diş dökülmesi...</p>
                  </div>
                  
                  <div onClick={handleUnlockMystery} className="absolute inset-0 flex flex-col items-center justify-center z-10 cursor-pointer active:scale-95 transition-transform">
@@ -228,7 +251,7 @@ export default function Home() {
 
       {/* 5. ÖZELLİKLER VİTRİNİ */}
       <section id="ozellikler" className="container mx-auto px-6 py-12 md:py-20 relative z-10 space-y-24 md:space-y-32">
-         {/* ... (Numeroloji, Tarot ve AI Vizyon aynı kalacak, sadece görsellerin yerini korudum) ... */}
+         {/* ... (Numeroloji, Tarot ve AI Vizyon aynı kaldı) ... */}
          {/* 1. Numeroloji */}
          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-24">
             <div className="flex-1 w-full relative">
@@ -308,21 +331,14 @@ export default function Home() {
          </div>
       </section>
 
-      {/* --- YENİ EKLENEN BÖLÜM: SEMBOLLER KÜTÜPHANESİ (GÖRSELDEKİ TASARIM) --- */}
-     {/* --- YENİ EKLENEN BÖLÜM: SEMBOLLER KÜTÜPHANESİ --- */}
+      {/* SEMBOLLER KÜTÜPHANESİ */}
       <section id="sozluk" className="container mx-auto px-4 md:px-6 py-20 relative z-10 border-t border-white/5 bg-[#050510]">
-        
-        {/* Başlık Alanı */}
         <div className="text-center mb-16">
           <h2 className="font-serif text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Semboller Kütüphanesi</h2>
           <p className="text-gray-400 text-lg font-light">Kadim işaretlerin dilini çöz. Rüyandaki sembolü arat ve anlamını keşfet.</p>
         </div>
 
-        {/* Kartlar Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          {/* Kart 1: Altın */}
-          {/* DÜZELTME: Link 'ruyada-altin-gormek' yapıldı */}
           <Link href="/sozluk/ruyada-altin-gormek" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-[#fbbf24]/30 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
              <div className="w-12 h-12 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center mb-6 text-[#fbbf24] group-hover:scale-110 transition-transform">
                 <Sparkles className="w-6 h-6" />
@@ -331,8 +347,6 @@ export default function Home() {
              <p className="text-gray-400 text-sm leading-relaxed">Rüyada altın görmek, zenginlik, neşe ve dileklerin kabul olması anlamına gelir. Manevi aydınlanmayı da simgeler.</p>
           </Link>
 
-          {/* Kart 2: Deniz */}
-          {/* DÜZELTME: Link 'ruyada-deniz-gormek' yapıldı */}
           <Link href="/sozluk/ruyada-deniz-gormek" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-white/20 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gray-400 group-hover:text-white transition-colors group-hover:scale-110">
                 <Sparkles className="w-6 h-6" />
@@ -341,8 +355,6 @@ export default function Home() {
              <p className="text-gray-400 text-sm leading-relaxed">Rüyada deniz görmek, büyük bir kısmet, devlet kapısında iş veya derin duygusal dünyayı ifade eder.</p>
           </Link>
 
-          {/* Kart 3: Diş */}
-          {/* DÜZELTME: Link 'ruyada-dis-dokulmesi' yapıldı */}
           <Link href="/sozluk/ruyada-dis-dokulmesi" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-white/20 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gray-400 group-hover:text-white transition-colors group-hover:scale-110">
                 <Sparkles className="w-6 h-6" />
@@ -351,8 +363,6 @@ export default function Home() {
              <p className="text-gray-400 text-sm leading-relaxed">Rüyada diş dökülmesi, güç kaybı, aile büyükleriyle ilgili endişeler veya hayatınızdaki köklü değişimleri simgeler.</p>
           </Link>
 
-          {/* Kart 4: Uçmak */}
-          {/* DÜZELTME: Link 'ruyada-ucmak' yapıldı */}
           <Link href="/sozluk/ruyada-ucmak" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-white/20 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gray-400 group-hover:text-white transition-colors group-hover:scale-110">
                 <Sparkles className="w-6 h-6" />
@@ -360,7 +370,6 @@ export default function Home() {
              <h3 className="font-serif text-xl font-bold text-white mb-4">Rüyada Uçmak</h3>
              <p className="text-gray-400 text-sm leading-relaxed">Rüyada uçmak, özgürlük isteği, ruhsal yükseliş ve engelleri aşma başarısı olarak yorumlanır.</p>
           </Link>
-
         </div>
 
         <div className="text-center mt-12">
@@ -370,13 +379,73 @@ export default function Home() {
         </div>
       </section>
 
+      {/* --- YENİ EKLENEN BÖLÜM: BLOG VİTRİNİ (ANA SAYFA İÇİN) --- */}
+      {latestPosts.length > 0 && (
+        <section className="container mx-auto px-4 md:px-6 py-20 relative z-10 border-t border-white/5 bg-[#050510]">
+          <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
+             <div className="text-left">
+                <h2 className="font-serif text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">Rüya Rehberi</h2>
+                <p className="text-gray-400 text-lg font-light max-w-xl">
+                  Bilinçaltının sırlarını, bilimsel ve manevi gerçekleri keşfedin.
+                </p>
+             </div>
+             <Link href="/blog" className="inline-flex items-center gap-2 text-sm font-bold text-white hover:text-[#fbbf24] transition-colors group">
+                Tüm Yazılar <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+             </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {latestPosts.map((post) => (
+              <Link key={post.slug} href={`/blog/${post.slug}`} className="group h-full">
+                <article className="h-full bg-[#0f172a] border border-white/5 rounded-2xl overflow-hidden hover:border-[#fbbf24]/30 transition-all duration-300 hover:-translate-y-1 flex flex-col">
+                  {/* Resim */}
+                  <div className="aspect-video bg-black/50 relative overflow-hidden">
+                    {post.image_url ? (
+                      <img 
+                        src={post.image_url} 
+                        alt={post.title} 
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
+                        <BookOpen className="w-10 h-10 text-white/10" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* İçerik */}
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                      <Calendar className="w-3 h-3 text-[#fbbf24]" />
+                      {new Date(post.created_at).toLocaleDateString('tr-TR')}
+                    </div>
+                    
+                    <h3 className="font-serif text-lg font-bold text-white mb-3 group-hover:text-[#fbbf24] transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+                    
+                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-3 mb-4">
+                      {post.excerpt}
+                    </p>
+
+                    <span className="text-[#fbbf24] text-xs font-bold mt-auto uppercase tracking-wider flex items-center gap-1">
+                      OKU <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </article>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 6. FİYATLANDIRMA */}
       <section id="paketler" className="container mx-auto px-4 md:px-6 py-20 md:py-32 relative z-10">
         <div className="text-center mb-12 md:mb-16">
           <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4 text-white">Kaderini Seç</h2>
           <p className="text-gray-400 text-sm">Ruhsal yolculuğunuzda size eşlik edecek rehberi belirleyin.</p>
         </div>
-
+        {/* ... Paketler Grid aynı kaldı ... */}
         <div className="grid md:grid-cols-3 gap-6 md:gap-8 items-stretch max-w-6xl mx-auto">
           {plans.map((plan, index) => (
             <div 
@@ -458,6 +527,58 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* 7. SEO & BİLGİ ALANI */}
+      <section className="container mx-auto px-4 md:px-6 py-16 md:py-24 relative z-10 border-t border-white/5 bg-[#050510]">
+        <div className="max-w-4xl mx-auto space-y-12">
+          {/* Ana SEO Başlığı ve Giriş */}
+          <div className="text-center space-y-6">
+            <h2 className="font-serif text-2xl md:text-3xl font-bold text-white tracking-tight">
+              Türkiye'nin Gelişmiş <span className="text-[#fbbf24]">Yapay Zeka Destekli</span> Rüya Tabiri Platformu
+            </h2>
+            <p className="text-gray-400 leading-relaxed">
+              Rüya Yorumcum AI, sıradan bir rüya sözlüğü değildir. Klasik <strong>İslami rüya tabirleri</strong> (İmam Nablusi, İbn-i Sirin, Seyyid Süleyman) ile modern <strong>Jungiyen psikoloji</strong> prensiplerini birleştiren gelişmiş bir yapay zeka asistanıdır. Rüyalarınızın sadece "ne anlama geldiğini" değil, bilinçaltınızın size vermeye çalıştığı gizli mesajı analiz eder.
+            </p>
+          </div>
+
+          {/* Detaylı Anahtar Kelime Alanı */}
+          <div className="grid md:grid-cols-2 gap-8 text-sm text-gray-500">
+            <div className="space-y-4">
+              <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#fbbf24]" /> İslami ve Dini Rüya Tabirleri
+              </h3>
+              <p>
+                Kadim kaynaklardan süzülen bilgilerle, rüyanızın manevi boyutunu keşfedin. <strong>Diyanet rüya tabirleri</strong> kaynaklarına uygun, sahih ve güvenilir yorumlarla içiniz ferahlasın. İstihare rüyaları, haberci rüyalar ve uyarıcı rüyaların ayrımını yapay zeka hassasiyetiyle yapın.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+               <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                <Eye className="w-4 h-4 text-[#8b5cf6]" /> Psikolojik Rüya Analizi
+              </h3>
+              <p>
+                Rüyalar sadece gelecekten haber vermez, aynı zamanda ruh halinizin aynasıdır. <strong>Rüyada düşmek, diş dökülmesi, yılan görmek</strong> veya uçmak gibi sık görülen sembollerin bilinçaltınızdaki karşılığını öğrenin. Kaygılarınızı, arzularınızı ve bastırılmış duygularınızı gün yüzüne çıkarın.
+              </p>
+            </div>
+          </div>
+
+          {/* SSS Tarzı Kısa Bilgi Kutusu */}
+          <div className="bg-white/5 p-6 md:p-8 rounded-3xl border border-white/5">
+            <h3 className="text-xl font-serif font-bold text-white mb-4">Neden Yapay Zeka ile Rüya Yorumu?</h3>
+            <p className="text-gray-400 mb-4">
+              Geleneksel sözlükler statiktir. Örneğin, "rüyada elma görmek" herkese aynı sonucu verir. Ancak <strong>Rüya Yorumcum AI</strong>, rüyanın bağlamını, sizin duygu durumunuzu ve rüyanın detaylarını (rengini, hissini, mekanını) analiz ederek size <strong>%100 kişiye özel</strong> bir yorum sunar.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {['Rüya Tabirleri', 'İslami Yorum', 'Psikolojik Analiz', 'Rüya Sözlüğü', 'Yapay Zeka'].map((tag, i) => (
+                <span key={i} className="px-3 py-1 rounded-full bg-white/5 text-xs text-gray-400 border border-white/5">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   );
 }
