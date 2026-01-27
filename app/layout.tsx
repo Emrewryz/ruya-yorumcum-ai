@@ -69,6 +69,25 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
+      {/* ... AdSense Kodu Yukarıda ... */}
+
+{/* GOOGLE ANALYTICS */}
+{/* GOOGLE ANALYTICS */}
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-W3T96RLZHL"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+        >
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-W3T96RLZHL'); 
+          `}
+        </Script>
 
       <body className={`${cinzel.variable} ${manrope.variable} font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh]`}>
         
