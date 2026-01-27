@@ -19,32 +19,45 @@ export default function AdminPanel() {
     });
   }, []);
 
-  const manuelActivate = async (plan: 'pro' | 'elite') => {
+  // app/dashboard/admin/page.tsx (veya admin panelin nerdeyse)
+
+// app/dashboard/admin/page.tsx (veya admin panelin nerdeyse)
+
+const manuelActivate = async (plan: 'pro' | 'elite') => {
     if(!targetEmail) return toast.error("Mail adresi giriniz");
     setLoading(true);
 
     try {
-        // ARTIK DİREKT VERİTABANI YOK -> API ÇAĞIRIYORUZ
         const response = await fetch('/api/admin/assign-plan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: targetEmail, plan }),
         });
 
-        const data = await response.json();
+        // ÖNCE TEXT OLARAK AL (Hata ayıklama için kritik)
+        const rawText = await response.text();
+        
+        console.log("Sunucudan gelen ham cevap:", rawText); // F12 Konsoluna bak
+
+        let data;
+        try {
+            data = JSON.parse(rawText); // Şimdi JSON'a çevirmeyi dene
+        } catch (e) {
+            throw new Error(`Sunucu JSON döndürmedi: ${rawText.substring(0, 50)}...`);
+        }
 
         if (!response.ok) throw new Error(data.error || 'İşlem başarısız');
 
         toast.success(`${targetEmail} başarıyla ${plan.toUpperCase()} yapıldı!`);
-        setTargetEmail(""); // Temizle
+        setTargetEmail(""); 
         
     } catch (e: any) {
+        console.error(e);
         toast.error("Hata: " + e.message);
     } finally {
         setLoading(false);
     }
-  };
-
+};
   if (!isAdmin) return <div className="p-20 text-center text-white">Yetkisiz Giriş</div>;
 
   return (
