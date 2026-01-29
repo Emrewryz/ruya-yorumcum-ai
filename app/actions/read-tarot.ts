@@ -4,125 +4,158 @@ import { checkUsageLimit } from "@/utils/gatekeeper";
 import { createClient } from "@/utils/supabase/server";
 import OpenAI from "openai";
 
-// 1. OpenRouter İstemcisi
+// OpenRouter Yapılandırması
 const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,      // .env.local dosyasındaki OpenRouter anahtarın
+  apiKey: process.env.OPENROUTER_API_KEY,
   defaultHeaders: {
     "HTTP-Referer": "https://ruyayorumcum.com",
     "X-Title": "Rüya Yorumcum",
   },
 });
 
-// Parametreler: dreamId opsiyonel, eğer varsa rüya üzerine tarot açılıyor demektir
-export async function readTarot(question: string, cards: string[], dreamId?: string) {
+export async function readTarot(question: string, cards: string[], spreadType: string, dreamId?: string) {
   const supabase = createClient();
 
-  // 1. Kullanıcı Kontrolü
+  // 1. KİMLİK KONTROLÜ
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Giriş yapmalısınız." };
+  if (!user) return { error: "AUTH_REQUIRED", message: "Giriş yapmalısınız." };
 
-  // Limit Kontrolü
+  // 2. LIMIT KONTROLÜ (BEKÇİ)
+  // Bekçi, kullanıcının kredisinin olup olmadığını kontrol eder.
   const usageCheck = await checkUsageLimit(user.id, 'tarot_reading');
+  
   if (!usageCheck.allowed) {
-    return { error: usageCheck.message || "Tarot hakkın doldu." };
+      return { error: "LIMIT_REACHED", message: usageCheck.message };
   }
 
-  // 2. Profil ve (Varsa) Rüya Verisini Çek
+  // 3. PROFİL VERİLERİNİ AL
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, bio, interest_area')
+    .select('full_name, bio, subscription_tier, tarot_credits')
     .eq('id', user.id)
     .single();
 
-  let context = `KULLANICI: ${profile?.full_name}, BİO: ${profile?.bio || "Bilinmiyor"}`;
-  let intent = "";
+  if (!profile) return { error: "PROFILE_ERROR", message: "Kullanıcı profili bulunamadı." };
 
-  // Eğer DREAM_ID varsa, rüyayı çek ve niyeti ona göre ayarla
-  if (dreamId) {
-      const { data: dream } = await supabase
-        .from('dreams')
-        .select('dream_text, dream_title')
-        .eq('id', dreamId)
-        .single();
+  const isPremium = ['pro', 'elite', 'seer'].includes(profile.subscription_tier);
+  const currentCredits = profile.tarot_credits || 0;
+
+  // -----------------------------------------------------------------
+  // 4. KREDİ DÜŞME İŞLEMİ (GÜNCELLENDİ)
+  // -----------------------------------------------------------------
+  // ARTIK AYRIM YOK: Free, Pro veya Elite fark etmeksizin her işlem 1 kredi yer.
+  // (Çünkü Pro/Elite'in kredileri zaten her gün yenileniyor/daha fazla veriliyor)
+  
+  if (currentCredits > 0) {
+      const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ tarot_credits: currentCredits - 1 })
+          .eq('id', user.id);
       
-      if (dream) {
-          intent = `
-            DİKKAT: Kullanıcı bir soru sormadı. Bunun yerine gördüğü son rüyayı daha iyi anlamak için tarot açıyor.
-            RÜYA: "${dream.dream_title} - ${dream.dream_text}"
-            GÖREV: Çıkan kartları, bu rüyanın gizli mesajını ve kullanıcının bilinçaltını çözmek için yorumla.
-          `;
+      if (updateError) {
+          console.error("Kredi düşme hatası:", updateError);
+          // Kritik hata değil, işleme devam edilebilir ama loglanmalı.
       }
   } else {
-      // Rüya yoksa, kullanıcının sorduğu soruya odaklan
-      intent = `SORU: "${question}"`;
+      // Bekçiden kaçan olursa burada yakalanır (Teorik olarak buraya girmemeli)
+      return { error: "NO_CREDIT", message: "Yetersiz kredi." };
   }
+  // -----------------------------------------------------------------
+
+  // --- YAPAY ZEKA HAZIRLIĞI ---
+  
+  // A. Açılım Tipine Göre Bağlam Oluşturma
+  let contextNote = "";
+  if (spreadType === "three_card") {
+    contextNote = "Bu 'Geçmiş, Şimdi, Gelecek' açılımıdır. 1. Kart geçmişi, 2. Kart şu anki durumu, 3. Kart muhtemel geleceği temsil eder.";
+  } else if (spreadType === "love") {
+    contextNote = "Bu 'Aşk ve İlişki' açılımıdır. 1. Kart kullanıcının duygularını, 2. Kart partnerin/karşı tarafın enerjisini, 3. Kart ilişkinin sonucunu temsil eder.";
+  } else if (spreadType === "single_card") {
+    contextNote = "Bu 'Tek Kart' açılımıdır. Soruya net, odaklanmış ve doğrudan bir rehberlik ver.";
+  } else if (spreadType === "dream_special") {
+    contextNote = "Bu bir 'RÜYA ANALİZİ + TAROT' açılımıdır. Kullanıcının gördüğü rüyanın bilinçaltı mesajını tarot sembolleriyle birleştirerek derinlemesine yorumla.";
+  }
+
+  const userContext = `KULLANICI: ${profile.full_name}, BİO: ${profile.bio || "Bilinmiyor"}`;
+  const intent = dreamId ? `RÜYA BAĞLAMI VE ANALİZİ İSTENİYOR` : `KULLANICI SORUSU: "${question}"`;
 
   let aiResponse = null;
 
-  // 3. AI İsteği (OpenRouter - Gemini 2.0 Flash Lite)
   try {
-    const prompt = `
-        Sen mistik bir tarot yorumcususun. Kartların enerjisini hissediyor ve kullanıcının ruhuna dokunuyorsun.
-        
-        ${context}
-        
-        ${intent}
-        
-        ÇEKİLEN KARTLAR (3 Kart Açılımı):
-        1. GEÇMİŞ (Kökler): ${cards[0]}
-        2. ŞİMDİ (Durum): ${cards[1]}
-        3. GELECEK (Sonuç): ${cards[2]}
+    // B. Gelişmiş Prompt (Persona + JSON Formatı)
+    const systemPrompt = `
+        Sen yüzyıllık deneyime sahip, mistik, bilge ve derin hissiyatlı bir Tarot Ustasısın.
+        Kullanıcının kartlarını yorumlarken soğuk bir yapay zeka gibi değil, 
+        gizemli, edebi ve insan ruhuna dokunan bir dille konuş.
 
-        KURALLAR VE FORMAT:
-        Bana SADECE şu JSON formatında cevap ver. Başka hiçbir metin ekleme. JSON dışında bir giriş veya kapanış cümlesi kurma.
+        Yanıtını KESİNLİKLE sadece aşağıdaki JSON formatında ver:
         {
-          "interpretation": "Kartların sentezi ve duruma özel detaylı, mistik bir cevap. Kullanıcıyla konuşur gibi yaz.",
-          "advice": "Kullanıcıya kısa, net ve uygulanabilir bir tavsiye.",
-          "keywords": ["AnahtarKelime1", "AnahtarKelime2", "AnahtarKelime3"]
+            "summary": "Kartların enerjisini özetleyen, 2-3 cümlelik çok çarpıcı, mistik ve gizemli bir giriş cümlesi.",
+            "interpretation": "Kartların detaylı yorumu. Akıcı, paragraflara bölünmüş, hikaye anlatır gibi bir analiz. ${contextNote}",
+            "advice": "Kartların ışığında kullanıcıya verilecek net, eyleme dönük ama bilgece bir tavsiye.",
+            "keywords": ["Anahtar Kelime 1", "Anahtar Kelime 2", "Anahtar Kelime 3", "Anahtar Kelime 4", "Anahtar Kelime 5"]
         }
+    `;
+
+    const userPrompt = `
+        ${userContext}
+        ${intent}
+        SEÇİLEN KARTLAR: ${cards.join(', ')}
+        AÇILIM TİPİ: ${spreadType}
+        BAĞLAM NOTU: ${contextNote}
     `;
 
     const completion = await openai.chat.completions.create({
         messages: [
-            { role: "system", content: "Sen JSON formatında çıktı veren mistik bir tarot yorumcususun. Sadece saf JSON döndür." },
-            { role: "user", content: prompt }
+            { role: "system", content: systemPrompt }, 
+            { role: "user", content: userPrompt }
         ],
-        // ONAYLADIĞIMIZ HIZLI MODEL:
         model: "google/gemini-2.0-flash-lite-001", 
-        
-        temperature: 1.0, // Yaratıcı ve mistik olması için
+        temperature: 0.8,
         response_format: { type: "json_object" }
     });
 
     const resultText = completion.choices[0].message.content;
-
-    if (!resultText) throw new Error("Kartlar sessiz kaldı (Boş cevap).");
-
-    // Temizlik (JSON bloklarını kaldır)
-    const cleanedText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-
-    aiResponse = JSON.parse(cleanedText);
+    if (!resultText) throw new Error("Boş cevap.");
+    
+    // JSON Temizleme
+    aiResponse = JSON.parse(resultText.replace(/```json/g, "").replace(/```/g, "").trim());
 
   } catch (e: any) {
-    console.error("OpenRouter Tarot Hatası:", e);
-    return { error: "Kartların enerjisi şu an okunamıyor. Lütfen tekrar dene." };
+    console.error("AI Hatası:", e);
+    
+    // -----------------------------------------------------------------
+    // 5. HATA DURUMUNDA KREDİ İADESİ (GÜNCELLENDİ)
+    // -----------------------------------------------------------------
+    // Yapay zeka hata verirse, kim olursa olsun kredisini iade et.
+    // Çünkü yukarıda herkesden düşmüştük.
+    await supabase
+        .from('profiles')
+        .update({ tarot_credits: currentCredits }) // Eski bakiyeyi geri yükle
+        .eq('id', user.id);
+
+    return { error: "AI_ERROR", message: "Kozmik bağlantıda bir kopukluk oldu, hakkınız iade edildi. Lütfen tekrar deneyin." };
   }
 
-  // 4. Veritabanına Kayıt
+  // 6. VERİTABANINA KAYIT
   const { error: dbError } = await supabase
     .from("tarot_readings")
     .insert({
       user_id: user.id,
       card_name: cards.join(", "),
-      card_image_url: "standard-deck",
-      interpretation: JSON.stringify(aiResponse), // JSON olarak saklıyoruz
-      dream_id: dreamId || null
+      card_image_url: "standard-deck", 
+      interpretation: aiResponse, 
+      dream_id: dreamId || null,
+      spread_type: spreadType, 
+      is_premium_reading: isPremium // Analitik için kullanıcının o anki statüsünü saklıyoruz
     });
 
-  if (dbError) {
-      console.error("DB Kayıt Hatası:", dbError);
-  }
+  if (dbError) console.error("DB Log Hatası:", dbError);
 
-  return { success: true, data: aiResponse };
+  // 7. SONUÇ DÖNDÜR
+  return { 
+      success: true, 
+      data: aiResponse 
+  };
 }

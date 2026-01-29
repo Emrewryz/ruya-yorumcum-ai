@@ -2,6 +2,7 @@
 
 import { v2 as cloudinary } from 'cloudinary';
 import { createClient } from "@/utils/supabase/server";
+import { checkUsageLimit } from "@/utils/gatekeeper"; // Bekçi import edildi
 
 // Cloudinary Ayarları
 cloudinary.config({
@@ -14,27 +15,37 @@ cloudinary.config({
 export async function generateDreamImage(prompt: string, dreamId: string) {
   const supabase = createClient();
   
-  // 1. Kullanıcı Kontrolü
+  // 1. Kullanıcı Oturum Kontrolü
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Giriş yapmalısınız." };
 
-  // 2. Paket Kontrolü
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('subscription_tier')
-    .eq('id', user.id)
-    .single();
+  // ---------------------------------------------------------
+  // 2. GÜVENLİK VE LİMİT KONTROLÜ (BEKÇİ DEVREDE)
+  // ---------------------------------------------------------
+  // dreamId'yi de gönderiyoruz ki "Bu rüyaya zaten resim yapılmış mı?" kontrolü yapılabilsin.
+  const limitCheck = await checkUsageLimit(user.id, 'image_generation', dreamId);
 
-  const tier = profile?.subscription_tier?.toLowerCase() || 'free';
+  // Eğer bekçi "Giremezsin" derse, işlemi burada durdur.
+  if (!limitCheck.allowed) {
+    return { 
+        error: limitCheck.message, // "Günlük limit doldu" veya "Paket yükselt" mesajı
+        code: limitCheck.code      // Frontend'de modal açmak için gerekli kod (LIMIT, UPGRADE, ALREADY)
+    };
+  }
+  // ---------------------------------------------------------
+
+  // 3. Kalite Ayarı için Tier Bilgisi (Bekçiden gelen veriyi kullanıyoruz, tekrar sorguya gerek yok)
+  const tier = limitCheck.tier || 'free';
 
   try {
-    // 3. Kalite Ayarları
+    // 4. Model ve Kalite Ayarları
     let model = 'turbo'; 
     let width = 768;
     let height = 512;
     let qualityPrompt = "mystic dream style, surrealism, digital art"; 
 
-    if (tier === 'seer' || tier === 'elite') { 
+    // Elite veya Seer (Kahin) paketindeyse FLUX modelini kullan
+    if (tier === 'pro' || tier === 'elite') { 
         model = 'flux'; 
         width = 1280;   
         height = 720;
@@ -45,7 +56,7 @@ export async function generateDreamImage(prompt: string, dreamId: string) {
     const encodedPrompt = encodeURIComponent(finalPrompt);
     const seed = Math.floor(Math.random() * 1000000);
 
-    // 4. Pollinations'dan İndir
+    // 5. Pollinations AI'dan Görseli İndir
     const imageUrlSource = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&model=${model}&nologo=true`;
     console.log("Resim indiriliyor:", imageUrlSource);
 
@@ -56,12 +67,12 @@ export async function generateDreamImage(prompt: string, dreamId: string) {
     const arrayBuffer = await imageBlob.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // 5. Cloudinary'ye Yükle
+    // 6. Cloudinary'ye Yükle
     const uploadedImageUrl = await new Promise<string>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
             { 
                 folder: "dream-images", 
-                public_id: `${user.id}-${dreamId}`,
+                public_id: `${user.id}-${dreamId}`, // Aynı rüya için üzerine yazar (overwrite: true)
                 overwrite: true,
                 resource_type: "image" 
             },
@@ -79,28 +90,25 @@ export async function generateDreamImage(prompt: string, dreamId: string) {
     if (!uploadedImageUrl) throw new Error("Resim Cloudinary'ye yüklenemedi.");
     console.log("Cloudinary Linki Alındı:", uploadedImageUrl);
 
-    // 6. VERİTABANI GÜNCELLEME (Burayı düzelttik)
-    // .select() ekleyerek işlemin sonucunu kontrol ediyoruz.
+    // 7. Veritabanını Güncelle
     const { data: updatedData, error: dbError } = await supabase
       .from('dreams')
       .update({ image_url: uploadedImageUrl })
       .eq('id', dreamId)
-      .eq('user_id', user.id) // Sadece kendi rüyasını güncelleyebilir
-      .select(); // <-- Geriye güncellenen satırı döndür
+      .eq('user_id', user.id) // Sadece kendi rüyasını güncelleyebilir (RLS ek güvenlik)
+      .select(); 
 
     if (dbError) {
         console.error("DB SQL Hatası:", dbError);
         throw new Error("Veritabanı hatası oluştu.");
     }
 
-    // Eğer RLS yüzünden güncelleme yapılmadıysa data boş döner
     if (!updatedData || updatedData.length === 0) {
         console.error("DB Güncelleme Başarısız: RLS kuralı veya yanlış ID.");
         throw new Error("Resim kaydedilemedi (İzin Hatası).");
     }
 
-    console.log("Veritabanı Başarıyla Güncellendi:", updatedData);
-
+    // 8. Başarılı Sonuç Dön
     return { success: true, imageUrl: uploadedImageUrl };
 
   } catch (error: any) {

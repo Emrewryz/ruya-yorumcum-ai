@@ -9,6 +9,14 @@ const supabase = createClient(
 
 export async function POST(request: Request) {
   try {
+    // 1. GÜVENLİK KONTROLÜ (Basit Header Kontrolü)
+    // Admin panelinden istek atarken headers kısmına 'x-admin-key' eklemelisin.
+    // Eğer env dosyasında yoksa bu kontrolü geçici olarak kaldırabilirsin ama tavsiye etmem.
+    /*const adminKey = request.headers.get('x-admin-key');
+    if (process.env.ADMIN_SECRET_KEY && adminKey !== process.env.ADMIN_SECRET_KEY) {
+        return NextResponse.json({ error: 'Yetkisiz Erişim' }, { status: 403 });
+    }*/
+
     const body = await request.json();
     const { email, plan } = body;
 
@@ -16,9 +24,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email ve Plan zorunludur' }, { status: 400 });
     }
 
-    console.log(`Admin İşlemi Başladı: ${email} -> ${plan}`);
+    // --- KREDİ HESAPLAMA ---
+    let startCredits = 0;
+    if (plan === 'pro') startCredits = 3;
+    if (plan === 'elite') startCredits = 10;
 
-    // 1. Kullanıcıyı Bul
+    console.log(`Admin İşlemi Başladı: ${email} -> ${plan} (Kredi: ${startCredits})`);
+
+    // 2. Kullanıcıyı Bul
     const { data: userProfile, error: userError } = await supabase
         .from('profiles')
         .select('id')
@@ -32,7 +45,7 @@ export async function POST(request: Request) {
 
     const userId = userProfile.id;
 
-    // 2. Subscriptions Tablosuna Ekle (Tarihler BURAYA yazılmalı)
+    // 3. Subscriptions Tablosuna Ekle
     // Önce eskileri pasif yap
     await supabase.from('subscriptions').update({ is_active: false }).eq('user_id', userId);
 
@@ -53,11 +66,13 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Abonelik tablosu güncellenemedi: ' + subError.message }, { status: 500 });
     }
 
-    // 3. Profiles Tablosunu Güncelle (SADECE TIER)
-    // DİKKAT: Burada start_date veya end_date ASLA olmamalı.
+    // 4. Profiles Tablosunu Güncelle (TIER + KREDİLER)
     const { error: profileError } = await supabase
         .from('profiles')
-        .update({ subscription_tier: plan })
+        .update({ 
+            subscription_tier: plan,
+            tarot_credits: startCredits // <-- KREDİLER BURADA GÜNCELLENİYOR
+        })
         .eq('id', userId);
 
     if (profileError) {
@@ -65,7 +80,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Profil güncellenemedi' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: 'Paket tanımlandı' });
+    return NextResponse.json({ success: true, message: `Paket (${plan}) ve Krediler (${startCredits}) tanımlandı` });
 
   } catch (error: any) {
     console.error('Kritik Sunucu Hatası:', error);

@@ -2,14 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  // 1. Cevap nesnesini hazırla
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
 
-  // 2. Supabase istemcisini oluştur
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -33,30 +31,26 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 3. Kullanıcı oturumunu kontrol et
-  // DİKKAT: getUser kullanıyoruz çünkü getSession güvenli değildir.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // --- KURAL 1: GİRİŞ YAPMAMIŞ KULLANICIYI KORU ---
-  // Kullanıcı YOKSA ve Dashboard'a girmeye çalışıyorsa -> Ana Sayfaya (Login) at
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  const path = request.nextUrl.pathname;
+
+  // --- KURAL 1: DASHBOARD KORUMASI ---
+  // Eğer kullanıcı GİRİŞ YAPMAMIŞSA ve /dashboard ile başlayan bir yere girmeye çalışıyorsa
+  // Onu Ana Sayfaya (Login ekranına) gönder.
+  if (!user && path.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();
     url.pathname = "/"; 
     return NextResponse.redirect(url);
   }
 
-  // --- KURAL 2: GİRİŞ YAPMIŞ KULLANICIYI YÖNLENDİR ---
-  // Kullanıcı VARSA ve Ana Sayfadaysa (Login ekranı) -> Dashboard'a at
-  if (user && request.nextUrl.pathname === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
-  
-  // Kullanıcı VARSA ve /auth sayfasına girmeye çalışıyorsa -> Dashboard'a at
-   if (user && request.nextUrl.pathname.startsWith("/auth")) {
+  // --- KURAL 2: AUTH SAYFASI KORUMASI ---
+  // Eğer kullanıcı ZATEN GİRİŞ YAPMIŞSA ve /auth (giriş/kayıt) sayfasına girmeye çalışıyorsa
+  // Onu Dashboard'a yönlendir (Giriş yapmış adamın login sayfasında işi yok).
+  // DİKKAT: Buradan '/' (Ana Sayfa) kontrolünü kaldırdık. Artık ana sayfaya dönebilirsin.
+  if (user && path.startsWith("/auth")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -72,7 +66,7 @@ export const config = {
      * - _next/static (statik dosyalar)
      * - _next/image (resim optimizasyonu)
      * - favicon.ico (favicon)
-     * - api (API ROUTES - BURASI ÇOK ÖNEMLİ, EKLENDİ)
+     * - api (API route'ları etkilenmesin)
      */
     "/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

@@ -6,30 +6,10 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { 
   Moon, Eye, Sparkles, Lock, 
-  Palette, Layers, Check, Crown, Star, X, BookOpen, ArrowRight,
-  MessageCircle, Hash, Zap, LogOut, LayoutDashboard, 
-  Image as ImageIcon, Calendar 
+  Palette, Layers, Check, Crown, Star, ArrowRight,
+  MessageCircle, Hash, Zap, BookOpen, Calendar, Search,
+  Activity, Fingerprint, Compass, BrainCircuit, HeartPulse,LayoutDashboard,ImageIcon
 } from "lucide-react";
-
-interface PlanFeature {
-  text: string;
-  included: boolean;
-  icon?: React.ReactNode; 
-}
-
-interface Plan {
-  id: string;
-  name: string;
-  price: string;
-  oldPrice?: string;
-  period?: string;
-  description: string;
-  features: PlanFeature[];
-  color: string;
-  icon: React.ReactNode;
-  buttonText: string;
-  popular: boolean;
-}
 
 // Blog verisi için tip tanımı
 interface BlogPost {
@@ -48,11 +28,11 @@ export default function Home() {
 
   useEffect(() => {
     const initData = async () => {
-      // 1. Kullanıcıyı kontrol et
+      // 1. Kullanıcı Kontrolü
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
 
-      // 2. Son 3 Blog yazısını çek (Blog Vitrini için)
+      // 2. Blog Yazılarını Çek
       const { data: posts } = await supabase
         .from('blog_posts')
         .select('title, slug, excerpt, image_url, created_at')
@@ -65,529 +45,415 @@ export default function Home() {
     initData();
   }, [supabase]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    router.refresh();
-  };
-  // Bu fonksiyon kullanıcının durumuna göre yönlendirme yapar
+  // Ana Aksiyon Butonu (Rüya Yorumla)
   const handleDreamInterpret = () => {
     if (user) {
-      // Kullanıcı giriş yapmışsa panele git
       router.push('/dashboard');
     } else {
-      // Giriş yapmamışsa kayıt/giriş sayfasına git
       router.push('/auth');
     }
   };
 
-  const handleUnlockMystery = () => {
-    router.push('/dashboard');
-  };
-
-  const handlePlanSelection = (planType: 'free' | 'paid') => {
-    if (user) {
-       router.push('/dashboard/pricing');
-    } else {
-       router.push('/auth'); 
-    }
-  };
-
-  const plans: Plan[] = [
-    {
-      id: 'free',
-      name: 'ÇIRAK',
-      price: 'Ücretsiz',
-      description: 'Yolculuğa yeni başlayanlar için temel rehberlik.',
-      features: [
-        { text: 'Sadece Rüya Özeti (Derin Öz)', included: true },
-        { text: 'Reklamlı Deneyim', included: true },
-        { text: 'Psikolojik & Manevi Analiz', included: false },
-        { text: 'Rüya Görselleştirme', included: false },
-        { text: 'Tarot & Şanslı Sayılar', included: false },
-        { text: 'Rüya Sohbeti (AI)', included: false },
-      ],
-      color: 'gray', 
-      icon: <Star className="w-6 h-6" />, 
-      buttonText: 'Mevcut Plan', 
-      popular: false
-    },
-    {
-      id: 'pro',
-      name: 'KAŞİF',
-      price: '119 TL', 
-      oldPrice: '199 TL', 
-      period: '/ay',
-      description: 'Bilinçaltını daha derinden keşfetmek isteyenler.',
-      features: [
-        { text: 'Detaylı Psikolojik & Manevi Analiz', included: true },
-        { text: 'Rüya Görselleştirme (1 Adet/Rüya)', included: true },
-        { text: 'Ruh Hali & Şanslı Sayılar', included: true },
-        { text: 'Haftalık Tarot (3 Hak)', included: true },
-        { text: 'Reklamsız Deneyim', included: true },
-        { text: 'Rüya Sohbeti (AI)', included: false },
-      ],
-      color: 'blue', 
-      icon: <Zap className="w-6 h-6" />, 
-      buttonText: 'Kaşif Ol', 
-      popular: true
-    },
-    {
-      id: 'elite',
-      name: 'KAHİN',
-      price: '299 TL', 
-      oldPrice: '499 TL', 
-      period: '/ay',
-      description: 'Rüyaların hakimi ol ve kaderini şekillendir.',
-      features: [
-        { text: 'SINIRSIZ Rüya Analizi', included: true },
-        { text: 'Rüya Sohbeti (AI ile Konuş)', included: true, icon: <MessageCircle className="w-4 h-4 text-amber-400 inline mr-1"/> },
-        { text: 'Gelişmiş Görsel Stüdyosu (10 Adet)', included: true, icon: <ImageIcon className="w-4 h-4 text-amber-400 inline mr-1"/> },
-        { text: 'Günlük Tarot & İşaretler', included: true },
-        { text: 'Detaylı Ruh Hali Analizi', included: true },
-        { text: 'Öncelikli Destek', included: true },
-      ],
-      color: 'amber', 
-      icon: <Crown className="w-6 h-6" />, 
-      buttonText: 'Kahin Ol', 
-      popular: false
-    }
-  ];
-
   return (
-    <main className="min-h-screen bg-[#050510] text-white relative overflow-x-hidden font-sans selection:bg-[#8b5cf6] selection:text-white pb-32 md:pb-20">
+    <main className="min-h-screen bg-[#020617] text-white relative overflow-x-hidden font-sans selection:bg-[#fbbf24]/30 pb-20">
       
-      {/* 1. ATMOSFER & ZEMİN */}
-      <div className="bg-noise"></div>
-      <div className="fixed top-[-10%] right-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-[#4c1d95]/20 rounded-full blur-[80px] md:blur-[128px] animate-pulse-slow pointer-events-none z-0"></div>
-      <div className="fixed bottom-[-10%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-[#1e1b4b]/20 rounded-full blur-[80px] md:blur-[128px] animate-pulse-slow delay-1000 pointer-events-none z-0"></div>
+     
 
-      {/* 2. ÜST MENÜ */}
-      <div className="fixed top-4 md:top-6 left-0 right-0 z-40 flex justify-center px-4">
-        <nav className="glass-pill rounded-full px-4 md:px-6 py-2 md:py-3 flex items-center justify-between w-full max-w-5xl border border-white/10 bg-white/5 backdrop-blur-md shadow-2xl">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
-            <div className="relative w-8 h-8 flex items-center justify-center">
-               <Moon className="w-6 h-6 text-[#fbbf24] fill-[#fbbf24]" />
-               <Eye className="w-3 h-3 text-black absolute top-[10px] left-[10px]" />
-            </div>
-            <span className="font-serif font-bold text-lg tracking-wide text-white">RüyaYorumcum</span>
-          </div>
+      {/* --- 3. HERO (GİRİŞ) BÖLÜMÜ - MERAK UYANDIRICI --- */}
+      <section className="relative z-10 pt-40 md:pt-52 pb-24 text-center px-4 max-w-6xl mx-auto">
+        
+        {/* Etiket */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[#fbbf24] text-xs font-bold tracking-widest uppercase mb-8 animate-fade-in-up hover:bg-white/10 transition-colors cursor-default">
+          <Sparkles className="w-3 h-3" /> Türkiye'nin İlk Derin Öğrenme Tabanlı Rüya Kahini
+        </div>
 
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
-            <Link href="#ozellikler" className="hover:text-[#fbbf24] transition-colors">Özellikler</Link>
-            <Link href="#sozluk" className="hover:text-[#fbbf24] transition-colors">Sözlük</Link>
-            {/* BLOG LINKI EKLENDİ */}
-            <Link href="/blog" className="hover:text-[#fbbf24] transition-colors">Blog</Link>
-            <Link href="#paketler" className="hover:text-[#fbbf24] transition-colors">Paketler</Link>
-          </div>
-
-          <div className="flex items-center gap-2 md:gap-4">
-            {user ? (
-                <Link 
-                  href="/dashboard" 
-                  className="flex items-center gap-2 px-3 md:px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-xs font-bold active:scale-95"
-                >
-                   <LayoutDashboard className="w-4 h-4" /> <span className="hidden md:inline">PANEL</span>
-                </Link>
-            ) : (
-                <>
-                   <Link href="/auth" className="text-sm font-medium text-white/80 hover:text-white hidden sm:block">Giriş Yap</Link>
-                   <Link 
-                     href="/auth" 
-                     className="px-4 md:px-6 py-2 md:py-2.5 rounded-full bg-[#8b5cf6] text-white text-xs font-bold tracking-wider shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] transition-all hover:scale-105 active:scale-95"
-                   >
-                     BAŞLA
-                   </Link>
-                </>
-            )}
-          </div>
-        </nav>
-      </div>
-
-      {/* 3. HERO BÖLÜMÜ */}
-      <section className="relative z-10 pt-32 md:pt-48 pb-12 md:pb-20 text-center px-4">
-        <h1 className="font-serif text-4xl md:text-[80px] font-bold mb-4 md:mb-6 leading-[1.1] max-w-5xl mx-auto tracking-tight">
-          <span className="bg-clip-text text-transparent bg-gradient-to-b from-gray-100 via-gray-200 to-[#8b5cf6]">
-            Rüyalarınızın Gizli <br /> Mesajlarını Çözün
+        {/* H1 Başlık */}
+        <h1 className="font-serif text-5xl md:text-8xl font-bold mb-8 leading-[1.1] tracking-tight">
+          Bilinçaltınızın <br/>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fbbf24] via-[#f59e0b] to-[#d97706] drop-shadow-2xl">
+            Gizli Dilini Çözün
           </span>
         </h1>
         
-        <p className="font-sans text-base md:text-xl text-[#94a3b8] max-w-2xl mx-auto mb-8 md:mb-12 font-light leading-relaxed px-2">
-          Modern psikoloji, kadim İslami bilgelik ve yapay zeka teknolojisiyle <br className="hidden md:block"/> bilinçaltınızın haritasını çıkarın.
+        {/* Alt Metin (SEO Odaklı) */}
+        <p className="text-lg md:text-2xl text-gray-400 max-w-3xl mx-auto mb-12 font-light leading-relaxed">
+          Sıradan sözlükleri unutun. Rüya Yorumcum AI; rüyanızı <strong className="text-gray-200">İmam Nablusi ve İbn-i Sirin</strong> gibi kadim İslami kaynaklarla tarar, <strong className="text-gray-200">Carl Jung ve Freud</strong> ekolüyle psikolojik analizini yapar. Size %100 kişisel bir yol haritası sunar.
         </p>
 
-       <button 
-          onClick={handleDreamInterpret}
-          className="group relative inline-flex items-center justify-center px-8 md:px-10 py-4 md:py-5 text-lg font-bold text-black transition-all duration-300 bg-gradient-to-r from-[#fcd34d] via-[#fbbf24] to-[#f59e0b] rounded-full hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(251,191,36,0.3)]"
-        >
-           <span className="relative flex items-center gap-2 z-10">
-             Rüyanı Şimdi Yorumla <Sparkles className="w-5 h-5 fill-black" />
-           </span>
-           <div className="absolute inset-0 rounded-full blur-md bg-[#fbbf24]/50 group-hover:bg-[#fbbf24]/80 transition-all"></div>
-        </button>
+        {/* Aksiyon Butonları */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+          <button 
+            onClick={handleDreamInterpret}
+            className="w-full md:w-auto px-12 py-6 rounded-2xl bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black font-bold text-lg hover:scale-105 active:scale-95 transition-transform shadow-[0_0_50px_rgba(251,191,36,0.3)] flex items-center justify-center gap-3 group"
+          >
+             <Moon className="w-6 h-6 fill-black group-hover:rotate-12 transition-transform" />
+             Rüyamı Şimdi Yorumla
+          </button>
+          <Link href="#ruya-analizi" className="w-full md:w-auto px-12 py-6 rounded-2xl bg-white/5 text-white font-bold text-lg border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-3">
+            Örnek Analizi Gör <Eye className="w-5 h-5 text-gray-400" />
+          </Link>
+        </div>
+
+        {/* İstatistik / Güven */}
+        <div className="mt-16 pt-8 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+                <div className="text-2xl md:text-3xl font-serif font-bold text-white mb-1">100K+</div>
+                <div className="text-xs text-gray-500 uppercase tracking-widest">Yorumlanan Rüya</div>
+            </div>
+            <div>
+                <div className="text-2xl md:text-3xl font-serif font-bold text-white mb-1">%98</div>
+                <div className="text-xs text-gray-500 uppercase tracking-widest">Doğruluk Oranı</div>
+            </div>
+            <div>
+                <div className="text-2xl md:text-3xl font-serif font-bold text-white mb-1">7/24</div>
+                <div className="text-xs text-gray-500 uppercase tracking-widest">Anlık Analiz</div>
+            </div>
+            <div>
+                <div className="text-2xl md:text-3xl font-serif font-bold text-white mb-1">Gizli</div>
+                <div className="text-xs text-gray-500 uppercase tracking-widest">%100 Anonim</div>
+            </div>
+        </div>
       </section>
 
-      {/* 4. CANLI DEMO */}
-      <section className="relative z-10 max-w-5xl mx-auto px-4 mb-20 md:mb-32">
-        <div className="glass-panel rounded-3xl p-1 relative overflow-hidden group bg-white/5 backdrop-blur-xl border border-white/10">
-           <div className="grid md:grid-cols-2 gap-0 bg-[#050510]/60 rounded-2xl overflow-hidden">
-             <div className="p-6 md:p-10 border-b md:border-b-0 md:border-r border-white/5 font-serif text-gray-300 italic text-lg leading-relaxed flex items-center">
-               <span className="animate-pulse opacity-80">
-                 "Rüyamda dişlerimin döküldüğünü gördüm ve ağzımdan kan yerine kum aktığını hissettim..."
-                 <span className="inline-block w-2 h-5 bg-white/50 ml-1 animate-ping"></span>
-               </span>
-             </div>
-
-             <div className="relative p-6 md:p-10 bg-black/40 flex flex-col justify-center min-h-[250px] md:min-h-[300px]">
-                 <div className="space-y-4 filter blur-[8px] opacity-40 select-none pointer-events-none">
-                   <h4 className="text-[#8b5cf6] font-bold text-xl">Psikolojik Analiz:</h4>
-                   <p className="text-gray-300">Bu rüya, hayatınızdaki güç kaybı korkusunu simgeliyor...</p>
-                   <h4 className="text-[#fbbf24] font-bold text-xl mt-6">Manevi Mesaj:</h4>
-                   <p className="text-gray-300">İbni Sirin kayıtlarına göre diş dökülmesi...</p>
-                 </div>
-                 
-                 <div onClick={handleUnlockMystery} className="absolute inset-0 flex flex-col items-center justify-center z-10 cursor-pointer active:scale-95 transition-transform">
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24] flex items-center justify-center shadow-[0_0_40px_rgba(251,191,36,0.2)] mb-4 backdrop-blur-md">
-                       <Lock className="w-6 h-6 md:w-8 md:h-8 text-[#fbbf24]" />
+      {/* --- 4. DETAYLI ÖZELLİK VİTRİNİ (Zig-Zag Yerleşim) --- */}
+      <div id="ruya-analizi" className="space-y-0">
+        
+        {/* ÖZELLİK 1: RÜYA ANALİZİ (İslami & Psikolojik) */}
+        <section className="py-24 md:py-32 border-t border-white/5 bg-[#020617] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#fbbf24]/5 rounded-full blur-[150px] pointer-events-none"></div>
+            
+            <div className="container mx-auto px-6 grid md:grid-cols-2 gap-20 items-center relative z-10">
+                {/* Sol: Görsel/UI (Mobile Order 2) */}
+                <div className="order-2 md:order-1 relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-[#fbbf24] to-[#f59e0b] rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                    <div className="relative glass-panel rounded-3xl p-8 border border-white/10 bg-[#0f172a] shadow-2xl">
+                        {/* Simüle Edilmiş Chat Arayüzü */}
+                        <div className="space-y-6">
+                            <div className="flex gap-4 items-start">
+                                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 text-xs font-bold">SİZ</div>
+                                <div className="bg-white/5 p-5 rounded-2xl rounded-tl-none text-sm text-gray-300 leading-relaxed">
+                                    "Rüyamda dişlerimin döküldüğünü ve avucuma kan dolduğunu gördüm. Çok korkarak uyandım, anlamı nedir?"
+                                </div>
+                            </div>
+                            <div className="flex gap-4 items-start flex-row-reverse">
+                                <div className="w-10 h-10 rounded-full bg-[#fbbf24] flex items-center justify-center flex-shrink-0"><Sparkles className="w-5 h-5 text-black"/></div>
+                                <div className="bg-[#fbbf24]/10 border border-[#fbbf24]/20 p-5 rounded-2xl rounded-tr-none text-sm text-gray-200 leading-relaxed">
+                                    <h4 className="text-[#fbbf24] font-bold mb-2 flex items-center gap-2"><BookOpen className="w-3 h-3"/> İslami Tabir (İbn-i Sirin):</h4>
+                                    <p className="mb-4 text-xs text-gray-400">Rüyanızda diş dökülmesi, genel kanının aksine ömrün uzunluğuna veya hane halkının artmasına işaret edebilir. Kan görülmesi ise rüyanın bozulduğu anlamına gelmez, bilakis yaşam enerjisidir.</p>
+                                    
+                                    <h4 className="text-[#8b5cf6] font-bold mb-2 flex items-center gap-2"><Activity className="w-3 h-3"/> Psikolojik Analiz (Jung):</h4>
+                                    <p className="text-xs text-gray-400">Bilinçaltınızda bir "güç kaybı" korkusu yaşıyorsunuz. Şu sıralar kontrolü kaybettiğinizi hissettiğiniz bir olay yaşadınız mı?</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <span className="text-xs md:text-sm font-bold text-[#fbbf24] tracking-[0.2em] uppercase opacity-90">
-                       Analizi Görmek İçin Tıkla
-                    </span>
-                 </div>
-             </div>
-           </div>
-        </div>
-      </section>
+                </div>
 
-      {/* 5. ÖZELLİKLER VİTRİNİ */}
-      <section id="ozellikler" className="container mx-auto px-6 py-12 md:py-20 relative z-10 space-y-24 md:space-y-32">
-         {/* ... (Numeroloji, Tarot ve AI Vizyon aynı kaldı) ... */}
-         {/* 1. Numeroloji */}
-         <div className="flex flex-col md:flex-row items-center gap-8 md:gap-24">
-            <div className="flex-1 w-full relative">
-               <div className="relative aspect-video bg-[#0f172a] border border-[#fbbf24]/20 rounded-3xl p-8 flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(251,191,36,0.1)]">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#fbbf24]/5 to-transparent"></div>
-                  <div className="text-center z-10">
-                     <div className="text-6xl md:text-8xl font-mono font-bold text-[#fbbf24] drop-shadow-[0_0_20px_rgba(251,191,36,0.5)] animate-pulse">7</div>
-                     <div className="text-[#fbbf24] text-[10px] md:text-xs font-bold tracking-[0.3em] uppercase mt-2">Ruhsal Uyanış</div>
-                  </div>
-                  <div className="absolute top-4 left-4 text-gray-800 font-mono text-xl md:text-2xl">3</div>
-                  <div className="absolute bottom-4 right-4 text-gray-800 font-mono text-xl md:text-2xl">12</div>
-               </div>
-            </div>
-            <div className="flex-1 space-y-4 md:space-y-6">
-               <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#fbbf24]/10 flex items-center justify-center">
-                  <Hash className="w-5 h-5 md:w-6 md:h-6 text-[#fbbf24]" />
-               </div>
-               <h3 className="text-2xl md:text-3xl font-serif font-bold text-white">Sayıların Gizemi</h3>
-               <p className="text-gray-400 leading-relaxed text-base md:text-lg">
-                  Rüyanızda beliren sayıların tesadüf olmadığını biliyor muydunuz? Yapay zeka, rüyanızdaki sembollerin numerolojik değerini hesaplar.
-               </p>
-               <ul className="space-y-3">
-                  <li className="flex items-center gap-3 text-sm text-gray-300"><Check className="w-4 h-4 text-[#fbbf24]" /> Şanslı sayı analizi</li>
-                  <li className="flex items-center gap-3 text-sm text-gray-300"><Check className="w-4 h-4 text-[#fbbf24]" /> Günlük numeroloji rehberi</li>
-               </ul>
-            </div>
-         </div>
-
-         {/* 2. Tarot */}
-         <div className="flex flex-col md:flex-row-reverse items-center gap-8 md:gap-24">
-            <div className="flex-1 w-full relative">
-               <div className="relative aspect-video bg-[#0f172a] border border-pink-500/20 rounded-3xl p-8 flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(236,72,153,0.1)]">
-                  <div className="flex gap-4 items-center">
-                     <div className="w-16 h-24 md:w-20 md:h-32 rounded-lg bg-pink-900/20 border border-pink-500/30 transform -rotate-6 translate-y-4"></div>
-                     <div className="w-20 h-32 md:w-24 md:h-40 rounded-xl bg-gradient-to-b from-pink-500/20 to-purple-500/20 border border-pink-500 flex items-center justify-center z-10 shadow-xl">
-                        <Layers className="w-6 h-6 md:w-8 md:h-8 text-pink-400" />
-                     </div>
-                     <div className="w-16 h-24 md:w-20 md:h-32 rounded-lg bg-pink-900/20 border border-pink-500/30 transform rotate-6 translate-y-4"></div>
-                  </div>
-                  <div className="absolute bottom-4 text-pink-400 text-[10px] md:text-xs font-bold tracking-widest uppercase">Geçmiş • Şimdi • Gelecek</div>
-               </div>
-            </div>
-            <div className="flex-1 space-y-4 md:space-y-6">
-               <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-pink-500/10 flex items-center justify-center">
-                  <Layers className="w-5 h-5 md:w-6 md:h-6 text-pink-500" />
-               </div>
-               <h3 className="text-2xl md:text-3xl font-serif font-bold text-white">Tarot Ritüeli</h3>
-               <p className="text-gray-400 leading-relaxed text-base md:text-lg">
-                  Rüya yorumu bazen yetmeyebilir. Kartların bilgeliğine başvurun ve 3 kartlık açılım ile kaderinizi görün.
-               </p>
-            </div>
-         </div>
-
-         {/* 3. AI Vizyon */}
-         <div className="flex flex-col md:flex-row items-center gap-8 md:gap-24">
-            <div className="flex-1 w-full relative">
-               <div className="relative aspect-video bg-[#0f172a] border border-emerald-500/20 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.1)]">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 to-black"></div>
-                  <div className="absolute inset-0 opacity-50 blur-2xl bg-[radial-gradient(circle_at_50%_50%,_rgba(16,185,129,0.4),transparent_50%)] animate-pulse-slow"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                     <div className="text-center">
-                        <Palette className="w-10 h-10 md:w-12 md:h-12 text-emerald-400 mx-auto mb-2" />
-                        <span className="text-emerald-200 text-[10px] md:text-xs uppercase tracking-widest">Görsel Oluşturuluyor...</span>
-                     </div>
-                  </div>
-               </div>
-            </div>
-            <div className="flex-1 space-y-4 md:space-y-6">
-               <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <Palette className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
-               </div>
-               <h3 className="text-2xl md:text-3xl font-serif font-bold text-white">AI Vizyon</h3>
-               <p className="text-gray-400 leading-relaxed text-base md:text-lg">
-                  Rüyanızdaki o bulanık sahneyi, yüksek çözünürlüklü bir sanat eserine dönüştürün.
-               </p>
-            </div>
-         </div>
-      </section>
-
-      {/* SEMBOLLER KÜTÜPHANESİ */}
-      <section id="sozluk" className="container mx-auto px-4 md:px-6 py-20 relative z-10 border-t border-white/5 bg-[#050510]">
-        <div className="text-center mb-16">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Semboller Kütüphanesi</h2>
-          <p className="text-gray-400 text-lg font-light">Kadim işaretlerin dilini çöz. Rüyandaki sembolü arat ve anlamını keşfet.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Link href="/sozluk/ruyada-altin-gormek" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-[#fbbf24]/30 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
-             <div className="w-12 h-12 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center mb-6 text-[#fbbf24] group-hover:scale-110 transition-transform">
-                <Sparkles className="w-6 h-6" />
-             </div>
-             <h3 className="font-serif text-xl font-bold text-[#fbbf24] mb-4 group-hover:text-white transition-colors">Rüyada Altın Görmek</h3>
-             <p className="text-gray-400 text-sm leading-relaxed">Rüyada altın görmek, zenginlik, neşe ve dileklerin kabul olması anlamına gelir. Manevi aydınlanmayı da simgeler.</p>
-          </Link>
-
-          <Link href="/sozluk/ruyada-deniz-gormek" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-white/20 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
-             <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gray-400 group-hover:text-white transition-colors group-hover:scale-110">
-                <Sparkles className="w-6 h-6" />
-             </div>
-             <h3 className="font-serif text-xl font-bold text-white mb-4">Rüyada Deniz Görmek</h3>
-             <p className="text-gray-400 text-sm leading-relaxed">Rüyada deniz görmek, büyük bir kısmet, devlet kapısında iş veya derin duygusal dünyayı ifade eder.</p>
-          </Link>
-
-          <Link href="/sozluk/ruyada-dis-dokulmesi" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-white/20 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
-             <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gray-400 group-hover:text-white transition-colors group-hover:scale-110">
-                <Sparkles className="w-6 h-6" />
-             </div>
-             <h3 className="font-serif text-xl font-bold text-white mb-4">Rüyada Diş Dökülmesi</h3>
-             <p className="text-gray-400 text-sm leading-relaxed">Rüyada diş dökülmesi, güç kaybı, aile büyükleriyle ilgili endişeler veya hayatınızdaki köklü değişimleri simgeler.</p>
-          </Link>
-
-          <Link href="/sozluk/ruyada-ucmak" className="group p-8 rounded-3xl bg-[#0f1020] border border-white/5 hover:border-white/20 hover:bg-[#151525] transition-all duration-300 hover:-translate-y-2 flex flex-col items-start text-left">
-             <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gray-400 group-hover:text-white transition-colors group-hover:scale-110">
-                <Sparkles className="w-6 h-6" />
-             </div>
-             <h3 className="font-serif text-xl font-bold text-white mb-4">Rüyada Uçmak</h3>
-             <p className="text-gray-400 text-sm leading-relaxed">Rüyada uçmak, özgürlük isteği, ruhsal yükseliş ve engelleri aşma başarısı olarak yorumlanır.</p>
-          </Link>
-        </div>
-
-        <div className="text-center mt-12">
-           <Link href="/sozluk" className="inline-flex items-center gap-2 text-sm font-bold text-[#fbbf24] hover:text-[#f59e0b] transition-colors border-b border-[#fbbf24]/30 pb-1 hover:border-[#fbbf24]">
-              Tüm Sözlüğü İncele <ArrowRight className="w-4 h-4" />
-           </Link>
-        </div>
-      </section>
-
-      {/* --- YENİ EKLENEN BÖLÜM: BLOG VİTRİNİ (ANA SAYFA İÇİN) --- */}
-      {latestPosts.length > 0 && (
-        <section className="container mx-auto px-4 md:px-6 py-20 relative z-10 border-t border-white/5 bg-[#050510]">
-          <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
-             <div className="text-left">
-                <h2 className="font-serif text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">Rüya Rehberi</h2>
-                <p className="text-gray-400 text-lg font-light max-w-xl">
-                  Bilinçaltının sırlarını, bilimsel ve manevi gerçekleri keşfedin.
-                </p>
-             </div>
-             <Link href="/blog" className="inline-flex items-center gap-2 text-sm font-bold text-white hover:text-[#fbbf24] transition-colors group">
-                Tüm Yazılar <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-             </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {latestPosts.map((post) => (
-              <Link key={post.slug} href={`/blog/${post.slug}`} className="group h-full">
-                <article className="h-full bg-[#0f172a] border border-white/5 rounded-2xl overflow-hidden hover:border-[#fbbf24]/30 transition-all duration-300 hover:-translate-y-1 flex flex-col">
-                  {/* Resim */}
-                  <div className="aspect-video bg-black/50 relative overflow-hidden">
-                    {post.image_url ? (
-                      <img 
-                        src={post.image_url} 
-                        alt={post.title} 
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
-                        <BookOpen className="w-10 h-10 text-white/10" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* İçerik */}
-                  <div className="p-6 flex flex-col flex-1">
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                      <Calendar className="w-3 h-3 text-[#fbbf24]" />
-                      {new Date(post.created_at).toLocaleDateString('tr-TR')}
+                {/* Sağ: Metin (Mobile Order 1) */}
+                <div className="order-1 md:order-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#fbbf24]/10 text-[#fbbf24] text-xs font-bold uppercase tracking-wider mb-6">
+                        <MessageCircle className="w-4 h-4" /> Ana Modül
                     </div>
-                    
-                    <h3 className="font-serif text-lg font-bold text-white mb-3 group-hover:text-[#fbbf24] transition-colors line-clamp-2">
-                      {post.title}
-                    </h3>
-                    
-                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-3 mb-4">
-                      {post.excerpt}
+                    <h2 className="font-serif text-4xl md:text-6xl font-bold mb-6">Rüyanızın <br/> <span className="text-[#fbbf24]">Gerçek Anlamı</span></h2>
+                    <p className="text-gray-400 text-lg leading-relaxed mb-8">
+                        Sıradan sözlüklerde "diş dökülmesi ölümdür" yazar ve sizi korkutur. Oysa rüya bir bütündür. Yapay zekamız, rüyanın rengini, hissini ve görüldüğü saati analiz ederek size özel yorum yapar.
                     </p>
+                    
+                    <div className="space-y-4 mb-10">
+                        <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-full bg-[#fbbf24]/10 flex items-center justify-center flex-shrink-0 mt-1">
+                                <BookOpen className="w-5 h-5 text-[#fbbf24]" />
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold">Külliyat Taraması</h4>
+                                <p className="text-sm text-gray-500">İhya, Nablusi, Seyyid Süleyman ve Diyanet kaynakları taranır.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-full bg-[#8b5cf6]/10 flex items-center justify-center flex-shrink-0 mt-1">
+                                <Fingerprint className="w-5 h-5 text-[#8b5cf6]" />
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold">Kişisel Analiz</h4>
+                                <p className="text-sm text-gray-500">Yaşınız, medeni durumunuz ve ruh halinize göre yorum değişir.</p>
+                            </div>
+                        </div>
+                    </div>
 
-                    <span className="text-[#fbbf24] text-xs font-bold mt-auto uppercase tracking-wider flex items-center gap-1">
-                      OKU <ArrowRight className="w-3 h-3" />
-                    </span>
-                  </div>
-                </article>
-              </Link>
-            ))}
-          </div>
+                    <button onClick={handleDreamInterpret} className="group flex items-center gap-3 text-white font-bold border-b border-[#fbbf24] pb-1 hover:text-[#fbbf24] transition-colors">
+                        Detaylı Analizi Başlat <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+                    </button>
+                </div>
+            </div>
         </section>
+
+        {/* ÖZELLİK 2: GÖRSEL OLUŞTURMA (AI Image) */}
+        <section className="py-24 md:py-32 border-t border-white/5 bg-[#050a1f] relative">
+            <div className="container mx-auto px-6 grid md:grid-cols-2 gap-20 items-center">
+                {/* Sol: Metin */}
+                <div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-bold uppercase tracking-wider mb-6">
+                        <Palette className="w-4 h-4" /> AI Vizyon
+                    </div>
+                    <h2 className="font-serif text-4xl md:text-6xl font-bold mb-6">Rüyanızı <br/> <span className="text-purple-400">Fotoğraflayın</span></h2>
+                    <p className="text-gray-400 text-lg leading-relaxed mb-8">
+                        Bazen kelimeler o mistik atmosferi anlatmaya yetmez. Gördüğünüz o garip yaratığı, uçan şehri veya rahmani ışığı hatırlamak mı istiyorsunuz? Gelişmiş "Text-to-Image" teknolojimiz ile rüyanızın fotoğrafını çekiyoruz.
+                    </p>
+                    <p className="text-sm text-gray-500 italic border-l-2 border-purple-500 pl-4 mb-10">
+                        "Rüyamda gökyüzünün mor olduğunu ve bulutların altından altın yağdığını gördüm..." diyin, o kareyi sizin için çizelim.
+                    </p>
+                    <Link href="/dashboard/visualize" className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-colors shadow-lg hover:shadow-purple-500/20">
+                        Rüyamı Çizdir <ImageIcon className="w-4 h-4 ml-2" />
+                    </Link>
+                </div>
+
+                {/* Sağ: Görsel */}
+                <div className="relative group">
+                     <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/30 to-blue-500/30 rounded-[2rem] blur-[60px] group-hover:blur-[80px] transition-all"></div>
+                     <div className="relative aspect-square rounded-[2rem] overflow-hidden border border-white/10 bg-black shadow-2xl">
+                        {/* Placeholder Visual - Unsplash'tan mistik bir görsel */}
+                        <img 
+                            src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1000&auto=format&fit=crop" 
+                            alt="AI Rüya Görseli" 
+                            className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-1000" 
+                        />
+                        <div className="absolute bottom-6 left-6 right-6 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10">
+                            <div className="text-xs text-purple-300 font-mono mb-1">PROMPT:</div>
+                            <div className="text-sm text-white line-clamp-1">"A giant golden snake flying in a purple sky..."</div>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        {/* --- MİSTİK ARAÇLAR BÖLÜMÜ (AYRI KUTULAR) --- */}
+        <section id="mistik-araclar" className="py-24 md:py-32 border-t border-white/5 bg-[#020617]">
+            <div className="container mx-auto px-6">
+                <div className="text-center mb-16">
+                    <h2 className="font-serif text-3xl md:text-5xl font-bold mb-4">Mistik Araçlar</h2>
+                    <p className="text-gray-400">Rüyalarınızın ötesindeki enerjiyi keşfetmeniz için tasarlanmış özel modüller.</p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8">
+                    
+                    {/* 1. TAROT KUTUSU */}
+                    <div className="group relative bg-[#0f172a] rounded-3xl p-8 border border-white/5 hover:border-pink-500/50 transition-all hover:-translate-y-2">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-[50px] group-hover:bg-pink-500/20 transition-all"></div>
+                        <div className="w-14 h-14 rounded-2xl bg-pink-500/10 flex items-center justify-center mb-6 text-pink-500">
+                            <Layers className="w-7 h-7" />
+                        </div>
+                        <h3 className="text-2xl font-serif font-bold text-white mb-4 group-hover:text-pink-400 transition-colors">Tarot Açılımı</h3>
+                        <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                            Rüyalarınızın işaret ettiği kader yolunu kartlarla doğrulayın. Kelt Haçı veya Üç Kart açılımı ile geçmiş, şimdi ve gelecek analizi yapın.
+                        </p>
+                        <Link href="/tarot" className="w-full py-3 rounded-xl border border-pink-500/30 text-pink-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-pink-500 hover:text-white transition-all">
+                            Kart Seç <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+
+                    {/* 2. NUMEROLOJİ KUTUSU */}
+                    <div className="group relative bg-[#0f172a] rounded-3xl p-8 border border-white/5 hover:border-blue-500/50 transition-all hover:-translate-y-2">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-[50px] group-hover:bg-blue-500/20 transition-all"></div>
+                        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 text-blue-500">
+                            <Hash className="w-7 h-7" />
+                        </div>
+                        <h3 className="text-2xl font-serif font-bold text-white mb-4 group-hover:text-blue-400 transition-colors">Ebced & Numeroloji</h3>
+                        <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                            Gördüğünüz nesnelerin (örn: Yılan, Altın) Ebced değerini hesaplayın. Rüyalarınızın size fısıldadığı "Şanslı Sayıları" öğrenin.
+                        </p>
+                        <Link href="/numeroloji" className="w-full py-3 rounded-xl border border-blue-500/30 text-blue-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-500 hover:text-white transition-all">
+                            Hesapla <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+
+                    {/* 3. DUYGU ANALİZİ KUTUSU */}
+                    <div className="group relative bg-[#0f172a] rounded-3xl p-8 border border-white/5 hover:border-emerald-500/50 transition-all hover:-translate-y-2">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[50px] group-hover:bg-emerald-500/20 transition-all"></div>
+                        <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 text-emerald-500">
+                            <BrainCircuit className="w-7 h-7" />
+                        </div>
+                        <h3 className="text-2xl font-serif font-bold text-white mb-4 group-hover:text-emerald-400 transition-colors">Duygu Analizi</h3>
+                        <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                            Rüyanızdaki baskın duygu neydi? Korku, huzur, endişe? Yapay zeka, rüya metninizden ruh halinizi ve stres seviyenizi ölçer.
+                        </p>
+                        <Link href="/duygu-analizi" className="w-full py-3 rounded-xl border border-emerald-500/30 text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-500 hover:text-white transition-all">
+                            Analiz Et <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+      </div>
+
+      {/* --- 5. RÜYA SÖZLÜĞÜ (SEO ANAHTAR KELİMELER) --- */}
+      <section id="sozluk" className="py-24 bg-[#050a1f] border-t border-white/5 relative">
+         <div className="container mx-auto px-6">
+            <div className="text-center mb-16">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-800 text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">
+                    <Search className="w-3 h-3" /> En Çok Arananlar
+                </div>
+                <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4">Google'da Popüler Rüya Tabirleri</h2>
+                <p className="text-gray-400 max-w-2xl mx-auto">
+                    Kullanıcıların en sık arattığı, manası en çok merak edilen sembollerin İslami ve bilimsel açıklamaları.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[
+                    { term: "Rüyada Yılan Görmek", slug: "ruyada-yilan-gormek", color: "text-green-400" },
+                    { term: "Rüyada Diş Dökülmesi", slug: "ruyada-dis-dokulmesi", color: "text-gray-200" },
+                    { term: "Rüyada Altın Görmek", slug: "ruyada-altin-gormek", color: "text-yellow-400" },
+                    { term: "Rüyada Kız Arkadaş Görmek", slug: "ruyada-kiz-arkadas-gormek", color: "text-pink-400" },
+                    { term: "Rüyada Anahtar Görmek", slug: "ruyada-anahtar-gormek", color: "text-blue-400" },
+                    { term: "Rüyada Köpek Görmek", slug: "ruyada-kopek-gormek", color: "text-orange-400" },
+                    { term: "Rüyada Deniz Görmek", slug: "ruyada-deniz-gormek", color: "text-cyan-400" },
+                    { term: "Rüyada Uçmak", slug: "ruyada-ucmak", color: "text-purple-400" },
+                    { term: "Rüyada Bebek Görmek", slug: "ruyada-bebek-gormek", color: "text-rose-300" },
+                    { term: "Rüyada Para Görmek", slug: "ruyada-para-gormek", color: "text-green-500" },
+                    { term: "Rüyada Fare Görmek", slug: "ruyada-fare-gormek", color: "text-gray-400" },
+                    { term: "Rüyada Öldüğünü Görmek", slug: "ruyada-oldugunu-gormek", color: "text-red-400" },
+                ].map((item, idx) => (
+                    <Link key={idx} href={`/sozluk/${item.slug}`} className="group p-5 rounded-xl bg-[#020617] border border-white/5 hover:border-[#fbbf24]/50 hover:shadow-[0_0_20px_rgba(251,191,36,0.1)] transition-all flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">{item.term}</span>
+                        <ArrowRight className={`w-4 h-4 ${item.color} opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
+                    </Link>
+                ))}
+            </div>
+
+            <div className="mt-12 text-center">
+                <Link href="/sozluk" className="inline-flex items-center gap-2 px-8 py-3 rounded-full border border-white/10 hover:bg-white/5 text-sm font-bold transition-all group">
+                    Tüm Rüya Sözlüğünü İncele <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+            </div>
+         </div>
+      </section>
+
+      {/* --- 6. BLOG VİTRİNİ --- */}
+      {latestPosts.length > 0 && (
+         <section className="py-24 bg-[#020617] border-t border-white/5">
+             <div className="container mx-auto px-6">
+                <div className="flex justify-between items-end mb-12">
+                    <div>
+                        <h2 className="font-serif text-3xl font-bold mb-2">Rüya ve Bilinçaltı Rehberi</h2>
+                        <p className="text-gray-400 text-sm">Karabasan, lucid rüya ve uyku bozuklukları hakkında uzman yazıları.</p>
+                    </div>
+                    <Link href="/blog" className="text-[#fbbf24] text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all">
+                        Tümünü Gör <ArrowRight className="w-4 h-4" />
+                    </Link>
+                </div>
+                
+                <div className="grid md:grid-cols-3 gap-8">
+                    {latestPosts.map((post) => (
+                        <Link key={post.slug} href={`/blog/${post.slug}`} className="group block h-full">
+                            <div className="bg-[#0f172a] rounded-2xl overflow-hidden border border-white/5 h-full hover:border-[#fbbf24]/30 transition-all hover:-translate-y-1">
+                                <div className="aspect-video bg-white/5 relative overflow-hidden">
+                                    {post.image_url ? (
+                                        <img src={post.image_url} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center"><BookOpen className="w-8 h-8 text-white/20"/></div>
+                                    )}
+                                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase text-[#fbbf24] border border-white/10">
+                                        Blog
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                                        <Calendar className="w-3 h-3 text-[#fbbf24]" />
+                                        {new Date(post.created_at).toLocaleDateString('tr-TR')}
+                                    </div>
+                                    <h3 className="font-serif text-xl font-bold text-white mb-3 group-hover:text-[#fbbf24] transition-colors line-clamp-2">{post.title}</h3>
+                                    <p className="text-gray-400 text-sm line-clamp-3 mb-4">{post.excerpt}</p>
+                                    <span className="text-[#fbbf24] text-xs font-bold uppercase tracking-wider flex items-center gap-1 group-hover:gap-2 transition-all">
+                                        Makaleyi Oku <ArrowRight className="w-3 h-3" />
+                                    </span>
+                                </div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+             </div>
+         </section>
       )}
 
-      {/* 6. FİYATLANDIRMA */}
-      <section id="paketler" className="container mx-auto px-4 md:px-6 py-20 md:py-32 relative z-10">
-        <div className="text-center mb-12 md:mb-16">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4 text-white">Kaderini Seç</h2>
-          <p className="text-gray-400 text-sm">Ruhsal yolculuğunuzda size eşlik edecek rehberi belirleyin.</p>
-        </div>
-        {/* ... Paketler Grid aynı kaldı ... */}
-        <div className="grid md:grid-cols-3 gap-6 md:gap-8 items-stretch max-w-6xl mx-auto">
-          {plans.map((plan, index) => (
-            <div 
-              key={plan.id}
-              className={`relative p-6 md:p-8 rounded-3xl border transition-all duration-300 flex flex-col h-full group ${
-                plan.popular 
-                  ? 'bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.15)] md:scale-105 z-10' 
-                  : plan.id === 'elite' 
-                    ? 'bg-gradient-to-b from-[#2a1b05] to-[#0f172a] border-amber-500/30'
-                    : 'bg-white/5 border-white/10'
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> En Çok Tercih Edilen
-                </div>
-              )}
-              
-              <div className="flex items-center gap-4 mb-6">
-                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center ${
-                  plan.color === 'amber' ? 'bg-amber-500/20 text-amber-400' : 
-                  plan.color === 'blue' ? 'bg-blue-500/20 text-blue-400' : 
-                  'bg-gray-500/20 text-gray-400'
-                }`}>
-                  {plan.icon}
-                </div>
-                <div>
-                  <h3 className={`text-lg md:text-xl font-bold ${plan.color === 'amber' ? 'text-amber-400' : 'text-white'}`}>{plan.name}</h3>
-                  <div className="h-1 w-12 bg-white/10 rounded-full mt-1"></div>
-                </div>
-              </div>
-              
-              <div className="mb-6 p-4 rounded-2xl bg-black/20 border border-white/5">
-                {plan.oldPrice && plan.price !== 'Ücretsiz' && (
-                   <span className="text-gray-500 line-through text-xs md:text-sm block mb-1">Normal Fiyat: {plan.oldPrice}</span>
-                )}
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl md:text-4xl font-serif text-white tracking-tight">{plan.price}</span>
-                  {plan.period && <span className="text-gray-500 text-sm">{plan.period}</span>}
-                </div>
-                <p className="text-gray-400 text-xs mt-2 leading-relaxed">{plan.description}</p>
-              </div>
-              
-              <ul className="space-y-3 md:space-y-4 mb-8 flex-1">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className={`flex items-start gap-3 text-xs md:text-sm ${feature.included ? 'text-gray-200' : 'text-gray-600'}`}>
-                    {feature.included ? (
-                      <Check className={`w-4 h-4 md:w-5 md:h-5 shrink-0 ${
-                        plan.color === 'amber' ? 'text-amber-400' : 
-                        plan.color === 'blue' ? 'text-blue-400' : 
-                        'text-gray-500'
-                      }`} />
-                    ) : (
-                      <X className="w-4 h-4 md:w-5 md:h-5 shrink-0 text-white/10" />
-                    )}
-                    <span className={feature.included ? '' : 'line-through decoration-white/10'}>
-                      {feature.icon} {feature.text}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => handlePlanSelection(plan.id === 'free' ? 'free' : 'paid')}
-                className={`w-full py-3 md:py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
-                  plan.id === 'free'
-                    ? 'bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10'
-                    : plan.color === 'amber' 
-                      ? 'bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black' 
-                      : plan.color === 'blue' 
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' 
-                        : 'bg-white/10 text-white'
-                }`}
-              >
-                {plan.id === 'free' ? 'Başla' : plan.buttonText}
-                {plan.id !== 'free' && <Crown className="w-4 h-4" />}
-              </button>
-            </div>
-          ))}
-        </div>
+      {/* --- 7. PREMIUM BANNER (SADELEŞTİRİLMİŞ) --- */}
+      <section className="container mx-auto px-6 py-20">
+         <div className="relative rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-[#fbbf24] to-[#d97706] p-8 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 shadow-[0_0_60px_rgba(251,191,36,0.15)] group">
+             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay"></div>
+             <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/20 rounded-full blur-[80px] group-hover:scale-150 transition-transform duration-1000"></div>
+             
+             <div className="relative z-10 text-center md:text-left max-w-xl">
+                 <div className="inline-block px-3 py-1 rounded-lg bg-black/10 text-black/70 text-xs font-bold uppercase tracking-wider mb-4 border border-black/5">Premium</div>
+                 <h2 className="font-serif text-3xl md:text-5xl font-bold text-black mb-4 leading-tight">Sınırları Kaldırın</h2>
+                 <p className="text-black/80 font-medium text-lg leading-relaxed">
+                     Reklamsız deneyim, sınırsız rüya analizi, detaylı tarot açılımları ve öncelikli destek. Kaderinizin kontrolünü elinize alın.
+                 </p>
+             </div>
+             <div className="relative z-10 flex-shrink-0">
+                 <Link href="/dashboard/pricing" className="px-10 py-5 rounded-2xl bg-black text-[#fbbf24] font-bold text-lg hover:scale-105 hover:shadow-2xl transition-all flex items-center gap-3">
+                    <Crown className="w-5 h-5" /> Paketleri İncele
+                 </Link>
+             </div>
+         </div>
       </section>
 
-      {/* 7. SEO & BİLGİ ALANI */}
-      <section className="container mx-auto px-4 md:px-6 py-16 md:py-24 relative z-10 border-t border-white/5 bg-[#050510]">
-        <div className="max-w-4xl mx-auto space-y-12">
-          {/* Ana SEO Başlığı ve Giriş */}
-          <div className="text-center space-y-6">
-            <h2 className="font-serif text-2xl md:text-3xl font-bold text-white tracking-tight">
-              Türkiye'nin Gelişmiş <span className="text-[#fbbf24]">Yapay Zeka Destekli</span> Rüya Tabiri Platformu
-            </h2>
-            <p className="text-gray-400 leading-relaxed">
-              Rüya Yorumcum AI, sıradan bir rüya sözlüğü değildir. Klasik <strong>İslami rüya tabirleri</strong> (İmam Nablusi, İbn-i Sirin, Seyyid Süleyman) ile modern <strong>Jungiyen psikoloji</strong> prensiplerini birleştiren gelişmiş bir yapay zeka asistanıdır. Rüyalarınızın sadece "ne anlama geldiğini" değil, bilinçaltınızın size vermeye çalıştığı gizli mesajı analiz eder.
-            </p>
-          </div>
+      {/* --- 8. SEO MEGA-FOOTER (UZUN VE DETAYLI İÇERİK) --- */}
+      <article className="container mx-auto px-6 py-20 border-t border-white/5 text-gray-400 text-sm leading-relaxed space-y-12">
+         
+         <div className="grid md:grid-cols-2 gap-12">
+             <div className="space-y-4">
+                 <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-[#fbbf24]" /> İslami Rüya Tabirleri ve Dini Yorumlar
+                 </h3>
+                 <p>
+                     Türkiye'de rüya yorumu denildiğinde akla ilk gelen kaynaklar, yüzyıllardır güvenle başvurulan <strong>Diyanet rüya tabirleri</strong>, <strong>İmam Nablusi</strong>, <strong>İbn-i Sirin</strong> ve <strong>Seyyid Süleyman</strong> hazretlerinin eserleridir. Rüya Yorumcum AI, bu kadim külliyatı saniyeler içinde tarayarak rüyanızdaki sembollerin (örneğin; <em>rüyada kelime-i şehadet getirmek</em>, <em>rüyada cami görmek</em>, <em>rüyada namaz kılmak</em>) manevi karşılığını bulur ve size sunar.
+                 </p>
+                 <p>
+                     Özellikle <strong>istihare rüyaları</strong> ve haberci (rahmani) rüyalar konusunda hassas analizler sunar. Rüyada görülen nesnelerin (altın, su, toprak) dini açıdan helal mala mı yoksa uyarıya mı işaret ettiğini ayet ve hadis ışığında yorumlar. Platformumuz, geleneksel bilgeliği teknolojiyle harmanlayarak size en doğru İslami rüya yorumunu sunmayı hedefler.
+                 </p>
+             </div>
+             <div className="space-y-4">
+                 <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-purple-400" /> Psikolojik Rüya Yorumlama ve Bilinçaltı Analizi
+                 </h3>
+                 <p>
+                     Rüyalar sadece gelecekten haber vermez; onlar aynı zamanda bastırılmış duyguların, korkuların ve arzuların birer aynasıdır. <strong>Sigmund Freud</strong> ve <strong>Carl Gustav Jung</strong> gibi modern psikolojinin kurucularına göre rüyalar, bilinçaltına giden kral yoludur. <strong>Sürekli rüya görmek</strong>, <em>rüyada dişlerin dökülmesi</em>, <em>yüksekten düşmek</em> veya <em>birinden kaçmak</em> gibi yaygın temalar, aslında stres, kaygı, değişim isteği veya güç kaybı korkusu olarak yorumlanır.
+                 </p>
+                 <p>
+                     Yapay zeka motorumuz, rüyanızdaki duygu durumunu (Sentiment Analysis) analiz ederek size "Bu rüya bilinçaltınızın bir oyunu mu yoksa gerçek bir mesaj mı?" sorusunun cevabını verir. Jung'un arketip teorisi ve Freud'un rüya sansürü kavramlarını kullanarak kişisel gelişiminize katkı sağlar.
+                 </p>
+             </div>
+         </div>
 
-          {/* Detaylı Anahtar Kelime Alanı */}
-          <div className="grid md:grid-cols-2 gap-8 text-sm text-gray-500">
-            <div className="space-y-4">
-              <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#fbbf24]" /> İslami ve Dini Rüya Tabirleri
-              </h3>
-              <p>
-                Kadim kaynaklardan süzülen bilgilerle, rüyanızın manevi boyutunu keşfedin. <strong>Diyanet rüya tabirleri</strong> kaynaklarına uygun, sahih ve güvenilir yorumlarla içiniz ferahlasın. İstihare rüyaları, haberci rüyalar ve uyarıcı rüyaların ayrımını yapay zeka hassasiyetiyle yapın.
-              </p>
-            </div>
+         {/* Sıkça Arananlar (SEO Images'den Gelen Kelimeler ve Uzun Kuyruk Anahtarlar) */}
+         <div className="bg-[#0f172a] rounded-3xl p-10 border border-white/5">
+             <h3 className="text-white font-bold text-lg mb-6 flex items-center gap-2">
+                <Search className="w-5 h-5 text-blue-400" /> Sıkça Sorulan Rüya Tabirleri
+             </h3>
+             <div className="flex flex-wrap gap-3 text-xs font-medium text-gray-500">
+                 {[
+                     "Rüyada Anahtar Görmek", "Rüyada Anahtar Kaybetmek", "Rüyada Ev Anahtarı", 
+                     "Rüyada Kız Arkadaş Görmek", "Eski Sevgiliyi Görmek", "Rüyada Sevgiliden Ayrılmak",
+                     "Rüyada Kelime-i Şehadet Getirmek", "Rüyada Namaz Kılmak", "Rüyada Camiye Gitmek",
+                     "Rüyada Yılan Isırması", "Rüyada Sarı Yılan", "Rüyada Evde Yılan Görmek",
+                     "Rüyada Diş Kırılması", "Rüyada Diş Çektirmek", "Rüyada Ön Dişin Düşmesi",
+                     "Sürekli Rüya Görmek ve Yorgun Uyanmak", "Çok Fazla Rüya Görmek",
+                     "Rüyada Bir Sürü Anahtar Görmek", "Rüyada Köpek Saldırması", "Rüyada Denizde Yüzmek"
+                 ].map((tag, i) => (
+                     <Link key={i} href={`/sozluk/${tag.toLowerCase().replace(/ /g, '-').replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')}`} className="px-3 py-2 rounded-lg bg-black/30 hover:bg-[#fbbf24]/10 hover:text-[#fbbf24] transition-colors border border-white/5">
+                         #{tag}
+                     </Link>
+                 ))}
+             </div>
+         </div>
 
-            <div className="space-y-4">
-               <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                <Eye className="w-4 h-4 text-[#8b5cf6]" /> Psikolojik Rüya Analizi
-              </h3>
-              <p>
-                Rüyalar sadece gelecekten haber vermez, aynı zamanda ruh halinizin aynasıdır. <strong>Rüyada düşmek, diş dökülmesi, yılan görmek</strong> veya uçmak gibi sık görülen sembollerin bilinçaltınızdaki karşılığını öğrenin. Kaygılarınızı, arzularınızı ve bastırılmış duygularınızı gün yüzüne çıkarın.
-              </p>
-            </div>
-          </div>
-
-          {/* SSS Tarzı Kısa Bilgi Kutusu */}
-          <div className="bg-white/5 p-6 md:p-8 rounded-3xl border border-white/5">
-            <h3 className="text-xl font-serif font-bold text-white mb-4">Neden Yapay Zeka ile Rüya Yorumu?</h3>
-            <p className="text-gray-400 mb-4">
-              Geleneksel sözlükler statiktir. Örneğin, "rüyada elma görmek" herkese aynı sonucu verir. Ancak <strong>Rüya Yorumcum AI</strong>, rüyanın bağlamını, sizin duygu durumunuzu ve rüyanın detaylarını (rengini, hissini, mekanını) analiz ederek size <strong>%100 kişiye özel</strong> bir yorum sunar.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {['Rüya Tabirleri', 'İslami Yorum', 'Psikolojik Analiz', 'Rüya Sözlüğü', 'Yapay Zeka'].map((tag, i) => (
-                <span key={i} className="px-3 py-1 rounded-full bg-white/5 text-xs text-gray-400 border border-white/5">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+         <div className="text-center max-w-2xl mx-auto pt-8">
+             <p className="italic opacity-60">
+                 "Rüyalar, uyanıkken göremediğimiz gerçeklerin geceleyin açılan pencereleridir."
+             </p>
+             <p className="mt-4 font-bold text-white text-sm">Rüya Yorumcum AI © 2026 — Tüm Hakları Saklıdır.</p>
+         </div>
+      </article>
 
     </main>
   );

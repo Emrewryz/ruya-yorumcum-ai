@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { 
   Check, Star, Zap, Crown, ArrowLeft, Loader2, X, MessageCircle, 
-  Image as ImageIcon, Sparkles, ShieldCheck, Copy, Info, Clock 
+  Image as ImageIcon, Sparkles, ShieldCheck, Copy, Clock, Layers, Binary
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
-// TİP TANIMLAMALARI
+// --- TİP TANIMLAMALARI ---
 interface PlanFeature {
   text: string;
   included: boolean;
@@ -18,7 +18,7 @@ interface PlanFeature {
 }
 
 interface Plan {
-  id: string;
+  id: string; // 'free' | 'pro' | 'elite'
   name: string;
   price: string;
   oldPrice?: string;
@@ -46,6 +46,8 @@ export default function PricingPage() {
           .select('subscription_tier')
           .eq('id', user.id)
           .single();
+        
+        // Veritabanındaki tier bilgisini al, yoksa free kabul et
         if (profile) setCurrentTier(profile.subscription_tier?.toLowerCase() || 'free');
       }
       setLoading(false);
@@ -53,18 +55,19 @@ export default function PricingPage() {
     getUser();
   }, [supabase]);
 
-  // --- GÜNCELLENEN VE PROFESYONELLEŞTİRİLEN SATIN ALMA FONKSİYONU ---
+  // --- SATIN ALMA İŞLEMİ ---
   const handlePurchase = async (planName: string) => {
     // 1. Kullanıcının Sitedeki Mailini Al
     const { data: { user } } = await supabase.auth.getUser();
     
     // Eğer kullanıcı giriş yapmamışsa login'e at
     if (!user || !user.email) {
+        toast.error("Paket almak için önce giriş yapmalısınız.");
         router.push('/login'); 
         return;
     }
 
-    // 2. Linki Seç
+    // 2. Linki Seç (Gerçek Linkler)
     let paymentLink = "";
     if (planName === "KAŞİF") paymentLink = "https://www.shopier.com/ruyayorumcumai/43369308";
     if (planName === "KAHİN") paymentLink = "https://www.shopier.com/ruyayorumcumai/43369409";
@@ -87,7 +90,7 @@ export default function PricingPage() {
                </div>
                <div>
                   <h3 className="text-white font-bold text-base leading-none">Güvenli Ödeme Adımı</h3>
-                  <p className="text-gray-400 text-xs mt-1">Lütfen aşağıdaki uyarıyı dikkate alınız.</p>
+                  <p className="text-gray-400 text-xs mt-1">Otomatik aktivasyon için önemlidir.</p>
                </div>
             </div>
             <button 
@@ -125,8 +128,8 @@ export default function PricingPage() {
                 <Clock className="w-4 h-4 text-blue-400" />
              </div>
              <div className="text-[11px] leading-relaxed text-gray-300">
-                <span className="font-bold text-blue-200">Farklı bir e-posta adresi girerseniz:</span> <br/>
-                Otomatik tanımlama yapılamaz. Bu durumda paketiniz, güvenlik kontrollerinin ardından <span className="text-white underline decoration-blue-500/30">12 saat içerisinde</span> operatörlerimiz tarafından manuel olarak hesabınıza tanımlanacaktır.
+                <span className="font-bold text-blue-200">Shopier ekranında farklı e-posta girerseniz:</span> <br/>
+                Otomatik eşleşme sağlanamaz. Bu durumda paketiniz, güvenlik kontrolleri sonrası <span className="text-white underline decoration-blue-500/30">12 saat içinde</span> manuel tanımlanır.
              </div>
           </div>
 
@@ -138,18 +141,18 @@ export default function PricingPage() {
             }}
             className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 transition-all active:scale-95"
           >
-             ANLADIM, GÜVENLİ ÖDEMEYE GİT <ShieldCheck className="w-4 h-4" />
+             ANLADIM, ÖDEMEYE GİT <ShieldCheck className="w-4 h-4" />
           </button>
         </div>
       </div>
     ), { 
       duration: Infinity, 
       position: 'top-center',
-      // Mobilde tam ekran kaplamaması için stil ayarı
       style: { background: 'transparent', border: 'none', boxShadow: 'none' } 
     });
   };
 
+  // --- PAKET ÖZELLİKLERİ VE YAPILANDIRMASI (LIMITS.TS İLE UYUMLU) ---
   const plans: Plan[] = [
     {
       id: 'free',
@@ -157,12 +160,12 @@ export default function PricingPage() {
       price: 'Ücretsiz',
       description: 'Yolculuğa yeni başlayanlar için temel rehberlik.',
       features: [
-        { text: 'Sadece Rüya Özeti (Derin Öz)', included: true },
+        { text: 'Günlük 1 Rüya Yorumu (Özet)', included: true },
         { text: 'Reklamlı Deneyim', included: true },
-        { text: 'Psikolojik & Manevi Analiz', included: false },
+        { text: 'Tarot Falı (Kredisiz)', included: false },
         { text: 'Rüya Görselleştirme', included: false },
-        { text: 'Tarot & Şanslı Sayılar', included: false },
-        { text: 'Rüya Sohbeti (AI)', included: false },
+        { text: 'Numeroloji Analizi', included: false },
+        { text: 'Kahin ile Sohbet', included: false },
       ],
       color: 'gray', 
       icon: <Star className="w-6 h-6" />, 
@@ -172,17 +175,17 @@ export default function PricingPage() {
     {
       id: 'pro',
       name: 'KAŞİF',
-      price: '119 TL', 
+      price: '69 TL', 
       oldPrice: '199 TL', 
       period: '/ay',
       description: 'Bilinçaltını daha derinden keşfetmek isteyenler.',
       features: [
-        { text: 'Detaylı Psikolojik & Manevi Analiz', included: true },
-        { text: 'Rüya Görselleştirme (1 Adet/Rüya)', included: true },
-        { text: 'Ruh Hali & Şanslı Sayılar', included: true },
-        { text: 'Haftalık Tarot (3 Hak)', included: true },
+        { text: 'Günlük 3 Detaylı Rüya Analizi', included: true },
+        { text: 'Günlük 3 Tarot Kredisi (Her gün yenilenir)', included: true, icon: <Layers className="w-3 h-3 text-blue-400 inline mr-1"/> },
+        { text: 'Rüya Görselleştirme (Günlük 1 Adet)', included: true, icon: <ImageIcon className="w-3 h-3 text-blue-400 inline mr-1"/> },
+        { text: 'Günlük 5 Numeroloji Analizi', included: true, icon: <Binary className="w-3 h-3 text-blue-400 inline mr-1"/> },
         { text: 'Reklamsız Deneyim', included: true },
-        { text: 'Rüya Sohbeti (AI)', included: false },
+        { text: 'Kahin ile Sohbet', included: false },
       ],
       color: 'blue', 
       icon: <Zap className="w-6 h-6" />, 
@@ -192,17 +195,17 @@ export default function PricingPage() {
     {
       id: 'elite',
       name: 'KAHİN',
-      price: '299 TL', 
+      price: '399 TL', 
       oldPrice: '499 TL', 
       period: '/ay',
       description: 'Rüyaların hakimi ol ve kaderini şekillendir.',
       features: [
         { text: 'SINIRSIZ Rüya Analizi', included: true },
-        { text: 'Rüya Sohbeti (AI ile Konuş)', included: true, icon: <MessageCircle className="w-4 h-4 text-amber-400 inline mr-1"/> },
-        { text: 'Gelişmiş Görsel Stüdyosu (10 Adet)', included: true, icon: <ImageIcon className="w-4 h-4 text-amber-400 inline mr-1"/> },
-        { text: 'Günlük Tarot & İşaretler', included: true },
-        { text: 'Detaylı Ruh Hali Analizi', included: true },
-        { text: 'Öncelikli Destek', included: true },
+        { text: 'Günlük 10 Tarot Kredisi', included: true, icon: <Layers className="w-3 h-3 text-amber-400 inline mr-1"/> },
+        { text: 'Gelişmiş Görsel (Günlük 10 Adet - Flux)', included: true, icon: <ImageIcon className="w-3 h-3 text-amber-400 inline mr-1"/> },
+        { text: 'SINIRSIZ Kahin Sohbeti (AI)', included: true, icon: <MessageCircle className="w-3 h-3 text-amber-400 inline mr-1"/> },
+        { text: 'SINIRSIZ Numeroloji Analizi', included: true },
+        { text: 'Öncelikli Destek & Erken Erişim', included: true },
       ],
       color: 'amber', 
       icon: <Crown className="w-6 h-6" />, 
@@ -227,8 +230,8 @@ export default function PricingPage() {
           <ArrowLeft className="w-5 h-5 text-gray-300 group-hover:text-white" /> 
           <span className="text-sm font-bold text-gray-300 group-hover:text-white">Geri Dön</span>
         </button>
-        <div className="text-xs font-bold text-[#fbbf24] border border-[#fbbf24]/20 px-3 py-1 rounded-full bg-[#fbbf24]/5">
-            GÜVENLİ ÖDEME
+        <div className="text-xs font-bold text-[#fbbf24] border border-[#fbbf24]/20 px-3 py-1 rounded-full bg-[#fbbf24]/5 flex items-center gap-2">
+            <ShieldCheck className="w-3 h-3"/> GÜVENLİ ÖDEME
         </div>
       </nav>
 

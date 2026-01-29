@@ -6,6 +6,7 @@ import Footer from "@/components/footer";
 import MobileNav from "@/components/ui/MobileNav";
 import Script from "next/script";
 import CookieConsent from "@/components/CookieConsent"; 
+import NavbarWrapper from "@/components/NavbarWrapper"; // Import tamam
 
 const cinzel = Cinzel({ 
   subsets: ["latin"], 
@@ -21,19 +22,19 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   // --- SEO GÜNCELLEMESİ BAŞLANGIÇ ---
-  // 1. Canonical URL: Google'a "Benim asıl adresim budur" diyoruz.
   metadataBase: new URL('https://www.ruyayorumcum.com.tr'),
+  alternates: {
+    canonical: './',
+  },
 
-  // 2. Akıllı Başlık: Alt sayfalarda sadece rüya adını yazsan bile sonuna otomatik marka adını ekler.
   title: {
-    default: "Rüya Yorumcum AI | Mistik Rehber",
-    template: "%s | Rüya Yorumcum AI", // Örn: "Rüyada Yılan Görmek | Rüya Yorumcum AI" olur
+    default: "Rüya Yorumcum AI - Yapay Zeka Destekli İslami ve Psikolojik Rüya Tabirleri",
+    template: "%s | Rüya Yorumcum AI", 
   },
   
-  description: "Yapay zeka ve kadim bilgelikle rüyalarınızı analiz edin. İslami ve psikolojik rüya tabirleri.",
+  description: "Rüyalarınızın gizli mesajlarını yapay zeka ile anında çözün. İslami kaynaklar ve modern psikoloji ışığında detaylı, size özel rüya yorumları ve analizleri için tıklayın.",
   manifest: "/manifest.json",
   
-  // 3. Sosyal Medya Paylaşım Kartı (Twitter/X ve WhatsApp için varsayılan)
   openGraph: {
     title: 'Rüya Yorumcum AI',
     description: 'Rüyalarınızın gizli mesajlarını yapay zeka ile çözün.',
@@ -69,10 +70,10 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      {/* ... AdSense Kodu Yukarıda ... */}
-
-{/* GOOGLE ANALYTICS */}
-{/* GOOGLE ANALYTICS */}
+      
+      <body className={`${cinzel.variable} ${manrope.variable} font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh]`}>
+        
+        {/* GOOGLE ANALYTICS */}
         <Script
           strategy="afterInteractive"
           src="https://www.googletagmanager.com/gtag/js?id=G-W3T96RLZHL"
@@ -89,28 +90,29 @@ export default function RootLayout({
           `}
         </Script>
 
-      <body className={`${cinzel.variable} ${manrope.variable} font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh]`}>
-        
-        {/* İçerik Alanı */}
+        {/* --- DÜZELTME BURADA: NavbarWrapper EKLENDİ --- */}
+        <NavbarWrapper /> 
+
+        {/* 2. İÇERİK ALANI */}
         <main className="flex-grow pb-24 md:pb-0">
           {children}
         </main>
 
-        {/* Masaüstü Footer (Mobilde gizli) */}
+        {/* 3. MASAÜSTÜ FOOTER (Mobilde gizli) */}
         <div className="hidden md:block">
           <Footer />
         </div>
 
-        {/* Mobil Alt Menü */}
+        {/* 4. MOBİL ALT MENÜ */}
         <MobileNav />
 
-        {/* Bildirimler (Toaster) */}
+        {/* 5. BİLDİRİMLER (TOASTER) */}
         <Toaster position="top-center" richColors theme="dark" /> 
         
-        {/* Gürültü Efekti (Noise) */}
+        {/* 6. GÜRÜLTÜ EFEKTİ (NOISE) */}
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
         
-        {/* ÇEREZ UYARISI */}
+        {/* 7. ÇEREZ UYARISI */}
         <CookieConsent />
 
       </body>

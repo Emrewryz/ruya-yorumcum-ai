@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "next/link"; // Link import edildiğinden emin ol
 import { ArrowLeft, Search, Sparkles, Loader2, Calendar, Star, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
@@ -18,7 +18,6 @@ interface Dream {
   };
 }
 
-// Mood'a göre Arkaplan Işığı ve Renkler
 const getMoodStyle = (mood: string) => {
   const m = mood?.toLowerCase() || "";
   if (m.includes("korku") || m.includes("endişe") || m.includes("kabus")) 
@@ -71,7 +70,6 @@ export default function JournalPage() {
   };
 
   return (
-    // APP FIX: min-h-[100dvh] ve pb-24
     <div className="min-h-[100dvh] bg-[#020617] text-white relative overflow-x-hidden selection:bg-purple-500/30 pb-32">
       
       {/* Atmosfer */}
@@ -80,7 +78,7 @@ export default function JournalPage() {
          <div className="bg-noise opacity-20"></div>
       </div>
       
-      {/* HEADER (Sticky) */}
+      {/* HEADER */}
       <nav className="sticky top-0 z-30 w-full bg-[#020617]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 mb-8 flex items-center justify-between">
         <button onClick={() => router.back()} className="p-2 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all border border-white/5">
           <ArrowLeft className="w-5 h-5 text-gray-300" />
@@ -139,44 +137,45 @@ export default function JournalPage() {
                        viewport={{ once: true, margin: "-20px" }}
                        transition={{ delay: index * 0.05, duration: 0.3 }}
                     >
-                       {/* APP FIX: Link artık tekil rüya detayına gider (henüz yapmadık ama linki hazır) */}
-                       {/* Şimdilik sadece karta tıklayınca bir şey olmasın veya detay modalı açılabilir */}
-                       <div className={`relative h-full p-6 rounded-2xl bg-[#0f172a] border ${moodStyle.border} transition-all duration-300 active:scale-[0.98] group overflow-hidden flex flex-col shadow-lg`}>
-                          
-                          {/* Arkaplan Glow */}
-                          <div className={`absolute inset-0 ${moodStyle.bg} opacity-50`}></div>
+                       {/* --- DEĞİŞİKLİK BURADA: Link eklendi --- */}
+                       <Link href={`/dashboard/gunluk/${dream.id}`} className="block h-full">
+                           <div className={`relative h-full p-6 rounded-2xl bg-[#0f172a] border ${moodStyle.border} transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,255,255,0.05)] cursor-pointer group overflow-hidden flex flex-col shadow-lg`}>
+                              
+                              {/* Arkaplan Glow */}
+                              <div className={`absolute inset-0 ${moodStyle.bg} opacity-50 group-hover:opacity-70 transition-opacity`}></div>
 
-                          {/* Tarih & Mood */}
-                          <div className="relative z-10 flex justify-between items-center mb-4">
-                             <span className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                <Calendar className="w-3 h-3" /> {formatDate(dream.created_at)}
-                             </span>
-                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/20 border border-white/5 ${moodStyle.text}`}>
-                                {dream.ai_response?.mood || "Analiz"}
-                             </span>
-                          </div>
+                              {/* Tarih & Mood */}
+                              <div className="relative z-10 flex justify-between items-center mb-4">
+                                 <span className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <Calendar className="w-3 h-3" /> {formatDate(dream.created_at)}
+                                 </span>
+                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/20 border border-white/5 ${moodStyle.text}`}>
+                                    {dream.ai_response?.mood || "Analiz"}
+                                 </span>
+                              </div>
 
-                          {/* Başlık & Metin */}
-                          <div className="relative z-10 flex-1">
-                             <h2 className="text-lg font-serif font-bold text-white mb-2 line-clamp-1 leading-tight">
-                                {dream.dream_title || "İsimsiz Rüya"}
-                             </h2>
-                             <p className="text-gray-400 text-xs md:text-sm font-light leading-relaxed line-clamp-3">
-                                "{dream.dream_text}"
-                             </p>
-                          </div>
+                              {/* Başlık & Metin */}
+                              <div className="relative z-10 flex-1">
+                                 <h2 className="text-lg font-serif font-bold text-white mb-2 line-clamp-1 leading-tight group-hover:text-[#fbbf24] transition-colors">
+                                    {dream.dream_title || "İsimsiz Rüya"}
+                                 </h2>
+                                 <p className="text-gray-400 text-xs md:text-sm font-light leading-relaxed line-clamp-3">
+                                    "{dream.dream_text}"
+                                 </p>
+                              </div>
 
-                          {/* Alt Süsleme */}
-                          <div className="relative z-10 mt-4 pt-4 border-t border-white/5 flex justify-between items-center opacity-60">
-                             <div className="flex gap-1">
-                                <div className="w-1 h-1 rounded-full bg-gray-600"></div>
-                                <div className="w-1 h-1 rounded-full bg-gray-600"></div>
-                                <div className="w-1 h-1 rounded-full bg-gray-600"></div>
-                             </div>
-                             <Star className={`w-3 h-3 ${moodStyle.text}`} />
-                          </div>
+                              {/* Alt Süsleme */}
+                              <div className="relative z-10 mt-4 pt-4 border-t border-white/5 flex justify-between items-center opacity-60">
+                                 <div className="flex gap-1">
+                                    <div className="w-1 h-1 rounded-full bg-gray-600"></div>
+                                    <div className="w-1 h-1 rounded-full bg-gray-600"></div>
+                                    <div className="w-1 h-1 rounded-full bg-gray-600"></div>
+                                 </div>
+                                 <Star className={`w-3 h-3 ${moodStyle.text}`} />
+                              </div>
 
-                       </div>
+                           </div>
+                       </Link>
                     </motion.div>
                  );
               })}

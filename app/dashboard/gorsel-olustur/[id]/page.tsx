@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { 
-  ArrowLeft, Sparkles, Image as ImageIcon, Download, Share2, 
+  ArrowLeft, Sparkles, Download, Share2, 
   Loader2, Check, Lock, Wand2, Paintbrush, Quote
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { generateDreamImage } from "@/app/actions/generate-image";
 import { toast } from "sonner";
+import UpgradeModal from "@/components/ui/upgrade-modal"; // Yeni Modal Bileşeni
 
 export default function ImageStudioPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -22,6 +23,10 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
   const [userTier, setUserTier] = useState<'free' | 'pro' | 'elite'>('free');
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
+
+  // --- Limit Yönetimi State'leri (YENİ) ---
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [limitMessage, setLimitMessage] = useState("");
 
   // Yükleme Mesajları
   const loadingMessages = [
@@ -51,7 +56,7 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
       const tier = profile?.subscription_tier?.toLowerCase() || 'free';
       setUserTier(tier);
 
-      // Yetkisiz Giriş Koruması
+      // Yetkisiz Giriş Koruması (Free Kullanıcılar Giremez)
       if (tier === 'free') {
         toast.error("Bu stüdyoya sadece Kaşif ve Kahinler girebilir.");
         router.push('/dashboard/pricing');
@@ -89,7 +94,7 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
     }
   }, [generating]);
 
-  // --- Görsel Oluşturma ---
+  // --- Görsel Oluşturma (GÜNCELLENDİ) ---
   const handleGenerate = async () => {
     if (!dream) return;
     
@@ -105,13 +110,26 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
     try {
       const result = await generateDreamImage(promptText, dream.id);
 
+      // --- LİMİT VE HATA KONTROLÜ ---
+      if (result.error) {
+        // Eğer sunucu "Limit Doldu" veya "Yükseltme Gerekli" derse Modalı aç
+        if (result.code === 'UPGRADE' || result.code === 'LIMIT' || result.code === 'ALREADY') {
+             setLimitMessage(result.error);
+             setShowUpgradeModal(true);
+        } else {
+             // Diğer teknik hatalar için toast
+             toast.error(result.error || "Bir sorun oluştu.");
+        }
+        setGenerating(false);
+        return; 
+      }
+
+      // --- BAŞARILI ---
       if (result.success && result.imageUrl) {
-        // State'i güncelle
         setDream((prev: any) => ({ ...prev, image_url: result.imageUrl }));
         toast.success("Eseriniz hazır! 🎨");
-      } else {
-        toast.error(result.error || "Bir sorun oluştu.");
-      }
+      } 
+
     } catch (e) {
       toast.error("Beklenmedik bir hata oluştu.");
     } finally {
@@ -167,8 +185,15 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
   }
 
   return (
-    // APP FIX: min-h-[100dvh] ve pb-24
     <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-hidden flex flex-col pb-32">
+      
+      {/* --- LİMİT MODALI (En üst katmanda) --- */}
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)} 
+        message={limitMessage}
+      />
+
       {/* Arkaplan Efektleri */}
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
       <div className="fixed top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-900/30 rounded-full blur-[80px] md:blur-[120px] pointer-events-none animate-pulse-slow"></div>

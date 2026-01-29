@@ -1,12 +1,13 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { checkUsageLimit } from "@/utils/gatekeeper"; // Bekçi eklendi
 import OpenAI from "openai";
 
 // 1. OpenRouter İstemcisi
 const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1', 
-  apiKey: process.env.OPENROUTER_API_KEY,      // .env.local dosyasındaki anahtar
+  apiKey: process.env.OPENROUTER_API_KEY,
   defaultHeaders: {
     "HTTP-Referer": "https://ruyayorumcum.com", 
     "X-Title": "Rüya Yorumcum",
@@ -22,21 +23,25 @@ export async function explainNumbers(numbers: number[], dreamId: string) {
 
   if (!numbers || numbers.length === 0) return { error: "Sayı bulunamadı." };
 
-  // 3. Profil ve Paket Kontrolü
+  // 3. LİMİT VE YETKİ KONTROLÜ (BEKÇİ) [GÜNCELLENDİ]
+  // Manuel if(tier=='free') kontrolü yerine merkezi sistemi kullanıyoruz.
+  const limitCheck = await checkUsageLimit(user.id, 'numerology');
+
+  if (!limitCheck.allowed) {
+      return { 
+          error: limitCheck.message || "Bu özellik paketine dahil değil.",
+          code: limitCheck.code // Frontend'de modal açmak için (opsiyonel)
+      };
+  }
+
+  // 4. Profil Verisi (Prompt için)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_tier, full_name, bio, interest_area')
+    .select('full_name, bio, interest_area')
     .eq('id', user.id)
     .single();
 
-  // Paket Kontrolü (Free ve Çırak erişemez)
-  // NOT: "admin" rolü veya geliştirici testi için bu kontrolü geçici olarak gevşetmek isteyebilirsin.
-  const tier = profile?.subscription_tier?.toLowerCase() || 'free';
-  if (tier === 'free' || tier === 'cirak') {
-      return { error: "Bu özellik sadece Kaşif ve Kahin paketlerine özeldir." };
-  }
-
-  // 4. Cache Kontrolü (Daha önce bu rüya için analiz yapılmış mı?)
+  // 5. Cache Kontrolü (Daha önce bu rüya için analiz yapılmış mı?)
   const { data: existingReport } = await supabase
     .from('numerology_reports')
     .select('analysis')
@@ -47,14 +52,14 @@ export async function explainNumbers(numbers: number[], dreamId: string) {
     return { success: true, data: existingReport.analysis };
   }
 
-  // 5. Bağlam Oluşturma
+  // 6. Bağlam Oluşturma
   const userContext = `
     Kullanıcı: ${profile?.full_name || "Bilinmiyor"}
     İlgi Alanı: ${profile?.interest_area || "Belirtilmemiş"}
     Hayat Durumu (Bio): "${profile?.bio || "Genel yorum yap."}"
   `;
 
-  // 6. AI İsteği (OpenRouter - Gemini 2.0 Flash Lite)
+  // 7. AI İsteği
   let aiResponse = null;
 
   try {
@@ -82,9 +87,7 @@ export async function explainNumbers(numbers: number[], dreamId: string) {
             { role: "system", content: "Sen JSON formatında çıktı veren mistik bir numerologsun. Sadece saf JSON döndür." },
             { role: "user", content: prompt }
         ],
-        // ONAYLADIĞIMIZ HIZLI MODEL:
         model: "google/gemini-2.0-flash-lite-001", 
-        
         temperature: 1.0, 
         response_format: { type: "json_object" } 
     });
@@ -94,16 +97,14 @@ export async function explainNumbers(numbers: number[], dreamId: string) {
     if (!resultText) throw new Error("Numeroloji analizi boş döndü.");
 
     // Temizlik
-    const cleanedText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-
-    aiResponse = JSON.parse(cleanedText);
+    aiResponse = JSON.parse(resultText.replace(/```json/g, "").replace(/```/g, "").trim());
 
   } catch (e: any) {
-    console.error("OpenRouter Numeroloji Hatası:", e);
+    console.error("AI Hatası:", e);
     return { error: "Evrensel frekanslar şu an okunamıyor. Lütfen daha sonra dene." };
   }
 
-  // 7. Veritabanına Kayıt
+  // 8. Veritabanına Kayıt
   const { error: dbError } = await supabase
     .from('numerology_reports')
     .insert({

@@ -27,7 +27,6 @@ export async function POST(request: Request) {
     }
 
     // 3. İMZA DOĞRULAMA
-    // PHP: hash_hmac('sha256', $_POST['res'] . $username, $key, false);
     const expectedHash = crypto
         .createHmac('sha256', osbPass)
         .update(String(resData) + osbUser)
@@ -38,29 +37,30 @@ export async function POST(request: Request) {
         return new Response('Invalid Hash', { status: 400 });
     }
 
-    // 4. Şifreli Veriyi Çöz (Base64 Decode -> JSON Parse)
+    // 4. Şifreli Veriyi Çöz
     const buffer = Buffer.from(String(resData), 'base64');
     const jsonString = buffer.toString('utf-8');
     const data = JSON.parse(jsonString);
 
     console.log(`✅ Doğrulama Başarılı. Sipariş: #${data.orderid}, Email: ${data.email}`);
 
-    // --- PAKET BELİRLEME (GERÇEK FİYATLAR) ---
+    // --- PAKET VE KREDİ BELİRLEME ---
     const paidAmount = parseFloat(String(data.price));
     let planType = '';
+    let startCredits = 0; // Varsayılan kredi
 
-    // Fiyat aralıkları (Shopier komisyonu veya kuruş farkları için esnek aralık)
-    // KAŞİF: 119 TL (110 - 130 arası kabul)
-    if (paidAmount >= 110 && paidAmount <= 130) {
+    // KAŞİF: 119 TL (110 - 130 arası kabul) -> 3 Kredi
+    if (paidAmount >= 60 && paidAmount <= 130) {
         planType = 'pro';
+        startCredits = 3;
     } 
-    // KAHİN: 299 TL (290 - 310 arası kabul)
+    // KAHİN: 299 TL (290 - 310 arası kabul) -> 10 Kredi
     else if (paidAmount >= 290 && paidAmount <= 310) {
         planType = 'elite';
+        startCredits = 10;
     } 
     else {
         console.log(`⚠️ Tanımsız Fiyat: ${paidAmount} TL. İşlem yapılmıyor.`);
-        // Shopier bizden 'success' bekler, yoksa sürekli tekrar dener.
         return new Response('success', { status: 200 });
     }
 
@@ -83,8 +83,6 @@ export async function POST(request: Request) {
     if (userError || !userProfile) {
         console.error(`❌ Kullanıcı Bulunamadı: ${cleanEmail} -> Admin Paneline Kaydediliyor.`);
         
-        // Hata alan siparişi 'webhook_logs' tablosuna kaydet (Admin panelinde görebilmen için)
-        // Eğer tabloyu henüz oluşturmadıysan bu kısım hata verir ama sistem durmaz.
         await supabase.from('webhook_logs').insert({
             shopier_email: cleanEmail,
             shopier_order_id: String(data.orderid),
@@ -94,7 +92,6 @@ export async function POST(request: Request) {
             is_resolved: false
         });
 
-        // Shopier'e success dönüyoruz ki sistem tıkanmasın.
         return new Response('success', { status: 200 });
     }
 
@@ -117,16 +114,17 @@ export async function POST(request: Request) {
 
     if (subError) {
         console.error("❌ Veritabanı Hatası (Insert):", subError);
-        // Kritik hata olduğu için 500 dönüyoruz, Shopier sonra tekrar denesin.
         return new Response('DB Error', { status: 500 });
     }
 
-    // D) Profili Güncelle (Frontend hızı için)
-    await supabase.from('profiles').update({ subscription_tier: planType }).eq('id', userId);
+    // D) Profili Güncelle (PAKET + KREDİ YÜKLEME)
+    await supabase.from('profiles').update({ 
+        subscription_tier: planType,
+        tarot_credits: startCredits // <-- KREDİ GÜNCELLEMESİ EKLENDİ
+    }).eq('id', userId);
 
-    console.log(`🎉 BAŞARILI! ${cleanEmail} kullanıcısına ${planType} tanımlandı.`);
+    console.log(`🎉 BAŞARILI! ${cleanEmail} kullanıcısına ${planType} ve ${startCredits} kredi tanımlandı.`);
     
-    // İşlem Tamam
     return new Response('success', { status: 200 });
 
   } catch (err: any) {
