@@ -46,12 +46,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      // YENİ: Blog Ana Sayfası
+      // Blog Ana Sayfası
       url: `${baseUrl}/blog`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
     },
+    // --- BURASI EKLENDİ: TAROT SAYFASI ---
+    {
+      url: `${baseUrl}/tarot`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly', // İçerik çok sık değişmiyorsa weekly iyidir
+      priority: 0.9, // Ana modüllerden biri olduğu için yüksek puan verdik
+    },
+    // -------------------------------------
     {
       url: `${baseUrl}/pricing`,
       lastModified: new Date(),
@@ -95,12 +103,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
-  // 4. Dinamik Blog Sayfaları (YENİ EKLENEN KISIM)
+  // 4. Dinamik Blog Sayfaları
   const blogPages: MetadataRoute.Sitemap = (posts || []).map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
     lastModified: post.created_at ? new Date(post.created_at) : new Date(),
-    changeFrequency: 'weekly', // Bloglar yorum vs. ile güncellenebilir
-    priority: 0.8, // Blog yazıları SEO için değerlidir, yüksek puan veriyoruz
+    changeFrequency: 'weekly',
+    priority: 0.8,
   }))
 
   // 5. Hepsini birleştirip döndür
