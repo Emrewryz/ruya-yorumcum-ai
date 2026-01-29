@@ -10,6 +10,7 @@ import {
   MessageCircle, Hash, Zap, BookOpen, Calendar, Search,
   Activity, Fingerprint, Compass, BrainCircuit, HeartPulse,LayoutDashboard,ImageIcon
 } from "lucide-react";
+import Script from "next/script";
 
 // Blog verisi için tip tanımı
 interface BlogPost {
@@ -19,7 +20,19 @@ interface BlogPost {
   image_url: string;
   created_at: string;
 }
-
+// --- GOOGLE İÇİN ANA SAYFA ŞEMASI (SCHEMA.ORG) ---
+const homeSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Rüya Yorumcum AI",
+  "url": "https://www.ruyayorumcum.com.tr",
+  "description": "Yapay zeka destekli İslami ve psikolojik rüya tabirleri platformu.",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://www.ruyayorumcum.com.tr/sozluk/{search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+};
 export default function Home() {
   const router = useRouter();
   const supabase = createClient();
@@ -57,7 +70,11 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#020617] text-white relative overflow-x-hidden font-sans selection:bg-[#fbbf24]/30 pb-20">
       
-     
+     <Script
+        id="home-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeSchema) }}
+      />
 
       {/* --- 3. HERO (GİRİŞ) BÖLÜMÜ - MERAK UYANDIRICI --- */}
       <section className="relative z-10 pt-40 md:pt-52 pb-24 text-center px-4 max-w-6xl mx-auto">
