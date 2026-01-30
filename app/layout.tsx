@@ -8,7 +8,7 @@ import Script from "next/script";
 import CookieConsent from "@/components/CookieConsent"; 
 import NavbarWrapper from "@/components/NavbarWrapper"; 
 import FooterSEOContent from "@/components/FooterSEOContent"; 
-import HideOnDashboard from "@/components/HideOnDashboard"; 
+import HideOnDashboard from "@/components/HideOnDashboard";
 
 const cinzel = Cinzel({ 
   subsets: ["latin"], 
@@ -28,21 +28,23 @@ export const metadata: Metadata = {
     canonical: './',
   },
 
+  // DÜZELTME 1: Title şablonunu kısalttık. 
+  // Google genelde 60 karakterden sonrasını keser.
   title: {
-    default: "Rüya Yorumcum AI - Yapay Zeka Destekli İslami ve Psikolojik Rüya Tabirleri",
+    default: "Rüya Yorumcum AI - İslami ve Psikolojik Rüya Tabirleri",
     template: "%s | Rüya Yorumcum AI", 
   },
   
-  description: "Rüyalarınızın gizli mesajlarını yapay zeka ile anında çözün. İslami kaynaklar ve modern psikoloji ışığında detaylı, size özel rüya yorumları ve analizleri için tıklayın.",
+  // DÜZELTME 2: Açıklamayı 160 karakter altına çektik.
+  description: "Rüyalarınızın gizli mesajlarını yapay zeka ile çözün. İslami kaynaklar ve modern psikoloji ışığında size özel rüya yorumları.",
+  
   manifest: "/manifest.json",
 
-  // --- GÜNCELLENEN KISIM BAŞLANGIÇ ---
   icons: {
-    icon: '/favicon.ico',      // Standart favicon (public klasöründe olmalı)
-    shortcut: '/favicon.ico',  // Bazı tarayıcılar için kısayol
-    apple: '/icon.png',        // Apple cihazlar için (Eğer yoksa burayı silebilirsin veya favicon.ico yapabilirsin)
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/icon.png',
   },
-  // --- GÜNCELLENEN KISIM BİTİŞ ---
   
   openGraph: {
     title: 'Rüya Yorumcum AI',
@@ -52,6 +54,13 @@ export const metadata: Metadata = {
     locale: 'tr_TR',
     type: 'website',
   },
+  
+  // DÜZELTME 3: Sosyal Medya ve Doğrulama (İleride buraları doldurursun)
+  verification: {
+    google: 'google-site-verification-kodun-buraya', 
+    yandex: 'yandex-verification-kodun',
+  },
+  category: 'lifestyle',
 };
 
 export const viewport: Viewport = {
@@ -62,6 +71,28 @@ export const viewport: Viewport = {
   themeColor: "#020617",
 };
 
+// DÜZELTME 4: Schema.org Yapısal Verisi (JSON-LD)
+// Bu script Google'a "Ben bir Web Sitesiyim/Organizasyonum" der.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Rüya Yorumcum AI',
+  url: 'https://www.ruyayorumcum.com.tr',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: 'https://www.ruyayorumcum.com.tr/arama?q={search_term_string}',
+    'query-input': 'required name=search_term_string'
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Rüya Yorumcum AI',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://www.ruyayorumcum.com.tr/icon.png'
+    }
+  }
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -70,18 +101,22 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
-        {/* GOOGLE ADSENSE KODU */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+        {/* Schema Script'i buraya ekliyoruz */}
+        <Script
+          id="json-ld-website"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       
       <body className={`${cinzel.variable} ${manrope.variable} font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh]`}>
         
-        {/* GOOGLE ANALYTICS */}
         <Script
           strategy="afterInteractive"
           src="https://www.googletagmanager.com/gtag/js?id=G-W3T96RLZHL"
@@ -98,33 +133,24 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* 1. NAVBAR */}
         <NavbarWrapper /> 
 
-        {/* 2. İÇERİK ALANI */}
         <main className="flex-grow pb-24 md:pb-0">
           {children}
         </main>
 
-        {/* 3. MASAÜSTÜ FOOTER VE SÖZLÜK BARI (Mobilde gizli) */}
         <div className="hidden md:block">
-          {/* Dashboard'da GİZLENECEK Alanlar */}
           <HideOnDashboard>
              <FooterSEOContent />
              <Footer />
           </HideOnDashboard>
         </div>
 
-        {/* 4. MOBİL ALT MENÜ */}
         <MobileNav />
-
-        {/* 5. BİLDİRİMLER (TOASTER) */}
         <Toaster position="top-center" richColors theme="dark" /> 
         
-        {/* 6. GÜRÜLTÜ EFEKTİ (NOISE) */}
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
         
-        {/* 7. ÇEREZ UYARISI */}
         <CookieConsent />
 
       </body>
