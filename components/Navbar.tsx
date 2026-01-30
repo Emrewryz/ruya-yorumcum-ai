@@ -5,9 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { 
-  Moon, Eye, Sparkles, BookOpen, Compass, 
-  LayoutDashboard, Menu, X, ChevronDown, 
-  Layers, BrainCircuit, Palette, User, LogOut
+  Moon, Eye, Sparkles, LayoutDashboard, Menu, X, ChevronDown, 
+  Layers, BrainCircuit, Palette, LogOut, Hash // Hash ikonunu ekledik
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -47,11 +46,12 @@ export default function Navbar() {
     { name: "Blog", href: "/blog" },
   ];
 
-  // Hizmetler Alt Menüsü
+  // Hizmetler Alt Menüsü (YENİ NUMEROLOJİ LİNKİ EKLENDİ)
   const services = [
-    { name: "Rüya Analizi", href: "/#ruya-analizi", icon: <Sparkles className="w-4 h-4 text-[#fbbf24]" /> },
-    { name: "Rüya Görselleştirme", href: "/dashboard/visualize", icon: <Palette className="w-4 h-4 text-purple-400" /> },
+    { name: "Rüya Analizi", href: "/ruya-tabiri", icon: <Sparkles className="w-4 h-4 text-[#fbbf24]" /> },
+    { name: "Rüya Görselleştirme", href: "/ruya-gorsellestirme", icon: <Palette className="w-4 h-4 text-purple-400" /> },
     { name: "Tarot Falı", href: "/tarot", icon: <Layers className="w-4 h-4 text-pink-400" /> },
+    { name: "Numeroloji", href: "/numeroloji", icon: <Hash className="w-4 h-4 text-amber-500" /> }, // YENİ
     { name: "Duygu Analizi", href: "/duygu-analizi", icon: <BrainCircuit className="w-4 h-4 text-emerald-400" /> },
   ];
 

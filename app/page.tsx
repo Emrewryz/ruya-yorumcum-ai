@@ -197,9 +197,10 @@ export default function Home() {
                         </div>
                     </div>
 
-                    <button onClick={handleDreamInterpret} className="group flex items-center gap-3 text-white font-bold border-b border-[#fbbf24] pb-1 hover:text-[#fbbf24] transition-colors">
-                        Detaylı Analizi Başlat <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
-                    </button>
+                  {/* --- YENİ HALİ (BUNU YAPIŞTIR) --- */}
+<Link href="/ruya-tabiri" className="group flex items-center gap-3 text-white font-bold border-b border-[#fbbf24] pb-1 hover:text-[#fbbf24] transition-colors">
+    Detaylı Analizi ve Süreci İncele <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+</Link>
                 </div>
             </div>
         </section>
@@ -219,7 +220,7 @@ export default function Home() {
                     <p className="text-sm text-gray-500 italic border-l-2 border-purple-500 pl-4 mb-10">
                         "Rüyamda gökyüzünün mor olduğunu ve bulutların altından altın yağdığını gördüm..." diyin, o kareyi sizin için çizelim.
                     </p>
-                    <Link href="/dashboard/visualize" className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-colors shadow-lg hover:shadow-purple-500/20">
+                    <Link href="/ruya-gorsellestirme" className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-colors shadow-lg hover:shadow-purple-500/20">
                         Rüyamı Çizdir <ImageIcon className="w-4 h-4 ml-2" />
                     </Link>
                 </div>

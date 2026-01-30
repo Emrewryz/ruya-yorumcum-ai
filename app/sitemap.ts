@@ -9,7 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // --- VERİ ÇEKME İŞLEMLERİ ---
 
-  // A) Rüyaları Çek (Mevcut)
+  // A) Rüyaları Çek
   const { data: terms, error: dreamsError } = await supabase
     .from('dream_dictionary')
     .select('slug, created_at')
@@ -18,8 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Sitemap (Rüyalar) çekilirken hata:', dreamsError)
   }
 
-  // B) Blog Yazılarını Çek (YENİ EKLENEN KISIM)
-  // Sadece yayınlanmış (is_published = true) olanları alıyoruz.
+  // B) Blog Yazılarını Çek
   const { data: posts, error: blogError } = await supabase
     .from('blog_posts')
     .select('slug, created_at')
@@ -31,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // --- SAYFA LİSTELERİ OLUŞTURMA ---
 
-  // 2. Statik (Sabit) Sayfalar
+  // 2. Statik (Sabit) Sayfalar - YENİ SAYFALAR BURAYA EKLENDİ
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}`,
@@ -46,20 +45,43 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      // Blog Ana Sayfası
       url: `${baseUrl}/blog`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
     },
-    // --- BURASI EKLENDİ: TAROT SAYFASI ---
+    // --- YENİ EKLENEN LANDING PAGES ---
     {
-      url: `${baseUrl}/tarot`,
+      url: `${baseUrl}/ruya-tabiri`, // Rüya Analizi
       lastModified: new Date(),
-      changeFrequency: 'weekly', // İçerik çok sık değişmiyorsa weekly iyidir
-      priority: 0.9, // Ana modüllerden biri olduğu için yüksek puan verdik
+      changeFrequency: 'weekly',
+      priority: 0.9,
     },
-    // -------------------------------------
+    {
+      url: `${baseUrl}/ruya-gorsellestirme`, // Görsel Oluşturma
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/numeroloji`, // Numeroloji
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/duygu-analizi`, // Duygu Analizi
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/tarot`, // Tarot (Zaten vardı)
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    // ----------------------------------
     {
       url: `${baseUrl}/pricing`,
       lastModified: new Date(),
