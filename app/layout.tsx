@@ -8,7 +8,7 @@ import Script from "next/script";
 import CookieConsent from "@/components/CookieConsent"; 
 import NavbarWrapper from "@/components/NavbarWrapper"; 
 import FooterSEOContent from "@/components/FooterSEOContent"; 
-import HideOnDashboard from "@/components/HideOnDashboard"; // <--- GİZLEME BİLEŞENİ
+import HideOnDashboard from "@/components/HideOnDashboard"; 
 
 const cinzel = Cinzel({ 
   subsets: ["latin"], 
@@ -36,10 +36,13 @@ export const metadata: Metadata = {
   description: "Rüyalarınızın gizli mesajlarını yapay zeka ile anında çözün. İslami kaynaklar ve modern psikoloji ışığında detaylı, size özel rüya yorumları ve analizleri için tıklayın.",
   manifest: "/manifest.json",
 
+  // --- GÜNCELLENEN KISIM BAŞLANGIÇ ---
   icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
+    icon: '/favicon.ico',      // Standart favicon (public klasöründe olmalı)
+    shortcut: '/favicon.ico',  // Bazı tarayıcılar için kısayol
+    apple: '/icon.png',        // Apple cihazlar için (Eğer yoksa burayı silebilirsin veya favicon.ico yapabilirsin)
   },
+  // --- GÜNCELLENEN KISIM BİTİŞ ---
   
   openGraph: {
     title: 'Rüya Yorumcum AI',
