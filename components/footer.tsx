@@ -1,7 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Moon, Mail, BookOpen } from "lucide-react";
+import { Moon, Mail, BookOpen, Instagram } from "lucide-react";
+
+// TikTok İkonu (Lucide'de yoksa diye manuel SVG)
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    fill="currentColor" 
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+  </svg>
+);
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -9,7 +21,6 @@ export default function Footer() {
   return (
     <footer className="w-full bg-[#020617] border-t border-white/5 pt-16 pb-8 px-6 relative z-10 mt-auto">
       <div className="max-w-7xl mx-auto">
-        {/* Grid yapısı 5 sütuna çıkarıldı */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-12">
           
           {/* 1. Logo ve Motto */}
@@ -20,9 +31,31 @@ export default function Footer() {
               </div>
               <span className="font-serif text-xl tracking-wider text-white">RÜYA YORUMCUM AI</span>
             </div>
-            <p className="text-gray-500 text-sm leading-relaxed">
+            <p className="text-gray-500 text-sm leading-relaxed mb-6">
               Bilinçaltının gizemli kapılarını yapay zeka ile aralıyoruz. Modern teknoloji ve kadim bilgelik bir arada.
             </p>
+            
+            {/* SOSYAL MEDYA İKONLARI */}
+            <div className="flex items-center gap-4">
+                <a 
+                  href="https://www.instagram.com/ruyayorumcum_ai" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-pink-600 hover:text-white transition-all duration-300"
+                  aria-label="Instagram"
+                >
+                    <Instagram className="w-5 h-5" />
+                </a>
+                <a 
+                  href="https://www.tiktok.com/@ruya.yorumcum.ai" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-black hover:text-white hover:border hover:border-white/20 transition-all duration-300"
+                  aria-label="TikTok"
+                >
+                    <TikTokIcon className="w-5 h-5" />
+                </a>
+            </div>
           </div>
 
           {/* 2. Keşfet */}
@@ -33,11 +66,11 @@ export default function Footer() {
             <ul className="space-y-4 text-gray-500 text-sm">
               <li><Link href="/dashboard" className="hover:text-[#fbbf24] transition-colors hover:translate-x-1 inline-block duration-200">Rüya Yorumla</Link></li>
               <li><Link href="/dashboard/pricing" className="hover:text-[#fbbf24] transition-colors hover:translate-x-1 inline-block duration-200">Paketler & Fiyatlar</Link></li>
-              <li><Link href="/dashboard/ay-takvimi" className="hover:text-[#fbbf24] transition-colors hover:translate-x-1 inline-block duration-200">Ay Takvimi</Link></li>
+              <li><Link href="/numeroloji" className="hover:text-[#fbbf24] transition-colors hover:translate-x-1 inline-block duration-200">Numeroloji</Link></li>
             </ul>
           </div>
 
-          {/* 3. YENİ: Popüler Tabirler (Sözlük) */}
+          {/* 3. Popüler Tabirler */}
           <div>
             <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-1 h-4 bg-purple-500 rounded-full"></span> Popüler Tabirler
@@ -84,7 +117,6 @@ export default function Footer() {
 
         </div>
 
-        {/* Alt Bilgi ve Ödeme Logoları */}
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-gray-600 text-xs text-center md:text-left">
             © {currentYear} Fikri Emre Topçu - Rüya Yorumcum AI. Tüm Hakları Saklıdır.

@@ -10,6 +10,9 @@ import NavbarWrapper from "@/components/NavbarWrapper";
 import FooterSEOContent from "@/components/FooterSEOContent"; 
 import HideOnDashboard from "@/components/HideOnDashboard";
 
+// --- YENİ EKLENEN IMPORT ---
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
 const cinzel = Cinzel({ 
   subsets: ["latin"], 
   variable: "--font-cinzel",
@@ -28,14 +31,11 @@ export const metadata: Metadata = {
     canonical: './',
   },
 
-  // DÜZELTME 1: Title şablonunu kısalttık. 
-  // Google genelde 60 karakterden sonrasını keser.
   title: {
     default: "Rüya Yorumcum AI - İslami ve Psikolojik Rüya Tabirleri",
     template: "%s | Rüya Yorumcum AI", 
   },
   
-  // DÜZELTME 2: Açıklamayı 160 karakter altına çektik.
   description: "Rüyalarınızın gizli mesajlarını yapay zeka ile çözün. İslami kaynaklar ve modern psikoloji ışığında size özel rüya yorumları.",
   
   manifest: "/manifest.json",
@@ -55,7 +55,6 @@ export const metadata: Metadata = {
     type: 'website',
   },
   
-  // DÜZELTME 3: Sosyal Medya ve Doğrulama (İleride buraları doldurursun)
   verification: {
     google: 'google-site-verification-kodun-buraya', 
     yandex: 'yandex-verification-kodun',
@@ -71,8 +70,6 @@ export const viewport: Viewport = {
   themeColor: "#020617",
 };
 
-// DÜZELTME 4: Schema.org Yapısal Verisi (JSON-LD)
-// Bu script Google'a "Ben bir Web Sitesiyim/Organizasyonum" der.
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
@@ -107,7 +104,6 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
-        {/* Schema Script'i buraya ekliyoruz */}
         <Script
           id="json-ld-website"
           type="application/ld+json"
@@ -152,6 +148,9 @@ export default function RootLayout({
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
         
         <CookieConsent />
+
+        {/* --- YENİ EKLENEN BİLEŞEN --- */}
+        <SpeedInsights />
 
       </body>
     </html>
