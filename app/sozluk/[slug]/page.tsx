@@ -1,19 +1,43 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, PenLine, BookOpen, Quote, ChevronRight } from "lucide-react";
+import { 
+  ArrowLeft, BookOpen, Brain, 
+  ChevronRight, Sparkles, List,
+  Quote, Info, CheckCircle2, AlertTriangle
+} from "lucide-react";
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import Script from 'next/script';
 
 // --- TİP TANIMLAMALARI ---
-type ContentBlock = 
-  | { type: 'heading'; text: string }
-  | { type: 'paragraph'; text: string }
-  | { type: 'quote'; title?: string; text: string }
-  | { type: 'list'; items: string[] };
+interface UltimateDreamData {
+  type: 'ultimate';
+  summary: string;
+  islamic: { source: string; text: string }[];
+  psychological: string;
+  scenarios: { 
+    title: string; 
+    description: string; 
+    isPositive: boolean; // true: Yeşil, false: Sarı/Turuncu
+    slug?: string;       // Doluysa "Detaylı Oku" butonu çıkar
+  }[];
+}
 
-// --- VERİ ÇEKME (CACHE MEKANİZMASI) ---
-// Bu fonksiyon veriyi sadece 1 kere çeker, hem SEO hem Sayfa kullanır.
+interface LegacyBlock {
+  type: 'heading' | 'paragraph' | 'quote' | 'list';
+  text?: string;
+  title?: string;
+  items?: string[];
+}
+
+// --- YARDIMCI FONKSİYONLAR ---
+const formatTerm = (term: string) => {
+  if (!term) return "";
+  let clean = term.replace(/^rüyada\s+/i, '').replace(/\s+görmek$/i, '');
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+};
+
+// --- VERİ ÇEKME (DATABASE) ---
 const getDreamData = cache(async (slug: string) => {
   const supabase = createClient();
   const { data: item } = await supabase
@@ -24,264 +48,237 @@ const getDreamData = cache(async (slug: string) => {
   return item;
 });
 
-// --- YARDIMCI FONKSİYONLAR ---
-const parseContent = (content: any): ContentBlock[] => {
+const parseContent = (rawContent: string | null): UltimateDreamData | LegacyBlock[] => {
+  if (!rawContent) return [];
   try {
-    if (typeof content === 'string' && content.startsWith('[')) {
-      return JSON.parse(content);
+    const parsed = JSON.parse(rawContent);
+    // Eğer yeni format ise (ultimate type)
+    if (!Array.isArray(parsed) && parsed.type === 'ultimate') {
+      return parsed as UltimateDreamData;
     }
-    return [{ type: 'paragraph', text: typeof content === 'string' ? content : 'İçerik hazırlanıyor...' }];
+    // Eski format ise
+    return parsed as LegacyBlock[];
   } catch (e) {
-    return [{ type: 'paragraph', text: 'İçerik formatı güncelleniyor.' }];
+    return [{ type: 'paragraph', text: rawContent }] as LegacyBlock[];
   }
 };
 
-// --- SEO METADATA (DİYANET & İSLAMİ TAKTİĞİ BURADA) ---
+// --- METADATA (SEO) ---
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const item = await getDreamData(params.slug);
-
-  if (!item) return { title: 'Rüya Tabiri Bulunamadı - RüyaYorumcum' };
-
-  // İnsanların en çok arattığı kelimeleri başlığa ekliyoruz
-  const seoTitle = `Rüyada ${item.term} Ne Anlama Gelir? Diyanet ve İslami Tabiri`;
+  if (!item) return { title: 'Rüya Tabiri Bulunamadı' };
+  const cleanTerm = formatTerm(item.term);
 
   return {
-    title: seoTitle,
+    title: `Rüyada ${cleanTerm} Görmek - İslami ve Psikolojik Yorumu`,
     description: item.description.substring(0, 160),
-    keywords: [`rüyada ${item.term}`, `${item.term} anlamı`, `islami rüya tabiri ${item.term}`, 'diyanet rüya', ...(item.keywords || [])],
-    openGraph: {
-      title: seoTitle,
-      description: item.description,
-      type: 'article',
-      siteName: 'RüyaYorumcum AI',
-      locale: 'tr_TR',
-    },
-    alternates: {
-      canonical: `https://www.ruyayorumcum.com.tr/sozluk/${params.slug}`
-    }
   };
 }
 
-// --- İÇERİK RENDERLAYICI BİLEŞEN ---
-const BlockRenderer = ({ block }: { block: ContentBlock }) => {
-  switch (block.type) {
-    case 'heading':
-      return (
-        <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#fbbf24] pt-8 border-b border-white/10 pb-4 mt-4">
-          {block.text}
-        </h2>
-      );
-    case 'paragraph':
-      return (
-        <p className="text-lg text-gray-300 font-light leading-loose mb-4">
-          {block.text}
-        </p>
-      );
-    case 'quote':
-      return (
-        <div className="my-8 p-6 md:p-8 rounded-2xl bg-[#0f172a] border border-white/10 relative overflow-hidden group shadow-lg">
-          <div className="absolute top-0 left-0 w-1 h-full bg-[#fbbf24]"></div>
-          <div className="relative z-10">
-            {block.title && (
-              <h3 className="text-[#fbbf24] font-bold text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
-                <Quote className="w-4 h-4" /> {block.title}
-              </h3>
-            )}
-            <p className="text-white text-lg font-serif italic leading-relaxed">"{block.text}"</p>
-          </div>
-        </div>
-      );
-    case 'list':
-      return (
-        <ul className="space-y-4 my-6 pl-2">
-          {block.items.map((li, i) => (
-            <li key={i} className="flex items-start gap-3 text-gray-300 text-lg leading-relaxed">
-              <span className="mt-2.5 w-1.5 h-1.5 rounded-full bg-[#fbbf24] shrink-0"></span>
-              <span>{li}</span>
-            </li>
-          ))}
-        </ul>
-      );
-    default:
-      return null;
-  }
-};
+// --- ESKİ İÇERİK İÇİN YEDEK RENDERER ---
+const LegacyRenderer = ({ blocks }: { blocks: LegacyBlock[] }) => (
+  <div className="space-y-6 text-gray-300">
+    {blocks.map((block, i) => (
+      <div key={i}>{block.text}</div>
+    ))}
+  </div>
+);
 
-// --- ANA SAYFA (Page Component) ---
+// --- ANA SAYFA COMPONENTİ ---
 export default async function Page({ params }: { params: { slug: string } }) {
   const item = await getDreamData(params.slug);
   const supabase = createClient();
 
-  // TERİM BULUNAMAZSA GÖSTERİLECEK EKRAN
-  if (!item) {
-    return (
-      <div className="min-h-[100dvh] bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden font-sans">
-        <div className="relative z-10 max-w-sm p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
-            <h1 className="text-xl font-serif font-bold text-[#fbbf24] mb-3">Henüz Bu Terimi Yazmadık</h1>
-            <p className="text-gray-400 text-sm mb-6">Yapay zeka kahinimiz bu sembolü senin için yorumlayabilir.</p>
-            <Link href="/dashboard" className="w-full px-6 py-3 bg-[#fbbf24] text-black rounded-xl font-bold text-sm hover:scale-105 transition-transform flex items-center justify-center gap-2">
-                <Sparkles className="w-4 h-4" /> Rüya Yorumla
-            </Link>
-        </div>
-      </div>
-    );
-  }
+  if (!item) return <div className="text-white text-center py-20">İçerik bulunamadı.</div>;
 
-  // Arama sayısını artır (Hata yönetimi ile)
-  supabase.rpc('increment_search_count', { row_id: item.id }).then(({ error }) => {
-    if(error) console.error("Sayaç hatası:", error);
-  });
+  // Okunma sayısını artır
+  await supabase.rpc('increment_search_count', { row_id: item.id });
 
-  // BENZER RÜYALARI ÇEK (İÇ LİNKLEME İÇİN)
-  const { data: relatedDreams } = await supabase
-    .from('dream_dictionary')
-    .select('term, slug')
-    .neq('id', item.id) // Kendisi hariç
-    .limit(3); // 3 tane getir
-
-  const contentBlocks = parseContent(item.content);
+  const cleanTitle = formatTerm(item.term);
+  const contentData = parseContent(item.content);
+  const isUltimate = !Array.isArray(contentData) && (contentData as any).type === 'ultimate';
+  const ultimateData = isUltimate ? contentData as UltimateDreamData : null;
 
   // JSON-LD (Google için Yapısal Veri)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: `Rüyada ${item.term} Görmek Ne Anlama Gelir?`,
+    headline: `Rüyada ${cleanTitle} Görmek`,
     description: item.description,
-    datePublished: item.created_at,
-    author: {
-      '@type': 'Organization',
-      name: 'RüyaYorumcum AI'
-    }
+    author: { '@type': 'Organization', name: 'RüyaYorumcum' },
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden selection:bg-[#fbbf24]/30 selection:text-[#fbbf24] pb-32">
-      
-      <Script
-        id="json-ld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+    <div className="min-h-screen bg-[#020617] text-white font-sans pb-20 pt-28">
+      <Script id="json-ld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      {/* ATMOSFER */}
-      <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
-      <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#4c1d95]/20 blur-[150px] rounded-full pointer-events-none"></div>
+      <main className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        {/* --- SOL SIDEBAR (Sticky) --- */}
+        <aside className="hidden lg:block lg:col-span-3">
+            <div className="sticky top-32 space-y-6">
+                
+                {/* Geri Dön Linki */}
+                <Link href="/sozluk" className="inline-flex items-center gap-2 text-gray-400 hover:text-[#fbbf24] transition-colors text-sm font-medium mb-2 pl-1">
+                    <ArrowLeft className="w-4 h-4" /> Sözlüğe Dön
+                </Link>
 
-      {/* HEADER */}
-      <nav className="sticky top-0 z-40 w-full bg-[#020617]/90 backdrop-blur-xl border-b border-white/5 px-4 md:px-8 py-4 flex items-center justify-between transition-all">
-         <Link href="/sozluk" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group px-3 py-1.5 rounded-full hover:bg-white/5 active:scale-95 border border-transparent hover:border-white/10">
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">Sözlüğe Dön</span>
-         </Link>
-         <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-[#fbbf24]" />
-            <span className="text-xs md:text-sm text-gray-300 font-serif italic">Rüya Sembolleri</span>
-         </div>
-         <div className="w-10"></div>
-      </nav>
+                {/* İçindekiler Menüsü */}
+                <nav className="bg-[#0f172a] rounded-2xl border border-white/5 p-6 shadow-xl">
+                    <h3 className="text-[#fbbf24] font-bold text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-2 border-b border-white/5 pb-3">
+                       <List className="w-4 h-4" /> İÇİNDEKİLER
+                    </h3>
+                    <ul className="space-y-4 text-sm text-gray-400 font-medium">
+                        <li><a href="#genel" className="hover:text-white transition-colors flex items-center gap-3 group"><span className="w-1.5 h-1.5 rounded-full bg-gray-600 group-hover:bg-[#fbbf24] transition-colors"></span> Genel Bakış</a></li>
+                        {isUltimate && (
+                            <>
+                            <li><a href="#islami" className="hover:text-white transition-colors flex items-center gap-3 group"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500/50 group-hover:bg-emerald-500 transition-colors"></span> İslami Tabir (Dini Yorum)</a></li>
+                            <li><a href="#psikolojik" className="hover:text-white transition-colors flex items-center gap-3 group"><span className="w-1.5 h-1.5 rounded-full bg-purple-500/50 group-hover:bg-purple-500 transition-colors"></span> Psikolojik Yorum</a></li>
+                            <li><a href="#senaryolar" className="hover:text-white transition-colors flex items-center gap-3 group"><span className="w-1.5 h-1.5 rounded-full bg-blue-500/50 group-hover:bg-blue-500 transition-colors"></span> Detaylı Durumlar</a></li>
+                            </>
+                        )}
+                    </ul>
+                </nav>
 
-      {/* ANA İÇERİK */}
-      <main className="w-full max-w-3xl mx-auto px-6 py-12 md:py-20 relative z-10">
-         <article>
-            {/* 1. HERO BÖLÜMÜ */}
-            <header className="mb-16 border-b border-white/5 pb-10">
-               <div className="mb-6 flex items-center gap-3">
-                  <span className="w-12 h-12 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center text-[#fbbf24] font-serif font-bold text-2xl shadow-[0_0_15px_rgba(251,191,36,0.1)]">
-                     {item.term.charAt(0)}
-                  </span>
-                  <span className="text-sm text-[#fbbf24] font-bold tracking-[0.2em] uppercase opacity-80">İslami Tabiri</span>
-               </div>
-
-               <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8 leading-[1.1] tracking-tight">
-                  {item.term}
-               </h1>
-               
-               <div className="pl-6 border-l-4 border-[#fbbf24] py-1">
-                  <p className="text-xl text-gray-300 font-light leading-relaxed italic">
-                     {item.description}
-                  </p>
-               </div>
-            </header>
-
-            {/* 2. DİNAMİK İÇERİK BLOKLARI */}
-            <div className="space-y-10">
-                {contentBlocks.map((block, index) => (
-                   <BlockRenderer key={index} block={block} />
-                ))}
-            </div>
-
-            {/* 3. CTA KARTI */}
-            <div className="mt-20 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0f172a] shadow-2xl">
-               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
-               <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-[#fbbf24]/10 to-transparent"></div>
-
-               <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
-                   <div className="max-w-md">
-                       <h3 className="text-2xl font-serif font-bold text-white mb-3">
-                         Bu rüya size özel bir mesaj taşıyor olabilir
-                       </h3>
-                       <p className="text-base text-gray-400 font-light leading-relaxed">
-                         Sözlük anlamları geneldir. Yapay zeka ile rüyanızın size özel gizli mesajını hemen çözün.
-                       </p>
-                   </div>
-                   
-                   <Link 
-                     href="/dashboard"
-                     className="whitespace-nowrap px-8 py-4 rounded-xl bg-[#fbbf24] text-black font-bold text-sm tracking-widest uppercase hover:bg-[#f59e0b] hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-3"
-                   >
-                      <PenLine className="w-5 h-5" /> Rüyamı Yorumla
-                   </Link>
-               </div>
-            </div>
-
-            {/* 4. SIKÇA SORULAN SORULAR (FAQ) - YENİ ÖZELLİK */}
-            <div className="mt-20 border-t border-white/10 pt-12">
-              <h3 className="text-2xl font-serif font-bold text-[#fbbf24] mb-8 flex items-center gap-3">
-                <Sparkles className="w-6 h-6" />
-                Rüyada {item.term} Görmek Hakkında SSS
-              </h3>
-              
-              <div className="grid gap-4">
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-                  <h4 className="font-bold text-white mb-2 text-lg">Rüyada {item.term.toLowerCase()} görmek iyiye mi işarettir?</h4>
-                  <p className="text-gray-400 font-light leading-relaxed">
-                    İslami kaynaklara ve rüya tabirlerine göre {item.term.toLowerCase()}, genellikle rüyayı gören kişinin niyetine ve rüyanın içeriğine göre değişir. Detaylı analiz için sayfamızdaki İslami yorumları inceleyebilirsiniz.
-                  </p>
-                </div>
-
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-                  <h4 className="font-bold text-white mb-2 text-lg">Bu rüyanın psikolojik anlamı nedir?</h4>
-                  <p className="text-gray-400 font-light leading-relaxed">
-                    Modern psikolojide {item.term.toLowerCase()}, bilinçaltınızdaki bastırılmış duyguların, korkuların veya günlük hayattaki arzuların bir yansıması olarak kabul edilir.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* 5. DİĞER POPÜLER RÜYALAR (İÇ LİNKLEME) - YENİ ÖZELLİK */}
-            {relatedDreams && relatedDreams.length > 0 && (
-              <div className="mt-20">
-                <h3 className="text-xl font-bold text-gray-200 mb-6 uppercase tracking-widest text-sm">Bunları da Gördünüz mü?</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {relatedDreams.map((dream) => (
-                    <Link 
-                      key={dream.slug} 
-                      href={`/sozluk/${dream.slug}`}
-                      className="group p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[#fbbf24]/50 transition-all flex flex-col justify-between h-32"
-                    >
-                      <span className="text-[#fbbf24] font-serif font-bold text-lg group-hover:translate-x-1 transition-transform">
-                        {dream.term}
-                      </span>
-                      <div className="flex items-center text-xs text-gray-500 group-hover:text-gray-300">
-                        Tabiri Oku <ChevronRight className="w-3 h-3 ml-1" />
-                      </div>
+                {/* CTA KUTUSU (Analiz Et) */}
+                <div className="relative overflow-hidden rounded-2xl bg-[#1e1b4b]/40 border border-white/10 p-6 text-center group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#fbbf24]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <Sparkles className="w-8 h-8 text-[#fbbf24] mx-auto mb-4" />
+                    <p className="text-xs text-gray-300 mb-6 leading-relaxed">
+                        Bu sembol sizin rüyanızda nasıl göründü? Yapay zeka ile kişisel analizini yap.
+                    </p>
+                    <Link href="/dashboard" className="block w-full py-3 bg-white/5 border border-white/10 hover:bg-[#fbbf24] hover:border-[#fbbf24] text-white hover:text-black font-bold rounded-xl text-xs transition-all uppercase tracking-wider shadow-lg">
+                        ANALİZ ET
                     </Link>
-                  ))}
                 </div>
-              </div>
-            )}
+            </div>
+        </aside>
 
-         </article>
+        {/* --- ORTA İÇERİK --- */}
+        <article className="col-span-1 lg:col-span-9">
+           
+           {/* Mobil Geri Butonu */}
+           <div className="lg:hidden mb-6">
+                <Link href="/sozluk" className="inline-flex items-center gap-2 text-gray-400 hover:text-[#fbbf24] text-sm">
+                    <ArrowLeft className="w-4 h-4" /> Sözlüğe Dön
+                </Link>
+           </div>
+
+           {/* 1. HERO BAŞLIK BÖLÜMÜ */}
+           <header id="genel" className="relative p-8 md:p-12 rounded-[2rem] bg-[#0a0a0a] border border-white/5 overflow-hidden mb-12 shadow-2xl">
+              {/* Arkaplan Glow Efekti */}
+              <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#fbbf24]/10 rounded-full blur-[100px] pointer-events-none"></div>
+              
+              <div className="relative z-10">
+                  <span className="inline-block px-3 py-1 rounded-full bg-[#fbbf24]/10 text-[#fbbf24] text-[10px] font-bold uppercase tracking-[0.2em] mb-6">
+                     RÜYA SÖZLÜĞÜ
+                  </span>
+                  
+                  <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8 leading-tight">
+                     Rüyada <span className="text-[#fbbf24]">{cleanTitle}</span> Görmek
+                  </h1>
+                  
+                  <div className="border-l-2 border-[#fbbf24]/50 pl-6 md:pl-8">
+                      <p className="text-lg md:text-xl text-gray-300 font-light leading-relaxed">
+                         {isUltimate ? ultimateData!.summary : item.description}
+                      </p>
+                  </div>
+              </div>
+           </header>
+
+           {isUltimate && ultimateData ? (
+              <div className="space-y-16">
+                 
+                 {/* 2. İSLAMİ VE PSİKOLOJİK YORUM (Revize: Kutusuz, Alt Alta) */}
+                 <div className="space-y-12">
+                    
+                    {/* İslami Bölüm */}
+                    <section id="islami">
+                        <h2 className="text-2xl font-serif font-bold text-emerald-400 mb-6 flex items-center gap-3">
+                           <BookOpen className="w-6 h-6"/> İslami Tabir (Dini Yorum)
+                        </h2>
+                        {/* Kutu (bg) kaldırıldı, sadece sol çizgi ile vurgu verildi */}
+                        <div className="space-y-8 border-l-2 border-emerald-500/30 pl-6">
+                           {ultimateData.islamic.map((src, i) => (
+                              <div key={i}>
+                                 <p className="text-gray-300 italic mb-2 leading-relaxed text-lg">"{src.text}"</p>
+                                 <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider block">— {src.source}</span>
+                              </div>
+                           ))}
+                        </div>
+                    </section>
+
+                    {/* Psikolojik Bölüm */}
+                    <section id="psikolojik">
+                        <h2 className="text-2xl font-serif font-bold text-purple-400 mb-6 flex items-center gap-3">
+                           <Brain className="w-6 h-6"/> Psikolojik Analiz
+                        </h2>
+                        {/* Kutu (bg) kaldırıldı, sadece sol çizgi ile vurgu verildi */}
+                        <div className="border-l-2 border-purple-500/30 pl-6">
+                           <p className="text-gray-300 leading-relaxed mb-6 text-lg">
+                               {ultimateData.psychological}
+                           </p>
+                           <div className="flex gap-2">
+                               <span className="px-3 py-1 bg-purple-500/10 text-purple-300 rounded text-[10px] font-bold uppercase">BİLİNÇALTI</span>
+                               <span className="px-3 py-1 bg-purple-500/10 text-purple-300 rounded text-[10px] font-bold uppercase">SEMBOLİZM</span>
+                           </div>
+                        </div>
+                    </section>
+                 </div>
+
+                 {/* 3. SENARYOLAR VE ÖRÜMCEK AĞI LİNKLERİ */}
+                 <section id="senaryolar" className="pt-8 border-t border-white/10">
+                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-10 flex items-center gap-3">
+                       <Sparkles className="w-6 h-6 text-[#fbbf24]" />
+                       Farklı Durumlara Göre Tabirler
+                    </h2>
+                    
+                    <div className="space-y-6">
+                       {ultimateData.scenarios.map((scene, i) => (
+                          <div key={i} className="group relative bg-[#0f172a]/50 hover:bg-[#0f172a] border border-white/5 hover:border-[#fbbf24]/20 rounded-2xl p-6 transition-all duration-300">
+                             
+                             {/* Sol Renkli Çizgi (Pozitif/Negatif Durumuna Göre) */}
+                             <div className={`absolute left-0 top-6 bottom-6 w-1 rounded-r-full ${scene.isPositive ? 'bg-emerald-500' : 'bg-[#fbbf24]'}`}></div>
+
+                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pl-4">
+                                <div className="flex-1 space-y-2">
+                                   <div className="flex items-center gap-3">
+                                      <h3 className="text-xl font-bold text-gray-100 group-hover:text-white transition-colors">
+                                         {scene.title}
+                                      </h3>
+                                      {/* Küçük ikon: Pozitif mi Negatif mi? */}
+                                      {scene.isPositive 
+                                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500/50" /> 
+                                        : <AlertTriangle className="w-4 h-4 text-[#fbbf24]/50" />
+                                      }
+                                   </div>
+                                   
+                                   {/* Kısa Açıklama Her Zaman Görünür */}
+                                   <p className="text-gray-400 text-sm leading-relaxed">
+                                      {scene.description}
+                                   </p>
+                                </div>
+
+                                {/* Link Varsa "DETAYLI OKU" Butonu Çıkar */}
+                                {scene.slug && (
+                                   <Link 
+                                     href={`/sozluk/${scene.slug}`}
+                                     className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-lg border border-white/10 bg-white/5 hover:bg-[#fbbf24] hover:border-[#fbbf24] hover:text-black text-xs font-bold text-gray-400 transition-all uppercase tracking-wider"
+                                   >
+                                      DETAYLI OKU <ChevronRight className="w-3 h-3" />
+                                   </Link>
+                                )}
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+                 </section>
+
+              </div>
+           ) : (
+              <LegacyRenderer blocks={contentData as LegacyBlock[]} />
+           )}
+        </article>
       </main>
     </div>
   );
