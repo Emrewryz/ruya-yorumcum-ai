@@ -44,6 +44,7 @@ export default function Navbar() {
     { name: "Anasayfa", href: "/" },
     { name: "Sözlük", href: "/sozluk" },
     { name: "Blog", href: "/blog" },
+    { name: "Paketler", href: "/dashboard/pricing" },
   ];
 
   // Hizmetler Alt Menüsü (YENİ NUMEROLOJİ LİNKİ EKLENDİ)

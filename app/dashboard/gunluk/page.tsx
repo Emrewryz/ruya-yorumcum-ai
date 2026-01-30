@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link"; // Link import edildiğinden emin ol
-import { ArrowLeft, Search, Sparkles, Loader2, Calendar, Star, BookOpen } from "lucide-react";
+import { ArrowLeft, Search, Sparkles, Loader2, Calendar, Star, BookOpen,Layers } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { motion } from "framer-motion";
@@ -80,17 +80,24 @@ export default function JournalPage() {
       
       {/* HEADER */}
       <nav className="sticky top-0 z-30 w-full bg-[#020617]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 mb-8 flex items-center justify-between">
-        <button onClick={() => router.back()} className="p-2 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all border border-white/5">
+        <button onClick={() => router.push('/dashboard')}className="p-2 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all border border-white/5">
           <ArrowLeft className="w-5 h-5 text-gray-300" />
         </button>
         <h1 className="font-serif text-sm md:text-xl tracking-[0.2em] text-[#fbbf24] flex items-center gap-2">
             <BookOpen className="w-4 h-4" /> RÜYA GÜNLÜĞÜ
         </h1>
         <div className="w-9"></div>
+       
       </nav>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-6">
-        
+         <button 
+            onClick={() => router.push('/dashboard/tarot/gecmis')} 
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest hover:bg-indigo-500/20 transition-all"
+        >
+            <Layers className="w-4 h-4" /> 
+            <span className="hidden md:inline">Tarot Geçmişi</span>
+        </button>
         {/* ARAMA ALANI */}
         <div className="mb-8 md:mb-12">
            <div className="relative w-full max-w-md mx-auto group">
@@ -104,9 +111,12 @@ export default function JournalPage() {
                    value={searchTerm}
                    onChange={(e) => setSearchTerm(e.target.value)}
                  />
+                 
               </div>
            </div>
+           
         </div>
+        
 
         {/* --- GRID ALANI (KARTLAR) --- */}
         {loading ? (

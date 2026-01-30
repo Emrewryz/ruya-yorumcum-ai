@@ -8,7 +8,7 @@ import {
   Crown, PenLine, PauseCircle, 
   MessageCircle, Layers, Brain, Lock, Heart, Trash2, 
   Image as ImageIcon, Eye, Loader2, Download, Check, Share2, Palette,
-  Star, ChevronRight, LogOut, RefreshCw
+  Star, ChevronRight, LogOut, RefreshCw,Hash
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { analyzeDream } from "@/app/actions/analyze-dream";
@@ -228,87 +228,146 @@ export default function DashboardPage() {
       <div className="fixed top-0 left-0 w-full h-[500px] bg-gradient-to-b from-[#4c1d95]/20 to-transparent pointer-events-none z-0"></div>
 
      {/* --- SIDEBAR (MASAÜSTÜ) --- */}
-      <aside className="fixed left-0 top-0 bottom-0 z-50 w-20 hidden md:flex flex-col items-center py-8 bg-[#020617]/80 backdrop-blur-xl border-r border-white/5">
-         <div className="mb-10 cursor-pointer" onClick={() => router.push('/')}>
-            <div className="w-10 h-10 rounded-xl bg-[#fbbf24] flex items-center justify-center text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]">
-               <Moon className="w-6 h-6" />
-            </div>
-         </div>
-         
-         <nav className="flex-1 flex flex-col gap-6 w-full px-2">
-            
-            {/* RÜYA BÖLÜMÜ */}
-            <button onClick={clearDashboard} className={`group flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${status !== 'COMPLETED' ? 'text-[#fbbf24] bg-white/5' : 'text-gray-500 hover:text-white'}`}>
-                <div className={`p-2 rounded-lg ${status !== 'COMPLETED' ? 'bg-[#fbbf24]/20' : 'group-hover:bg-white/10'}`}>
-                    <PenLine className="w-5 h-5" />
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider">Yorumla</span>
-            </button>
-            
-            <button onClick={() => router.push('/dashboard/gunluk')} className="group flex flex-col items-center gap-1 p-2 rounded-xl text-gray-500 hover:text-white transition-all">
-                <div className="p-2 rounded-lg group-hover:bg-white/10">
-                    <FileText className="w-5 h-5" />
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider">Arşiv</span>
-            </button>
+    
 
-            <div className="w-full h-px bg-white/10 my-2"></div>
 
-            {/* --- YENİ EKLENEN TAROT BÖLÜMÜ --- */}
-            <button onClick={() => router.push('/dashboard/tarot')} className="group flex flex-col items-center gap-1 p-2 rounded-xl text-gray-500 hover:text-amber-400 transition-all">
-                <div className="p-2 rounded-lg group-hover:bg-amber-500/10">
-                    <Sparkles className="w-5 h-5" />
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider">Tarot</span>
-            </button>
+<aside className="fixed left-0 top-0 bottom-0 z-50 w-20 hidden md:flex flex-col items-center py-8 bg-[#020617]/80 backdrop-blur-xl border-r border-white/5">
+    {/* LOGO */}
+    <div className="mb-10 cursor-pointer" onClick={() => router.push('/')}>
+       <div className="w-10 h-10 rounded-xl bg-[#fbbf24] flex items-center justify-center text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]">
+          <Moon className="w-6 h-6" />
+       </div>
+    </div>
+    
+    <nav className="flex-1 flex flex-col gap-4 w-full px-2 overflow-y-auto no-scrollbar pb-4">
+       
+       {/* --- 1. RÜYA BÖLÜMÜ --- */}
+       <button onClick={clearDashboard} className={`group flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${status !== 'COMPLETED' ? 'text-[#fbbf24] bg-white/5' : 'text-gray-500 hover:text-white'}`}>
+           <div className={`p-2 rounded-lg ${status !== 'COMPLETED' ? 'bg-[#fbbf24]/20' : 'group-hover:bg-white/10'}`}>
+               <PenLine className="w-5 h-5" />
+           </div>
+           <span className="text-[9px] font-bold uppercase tracking-wider">Yorumla</span>
+       </button>
+       
+       <button onClick={() => router.push('/dashboard/gunluk')} className="group flex flex-col items-center gap-1 p-2 rounded-xl text-gray-500 hover:text-white transition-all">
+           <div className="p-2 rounded-lg group-hover:bg-white/10">
+               <FileText className="w-5 h-5" />
+           </div>
+           <span className="text-[9px] font-bold uppercase tracking-wider">Arşiv</span>
+       </button>
 
-            <button onClick={() => router.push('/dashboard/tarot/gecmis')} className="group flex flex-col items-center gap-1 p-2 rounded-xl text-gray-500 hover:text-indigo-400 transition-all">
-                <div className="p-2 rounded-lg group-hover:bg-indigo-500/10">
-                    <Layers className="w-5 h-5" />
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider">Fal Geçmişi</span>
-            </button>
-            {/* ---------------------------------- */}
+      
+       <div className="w-full h-px bg-white/10 my-1"></div>
 
-         </nav>
+       {/* --- 2. MİSTİK ARAÇLAR --- */}
+       
+       {/* TAROT */}
+       <button onClick={() => router.push('/dashboard/tarot')} className="group flex flex-col items-center gap-1 p-2 rounded-xl text-gray-500 hover:text-pink-400 transition-all">
+           <div className="p-2 rounded-lg group-hover:bg-pink-500/10">
+               <Sparkles className="w-5 h-5" />
+           </div>
+           <span className="text-[9px] font-bold uppercase tracking-wider">Tarot</span>
+       </button>
 
-         <div className="mt-auto">
-             <button onClick={() => router.push('/dashboard/settings')} className="group flex flex-col items-center gap-1 p-2 rounded-xl text-gray-500 hover:text-white transition-all">
-                <div className="p-2 rounded-lg group-hover:bg-white/10">
-                    <Settings className="w-5 h-5" />
-                </div>
-            </button>
-         </div>
-      </aside>
+       
 
-      {/* --- ANA İÇERİK --- */}
+       
+
+       {/* --- 3. PREMIUM VE AYARLAR --- */}
+       
+      
+
+       {/* AYARLAR (SETTINGS) - EN SONA EKLENDİ */}
+       <button onClick={() => router.push('/dashboard/settings')} className="group flex flex-col items-center gap-1 p-2 rounded-xl text-gray-500 hover:text-white transition-all">
+           <div className="p-2 rounded-lg group-hover:bg-white/10">
+               <Settings className="w-5 h-5" />
+           </div>
+           <span className="text-[9px] font-bold uppercase tracking-wider">Ayarlar</span>
+       </button>
+
+    </nav>
+</aside>
       <main className="flex-1 flex flex-col relative z-10 w-full min-h-screen md:pl-20">
           <div className="w-full max-w-6xl mx-auto px-4 md:px-12 py-8 flex flex-col min-h-screen">
 
             {/* HEADER */}
-            <header className="flex justify-between items-center mb-10">
-               <div>
-                  <h1 className="font-serif text-3xl md:text-4xl text-white tracking-tight">
-                     {greeting}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fbbf24] to-[#f59e0b]">{userName}</span>
-                  </h1>
-                  <p className="text-gray-400 text-sm mt-2 flex items-center gap-2">
-                     <Sparkles className="w-4 h-4 text-[#fbbf24]" /> 
-                     Bilinçaltın bugün sana ne fısıldadı?
-                  </p>
-               </div>
+{/* ... önceki kodlar ... */}
 
-               {/* Ay Durumu (Tıklanabilir) */}
-               <button 
-                  onClick={() => router.push('/dashboard/ay-takvimi')}
-                  className="hidden md:flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-2 rounded-full backdrop-blur-md hover:bg-white/10 hover:border-[#fbbf24]/50 transition-all group"
-               >
-                  <div className="text-2xl group-hover:scale-110 transition-transform">{currentMoon ? currentMoon.icon : "🌕"}</div>
-                  <div className="flex flex-col items-start">
-                     <span className="text-xs font-bold text-[#fbbf24] uppercase group-hover:text-[#fcd34d] transition-colors">{currentMoon ? currentMoon.phase : "Ay Fazı"}</span>
-                     <span className="text-[10px] text-gray-400">Enerji: {currentMoon ? `%${currentMoon.percentage} Aydınlık` : "Hesaplanıyor"}</span>
-                  </div>
-               </button>
-            </header>
+{/* HEADER */}
+{/* HEADER */}
+<header className="flex justify-between items-center mb-10">
+    <div>
+        <h1 className="font-serif text-3xl md:text-4xl text-white tracking-tight">
+            {greeting}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fbbf24] to-[#f59e0b]">{userName}</span>
+        </h1>
+        <p className="text-gray-400 text-sm mt-2 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#fbbf24]" /> 
+            Bilinçaltın bugün sana ne fısıldadı?
+        </p>
+    </div>
+
+    {/* SAĞ ÜST BUTON GRUBU */}
+    <div className="flex items-center gap-3">
+        
+        {/* --- DİNAMİK PAKET BUTONU --- */}
+        {(() => {
+            const tierStyles = {
+                free: {
+                    label: "Premium'a Geç",
+                    mobileLabel: "Yükselt",
+                    bg: "bg-gradient-to-r from-gray-800 to-gray-700 border border-white/10", // Free için daha sade, premium'a teşvik edici
+                    text: "text-white",
+                    icon: Crown,
+                    animation: "animate-pulse-slow hover:border-[#fbbf24]/50"
+                },
+                pro: {
+                    label: "Pro Üyelik",
+                    mobileLabel: "Pro",
+                    bg: "bg-blue-600", // Mavi (İstediğin gibi)
+                    text: "text-white",
+                    icon: Star,
+                    animation: "hover:bg-blue-500 shadow-lg shadow-blue-900/20"
+                },
+                elite: {
+                    label: "Elite Kahin",
+                    mobileLabel: "Elite",
+                    bg: "bg-[#fbbf24]", // Sarı Sade (İstediğin gibi)
+                    text: "text-black",
+                    icon: Sparkles,
+                    animation: "hover:bg-[#fcd34d] shadow-lg shadow-amber-500/20"
+                }
+            };
+
+            const currentStyle = tierStyles[userTier] || tierStyles.free;
+            const TierIcon = currentStyle.icon;
+
+            return (
+                <button 
+                    onClick={() => router.push('/dashboard/pricing')} 
+                    className={`flex items-center gap-2 px-4 py-2 md:px-6 md:py-2.5 rounded-full ${currentStyle.bg} ${currentStyle.text} font-bold text-xs uppercase tracking-wider transition-all duration-300 hover:scale-105 ${currentStyle.animation}`}
+                >
+                    <TierIcon className="w-4 h-4" />
+                    <span className="hidden md:inline">{currentStyle.label}</span>
+                    <span className="md:hidden">{currentStyle.mobileLabel}</span>
+                </button>
+            );
+        })()}
+        {/* ------------------------------------ */}
+
+        {/* Ay Durumu Butonu */}
+        <button 
+            onClick={() => router.push('/dashboard/ay-takvimi')}
+            className="hidden md:flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-2 rounded-full backdrop-blur-md hover:bg-white/10 hover:border-[#fbbf24]/50 transition-all group"
+        >
+            <div className="text-2xl group-hover:scale-110 transition-transform">{currentMoon ? currentMoon.icon : "🌕"}</div>
+            <div className="flex flex-col items-start">
+                <span className="text-xs font-bold text-[#fbbf24] uppercase group-hover:text-[#fcd34d] transition-colors">{currentMoon ? currentMoon.phase : "Ay Fazı"}</span>
+                <span className="text-[10px] text-gray-400">Enerji: {currentMoon ? `%${currentMoon.percentage} Aydınlık` : "..."}</span>
+            </div>
+        </button>
+
+    </div>
+</header>
 
             {/* --- RÜYA GİRİŞ ALANI (CENTER STAGE) --- */}
             <div className="flex-1 flex flex-col w-full relative transition-all duration-700 mb-12">

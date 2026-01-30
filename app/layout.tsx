@@ -7,6 +7,8 @@ import MobileNav from "@/components/ui/MobileNav";
 import Script from "next/script";
 import CookieConsent from "@/components/CookieConsent"; 
 import NavbarWrapper from "@/components/NavbarWrapper"; 
+import FooterSEOContent from "@/components/FooterSEOContent"; 
+import HideOnDashboard from "@/components/HideOnDashboard"; // <--- GİZLEME BİLEŞENİ
 
 const cinzel = Cinzel({ 
   subsets: ["latin"], 
@@ -21,7 +23,6 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  // --- SEO GÜNCELLEMESİ BAŞLANGIÇ ---
   metadataBase: new URL('https://www.ruyayorumcum.com.tr'),
   alternates: {
     canonical: './',
@@ -35,12 +36,10 @@ export const metadata: Metadata = {
   description: "Rüyalarınızın gizli mesajlarını yapay zeka ile anında çözün. İslami kaynaklar ve modern psikoloji ışığında detaylı, size özel rüya yorumları ve analizleri için tıklayın.",
   manifest: "/manifest.json",
 
-  // --- ICON EKLEMESİ BURAYA YAPILDI ---
   icons: {
     icon: '/icon.png',
-    apple: '/icon.png', // Apple cihazlar için de aynı ikonu kullanır
+    apple: '/icon.png',
   },
-  // -------------------------------------
   
   openGraph: {
     title: 'Rüya Yorumcum AI',
@@ -50,7 +49,6 @@ export const metadata: Metadata = {
     locale: 'tr_TR',
     type: 'website',
   },
-  // --- SEO GÜNCELLEMESİ BİTİŞ ---
 };
 
 export const viewport: Viewport = {
@@ -97,7 +95,7 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* --- DÜZELTME BURADA: NavbarWrapper EKLENDİ --- */}
+        {/* 1. NAVBAR */}
         <NavbarWrapper /> 
 
         {/* 2. İÇERİK ALANI */}
@@ -105,9 +103,13 @@ export default function RootLayout({
           {children}
         </main>
 
-        {/* 3. MASAÜSTÜ FOOTER (Mobilde gizli) */}
+        {/* 3. MASAÜSTÜ FOOTER VE SÖZLÜK BARI (Mobilde gizli) */}
         <div className="hidden md:block">
-          <Footer />
+          {/* Dashboard'da GİZLENECEK Alanlar */}
+          <HideOnDashboard>
+             <FooterSEOContent />
+             <Footer />
+          </HideOnDashboard>
         </div>
 
         {/* 4. MOBİL ALT MENÜ */}
