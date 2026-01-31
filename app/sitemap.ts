@@ -30,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // --- SAYFA LİSTELERİ OLUŞTURMA ---
 
-  // 2. Statik (Sabit) Sayfalar - YENİ SAYFALAR BURAYA EKLENDİ
+  // 2. Statik (Sabit) Sayfalar
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}`,
@@ -51,6 +51,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     // --- YENİ EKLENEN LANDING PAGES ---
+    {
+      url: `${baseUrl}/astroloji`, // YENİ: Astroloji Ana Sayfası
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9, // Yüksek öncelik
+    },
     {
       url: `${baseUrl}/ruya-tabiri`, // Rüya Analizi
       lastModified: new Date(),
@@ -76,7 +82,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/tarot`, // Tarot (Zaten vardı)
+      url: `${baseUrl}/tarot`, // Tarot
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
@@ -89,7 +95,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/dashboard`,
+      url: `${baseUrl}/dashboard`, // Kullanıcı Paneli (Login gerektirir ama indexlenebilir)
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
