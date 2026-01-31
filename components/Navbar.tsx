@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { 
   Moon, Eye, Sparkles, LayoutDashboard, Menu, X, ChevronDown, 
-  Layers, BrainCircuit, Palette, LogOut, Hash // Hash ikonunu ekledik
+  Layers, BrainCircuit, Palette, LogOut, Hash, Compass // Compass ikonunu ekledik
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -39,20 +39,22 @@ export default function Navbar() {
     window.location.reload();
   };
 
-  // Menü Linkleri
+  // Menü Linkleri (Astroloji Eklendi)
   const navLinks = [
     { name: "Anasayfa", href: "/" },
     { name: "Sözlük", href: "/sozluk" },
+    { name: "Astroloji", href: "/astroloji" }, // YENİ LİNK
     { name: "Blog", href: "/blog" },
     { name: "Paketler", href: "/dashboard/pricing" },
   ];
 
-  // Hizmetler Alt Menüsü (YENİ NUMEROLOJİ LİNKİ EKLENDİ)
+  // Hizmetler Alt Menüsü (Astroloji En Üste Eklendi)
   const services = [
+    { name: "Doğum Haritası & Burç", href: "/astroloji", icon: <Compass className="w-4 h-4 text-indigo-400" /> }, // YENİ
     { name: "Rüya Analizi", href: "/ruya-tabiri", icon: <Sparkles className="w-4 h-4 text-[#fbbf24]" /> },
     { name: "Rüya Görselleştirme", href: "/ruya-gorsellestirme", icon: <Palette className="w-4 h-4 text-purple-400" /> },
     { name: "Tarot Falı", href: "/tarot", icon: <Layers className="w-4 h-4 text-pink-400" /> },
-    { name: "Numeroloji", href: "/numeroloji", icon: <Hash className="w-4 h-4 text-amber-500" /> }, // YENİ
+    { name: "Numeroloji", href: "/numeroloji", icon: <Hash className="w-4 h-4 text-amber-500" /> }, 
     { name: "Duygu Analizi", href: "/duygu-analizi", icon: <BrainCircuit className="w-4 h-4 text-emerald-400" /> },
   ];
 

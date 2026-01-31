@@ -1,0 +1,272 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { getDailyHoroscope } from "@/app/actions/daily-horoscope";
+import Sidebar from "@/app/dashboard/Sidebar"; 
+import { 
+  ArrowLeft, Sparkles, Loader2, Star, Heart, 
+  Briefcase, Quote, Zap, Calendar 
+} from "lucide-react"; 
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+
+export default function DailyHoroscopePage() {
+  const supabase = createClient();
+  const router = useRouter();
+  
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [data, setData] = useState<any>(null);
+  const [formattedDate, setFormattedDate] = useState("");
+
+  useEffect(() => {
+    // Tarihi güzel formatta gösterelim (Örn: 14 Ekim 2023)
+    const dateOptions: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' };
+    setFormattedDate(new Date().toLocaleDateString('tr-TR', dateOptions));
+    
+    checkTodayData();
+  }, []);
+
+  // 1. Veritabanı Kontrolü
+  const checkTodayData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Backend ile aynı tarih formatı (Timezone Fix)
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
+
+    const { data: existing } = await supabase
+      .from('daily_horoscopes')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .single();
+
+    if (existing) {
+      setData(existing);
+    }
+    setLoading(false);
+  };
+
+  // 2. Butona basılınca AI çalıştır
+  const handleGenerate = async () => {
+    setGenerating(true);
+    
+    // Yavaşça yukarı kaydır
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const res = await getDailyHoroscope(); 
+    
+    if (res.success) {
+      setData(res.data);
+      toast.success("Yıldızlar haritanızı okudu!");
+    } else {
+      if (res.message?.includes("Pro üye")) {
+          toast.error("Bu detaylı analiz Premium üyelere özeldir.", {
+              action: {
+                  label: "Yükselt",
+                  onClick: () => router.push("/dashboard/pricing")
+              }
+          });
+      } else {
+          toast.error(res.error || "Bir hata oluştu");
+      }
+    }
+    setGenerating(false);
+  };
+
+  // Şans skoruna göre renk belirleme
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-emerald-400 border-emerald-500/50 shadow-emerald-500/20";
+    if (score >= 50) return "text-indigo-400 border-indigo-500/50 shadow-indigo-500/20";
+    return "text-amber-400 border-amber-500/50 shadow-amber-500/20";
+  };
+
+  return (
+    <div className="min-h-screen bg-[#020617] text-white flex pb-20 overflow-hidden font-sans">
+      <Sidebar activeTab="astro" />
+      
+      {/* Arkaplan Efektleri (Noise & Glow) */}
+      <div className="fixed inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none z-0 mix-blend-overlay"></div>
+      <div className="fixed -top-[20%] -left-[10%] w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none z-0 animate-pulse-slow"></div>
+      <div className="fixed top-[40%] -right-[10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none z-0"></div>
+
+      <main className="flex-1 md:pl-24 p-4 md:p-10 relative z-10 w-full flex flex-col items-center">
+         
+         {/* Üst Header */}
+         <div className="max-w-4xl w-full mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <button onClick={() => router.back()} className="flex items-center gap-2 text-indigo-300/60 hover:text-white transition-colors mb-4 text-sm font-medium tracking-wide">
+                    <ArrowLeft className="w-4 h-4" /> Astroloji Merkezi
+                </button>
+                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200 tracking-tight">
+                    Günlük Analiz
+                </h1>
+                <div className="flex items-center gap-2 mt-2 text-indigo-300/50 text-sm">
+                    <Calendar className="w-4 h-4" />
+                    <span>{formattedDate}</span>
+                </div>
+            </div>
+         </div>
+
+         <div className="max-w-4xl w-full min-h-[400px]">
+           <AnimatePresence mode="wait">
+            
+            {loading ? (
+                // LOADING STATE
+                <motion.div 
+                    key="loading"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex flex-col items-center justify-center h-64 w-full"
+                >
+                    <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+                    <p className="text-indigo-300/70 animate-pulse">Veriler yükleniyor...</p>
+                </motion.div>
+
+            ) : data ? (
+                // DATA STATE (SONUÇ KARTI)
+                <motion.div 
+                  key="result"
+                  initial={{ opacity: 0, y: 20, scale: 0.98 }} 
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="relative group"
+                >
+                    {/* Glow Border Effect */}
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[2.5rem] opacity-30 blur md:group-hover:opacity-50 transition duration-1000"></div>
+
+                    <div className="relative rounded-[2.5rem] bg-[#0B0F1F]/90 backdrop-blur-xl border border-white/10 p-6 md:p-12 overflow-hidden">
+                        
+                        {/* İç Dekorasyon */}
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+                        {/* ÜST BÖLÜM: Skor ve Başlık */}
+                        <div className="flex flex-col-reverse md:flex-row md:items-start justify-between gap-6 mb-10 border-b border-white/5 pb-8">
+                            <div className="flex-1">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-4">
+                                    <Sparkles className="w-3 h-3" /> Transit Etkiler Aktif
+                                </div>
+                                <h2 className="text-2xl md:text-3xl font-semibold text-white leading-tight">
+                                    Gökyüzü bugün senin için ne fısıldıyor?
+                                </h2>
+                            </div>
+
+                            {/* Şans Skoru Dairesi */}
+                            <div className="flex flex-col items-center">
+                                <div className={`w-24 h-24 rounded-full border-4 flex items-center justify-center bg-black/20 backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.3)] ${getScoreColor(data.lucky_score)}`}>
+                                    <div className="text-center">
+                                        <span className="text-3xl font-bold block leading-none">{data.lucky_score}</span>
+                                        <span className="text-[10px] uppercase font-bold tracking-widest opacity-70">Puan</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* ANA METİN (General Vibe) */}
+                        <div className="mb-10 relative">
+                            <Quote className="absolute -top-4 -left-2 w-8 h-8 text-indigo-500/20 transform -scale-x-100" />
+                            <p className="text-lg md:text-xl text-gray-200 leading-relaxed pl-6 font-light">
+                                {data.general_vibe}
+                            </p>
+                        </div>
+
+                        {/* DETAY KARTLARI (Grid) */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                          
+                          {/* Aşk Kartı */}
+                          <motion.div 
+                             whileHover={{ scale: 1.02 }}
+                             className="bg-gradient-to-br from-white/5 to-white/0 p-6 rounded-3xl border border-white/5 hover:border-pink-500/30 transition-colors group/card"
+                          >
+                             <div className="flex items-center gap-3 mb-4">
+                                <div className="p-3 rounded-2xl bg-pink-500/20 text-pink-400 group-hover/card:bg-pink-500 group-hover/card:text-white transition-colors">
+                                    <Heart className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Aşk & İlişkiler</h3>
+                             </div>
+                             <p className="text-sm md:text-base text-gray-400 leading-relaxed">
+                                {data.love_focus}
+                             </p>
+                          </motion.div>
+
+                          {/* Kariyer Kartı */}
+                          <motion.div 
+                             whileHover={{ scale: 1.02 }}
+                             className="bg-gradient-to-br from-white/5 to-white/0 p-6 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition-colors group/card"
+                          >
+                             <div className="flex items-center gap-3 mb-4">
+                                <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 group-hover/card:bg-emerald-500 group-hover/card:text-white transition-colors">
+                                    <Briefcase className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Kariyer & Para</h3>
+                             </div>
+                             <p className="text-sm md:text-base text-gray-400 leading-relaxed">
+                                {data.career_focus}
+                             </p>
+                          </motion.div>
+
+                        </div>
+
+                        {/* Footer Notu */}
+                        <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-center text-center">
+                            <p className="text-xs text-indigo-300/40 flex items-center gap-2">
+                                <Zap className="w-3 h-3" /> 
+                                Bu analiz doğum haritanız ve anlık gezegen konumları kullanılarak yapılmıştır.
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+            ) : (
+                // EMPTY STATE (BAŞLANGIÇ EKRANI)
+                <motion.div 
+                    key="empty"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 backdrop-blur-sm p-8 md:p-16 text-center"
+                >
+                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none"></div>
+                    
+                    <div className="relative z-10 flex flex-col items-center max-w-lg mx-auto">
+                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center mb-8 shadow-lg shadow-indigo-500/30 rotate-3">
+                            <Sparkles className="w-12 h-12 text-white" />
+                        </div>
+                        
+                        <h2 className="text-3xl font-bold text-white mb-4">
+                            Bugün Yıldızlar Ne Söylüyor?
+                        </h2>
+                        <p className="text-gray-400 text-lg mb-10 leading-relaxed">
+                            Doğum haritanla şu an gökyüzündeki gezegenlerin dansını analiz edelim. 
+                            <span className="text-indigo-300 block mt-2">Sana özel transit etkileri keşfet.</span>
+                        </p>
+
+                        <button 
+                            onClick={handleGenerate} 
+                            disabled={generating}
+                            className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-black font-bold text-lg rounded-2xl hover:scale-105 transition-all disabled:opacity-70 disabled:scale-100 overflow-hidden"
+                        >
+                            {/* Buton içi animasyonlu gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-200 via-white to-indigo-200 opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
+                            
+                            <span className="relative flex items-center gap-2">
+                                {generating ? <Loader2 className="animate-spin w-5 h-5" /> : <Star className="w-5 h-5 fill-black" />}
+                                {generating ? "Yıldızlar Okunuyor..." : "Ücretsiz Günlük Analiz Al"}
+                            </span>
+                        </button>
+                        
+                        {!generating && (
+                            <p className="mt-6 text-xs text-gray-500">
+                                * Premium üyeler için detaylı gezegen açıları dahildir.
+                            </p>
+                        )}
+                    </div>
+                </motion.div>
+            )}
+           </AnimatePresence>
+         </div>
+
+      </main>
+    </div>
+  );
+}
