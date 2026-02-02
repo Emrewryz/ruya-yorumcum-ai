@@ -19,28 +19,52 @@ export default function Sidebar({ activeTab }: SidebarProps) {
   };
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 z-50 w-20 hidden md:flex flex-col items-center py-8 bg-[#020617]/80 backdrop-blur-xl border-r border-white/5">
-      <Link href="/" className="mb-10">
+    <aside className="
+      fixed z-50 bg-[#020617]/90 backdrop-blur-xl border-white/5
+      
+      /* MOBİL AYARLARI (Alt Menü) */
+      bottom-0 left-0 right-0 w-full h-20 flex flex-row items-center justify-around border-t
+      
+      /* MASAÜSTÜ AYARLARI (Sol Sidebar) */
+      md:top-0 md:bottom-0 md:left-0 md:w-20 md:h-full md:flex-col md:py-8 md:border-r md:border-t-0 md:justify-start
+    ">
+      
+      {/* LOGO - Sadece Masaüstünde Görünür */}
+      <Link href="/" className="hidden md:flex mb-10">
         <div className="w-10 h-10 rounded-xl bg-[#fbbf24] flex items-center justify-center text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]">
           <Moon className="w-6 h-6" />
         </div>
       </Link>
-      <nav className="flex-1 flex flex-col gap-6 w-full px-2">
+
+      {/* MENÜ LİNKLERİ */}
+      <nav className="flex flex-row md:flex-col gap-1 md:gap-6 w-full px-2 justify-around md:justify-start">
+        
         <button onClick={() => router.push('/dashboard')} className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all ${activeTab === 'dream' ? 'text-[#fbbf24] bg-[#fbbf24]/10' : 'text-gray-500 hover:text-white'}`}>
            <PenLine className="w-5 h-5" /><span className="text-[9px] font-bold uppercase tracking-wider">Rüya</span>
         </button>
+        
         <button onClick={() => router.push('/dashboard/astroloji')} className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all ${activeTab === 'astro' ? 'text-[#fbbf24] bg-[#fbbf24]/10' : 'text-gray-500 hover:text-white'}`}>
            <Star className="w-5 h-5" /><span className="text-[9px] font-bold uppercase tracking-wider">Astro</span>
         </button>
+        
         <button onClick={() => router.push('/dashboard/gunluk')} className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all ${activeTab === 'archive' ? 'text-blue-400 bg-blue-400/10' : 'text-gray-500 hover:text-white'}`}>
            <FileText className="w-5 h-5" /><span className="text-[9px] font-bold uppercase tracking-wider">Arşiv</span>
         </button>
-        <div className="w-full h-px bg-white/10 my-2 px-2"></div>
+        
+        {/* Çizgi - Sadece Masaüstü */}
+        <div className="hidden md:block w-full h-px bg-white/10 my-2 px-2"></div>
+        
         <button onClick={() => router.push('/dashboard/settings')} className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all ${activeTab === 'settings' ? 'text-white bg-white/10' : 'text-gray-500 hover:text-white'}`}>
            <Settings className="w-5 h-5" /><span className="text-[9px] font-bold uppercase tracking-wider">Ayarlar</span>
         </button>
+
       </nav>
-      <button onClick={handleSignOut} className="p-3 text-gray-500 hover:text-red-500 transition-colors"><LogOut className="w-5 h-5" /></button>
+
+      {/* ÇIKIŞ BUTONU - Sadece Masaüstünde (Mobilde Ayarlar içinden çıkış yapılır genelde veya yer kalmadığı için gizledim) */}
+      <button onClick={handleSignOut} className="hidden md:block p-3 text-gray-500 hover:text-red-500 transition-colors mt-auto">
+        <LogOut className="w-5 h-5" />
+      </button>
+
     </aside>
   );
 }

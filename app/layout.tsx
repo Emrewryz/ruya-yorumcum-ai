@@ -7,10 +7,7 @@ import MobileNav from "@/components/ui/MobileNav";
 import Script from "next/script";
 import CookieConsent from "@/components/CookieConsent"; 
 import NavbarWrapper from "@/components/NavbarWrapper"; 
-import FooterSEOContent from "@/components/FooterSEOContent"; 
 import HideOnDashboard from "@/components/HideOnDashboard";
-
-// --- YENİ EKLENEN IMPORT ---
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const cinzel = Cinzel({ 
@@ -30,22 +27,17 @@ export const metadata: Metadata = {
   alternates: {
     canonical: './',
   },
-
   title: {
     default: "Rüya Yorumcum AI - İslami ve Psikolojik Rüya Tabirleri",
     template: "%s | Rüya Yorumcum AI", 
   },
-  
   description: "Rüyalarınızın gizli mesajlarını yapay zeka ile çözün. İslami kaynaklar ve modern psikoloji ışığında size özel rüya yorumları.",
-  
   manifest: "/manifest.json",
-
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
     apple: '/icon.png',
   },
-  
   openGraph: {
     title: 'Rüya Yorumcum AI',
     description: 'Rüyalarınızın gizli mesajlarını yapay zeka ile çözün.',
@@ -54,7 +46,6 @@ export const metadata: Metadata = {
     locale: 'tr_TR',
     type: 'website',
   },
-  
   verification: {
     google: 'google-site-verification-kodun-buraya', 
     yandex: 'yandex-verification-kodun',
@@ -129,27 +120,33 @@ export default function RootLayout({
           `}
         </Script>
 
-        <NavbarWrapper /> 
+        {/* 1. ÜST NAVBAR: Dashboard'da gizlenir */}
+        <HideOnDashboard>
+           <NavbarWrapper /> 
+        </HideOnDashboard>
 
         <main className="flex-grow pb-24 md:pb-0">
           {children}
         </main>
 
+        {/* 2. FOOTER: Dashboard'da gizlenir */}
         <div className="hidden md:block">
           <HideOnDashboard>
-             <FooterSEOContent />
              <Footer />
           </HideOnDashboard>
         </div>
 
-        <MobileNav />
+        {/* 3. MOBİL MENÜ: Dashboard'da gizlenir (Çakışmayı önlemek için) */}
+        <HideOnDashboard>
+           <MobileNav />
+        </HideOnDashboard>
+
         <Toaster position="top-center" richColors theme="dark" /> 
         
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
         
         <CookieConsent />
 
-        {/* --- YENİ EKLENEN BİLEŞEN --- */}
         <SpeedInsights />
 
       </body>

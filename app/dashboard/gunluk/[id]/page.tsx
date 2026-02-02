@@ -83,7 +83,7 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
                 .from('tarot_readings')
                 .select('*')
                 .eq('dream_id', current.id)
-                .single(); // Tek bir kayıt bekliyoruz
+                .single(); 
             
             if (tarotData) setTarot(tarotData);
 
@@ -120,12 +120,12 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
   };
 
   const LockedFeature = ({ title }: { title: string }) => (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl p-6 text-center group cursor-pointer transition-all">
-       <div className="p-4 rounded-full bg-white/5 border border-white/10 mb-4 group-hover:bg-white/10 transition-all">
-          <Lock className="w-5 h-5 text-gray-400" />
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl p-4 md:p-6 text-center group cursor-pointer transition-all rounded-2xl md:rounded-[2rem]">
+       <div className="p-3 md:p-4 rounded-full bg-white/5 border border-white/10 mb-3 md:mb-4 group-hover:bg-white/10 transition-all">
+          <Lock className="w-4 h-4 md:w-5 md:h-5 text-gray-400" />
        </div>
-       <h3 className="text-white font-serif text-lg mb-2 tracking-wide">{title}</h3>
-       <button onClick={(e) => { e.stopPropagation(); router.push('/dashboard/pricing'); }} className="px-6 py-2 rounded-full border border-white/20 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all">
+       <h3 className="text-white font-serif text-base md:text-lg mb-2 tracking-wide">{title}</h3>
+       <button onClick={(e) => { e.stopPropagation(); router.push('/dashboard/pricing'); }} className="px-5 py-2 md:px-6 md:py-2 rounded-full border border-white/20 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all">
          Yükselt
        </button>
     </div>
@@ -151,74 +151,77 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
   if (!dream) return <div className="min-h-[100dvh] bg-[#020617] flex items-center justify-center text-red-500">Rüya bulunamadı.</div>;
 
   const currentIndex = allDreams.findIndex(d => d.id === dream.id);
-  
-  // Şanslı sayıları belirle (Tablodan varsa oradan, yoksa AI response'dan)
   const displayNumbers = numerology?.lucky_numbers || dream.ai_response?.lucky_numbers || [];
 
   return (
-    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex justify-center pb-32">
+    // APP FIX: pb-24 (mobilde alt bar için boşluk)
+    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex justify-center pb-24 md:pb-32">
       
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[300px] md:w-[800px] h-[300px] md:h-[800px] bg-purple-900/10 rounded-full blur-[100px] md:blur-[150px] pointer-events-none"></div>
 
-      {/* MOBİL NAVİGASYON */}
-      <div className="fixed bottom-24 left-0 right-0 px-4 flex justify-between items-center z-40 pointer-events-none">
+      {/* MOBİL NAVİGASYON (Alt Barın Üzerinde) */}
+      <div className="fixed bottom-20 md:bottom-24 left-0 right-0 px-4 flex justify-between items-center z-40 pointer-events-none">
          {currentIndex > 0 ? (
-            <button onClick={() => navigateDream('prev')} className="pointer-events-auto p-3 rounded-full bg-[#0f172a]/90 backdrop-blur-xl border border-white/20 shadow-lg active:scale-90 transition-all text-white"><ChevronLeft className="w-6 h-6" /></button>
+            <button onClick={() => navigateDream('prev')} className="pointer-events-auto p-2 md:p-3 rounded-full bg-[#0f172a]/90 backdrop-blur-xl border border-white/20 shadow-lg active:scale-90 transition-all text-white"><ChevronLeft className="w-5 h-5 md:w-6 md:h-6" /></button>
          ) : <div></div>}
          {currentIndex < allDreams.length - 1 ? (
-            <button onClick={() => navigateDream('next')} className="pointer-events-auto p-3 rounded-full bg-[#0f172a]/90 backdrop-blur-xl border border-white/20 shadow-lg active:scale-90 transition-all text-white"><ChevronRight className="w-6 h-6" /></button>
+            <button onClick={() => navigateDream('next')} className="pointer-events-auto p-2 md:p-3 rounded-full bg-[#0f172a]/90 backdrop-blur-xl border border-white/20 shadow-lg active:scale-90 transition-all text-white"><ChevronRight className="w-5 h-5 md:w-6 md:h-6" /></button>
          ) : <div></div>}
       </div>
 
       <main className="w-full max-w-5xl relative z-10">
          
          {/* HEADER */}
-         <nav className="sticky top-0 z-30 w-full bg-[#020617]/90 backdrop-blur-md border-b border-white/5 px-4 py-4 md:py-6 flex justify-between items-center mb-8">
+         <nav className="sticky top-0 z-30 w-full bg-[#020617]/90 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 flex justify-between items-center mb-6 md:mb-8">
             <button onClick={() => router.push('/dashboard/gunluk')} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group p-2 -ml-2 active:scale-95">
                <ArrowLeft className="w-5 h-5" />
-               <span className="text-sm font-bold hidden md:inline tracking-wide">Arşive Dön</span>
+               <span className="text-xs md:text-sm font-bold hidden md:inline tracking-wide">Arşive Dön</span>
             </button>
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+            <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2 bg-white/5 px-3 py-1 md:px-4 md:py-1.5 rounded-full border border-white/5">
                <Calendar className="w-3 h-3" />
                {new Date(dream.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
          </nav>
 
-         <div className="px-4 md:px-8 space-y-8">
+         <div className="px-4 md:px-8 space-y-6 md:space-y-8">
 
-            {/* 1. GÖRSEL STÜDYOSU */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full rounded-[2rem] overflow-hidden bg-[#080808] border border-white/10 group shadow-2xl min-h-[400px]">
-                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+            {/* 1. GÖRSEL STÜDYOSU (MOBİLDE DİKEY) */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full rounded-2xl md:rounded-[2rem] overflow-hidden bg-[#080808] border border-white/10 group shadow-2xl min-h-[400px]">
+                <div className="absolute top-0 right-0 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-violet-600/10 rounded-full blur-[60px] md:blur-[100px] pointer-events-none"></div>
+                
                 <div className="grid md:grid-cols-2 h-full relative z-10">
-                    <div className="p-8 md:p-12 flex flex-col justify-center">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-violet-500/20 text-violet-300"><Palette className="w-5 h-5" /></div>
-                            <span className="text-violet-200/60 text-xs font-bold uppercase tracking-[0.2em]">Rüya Görseli</span>
+                    {/* Metin Alanı - Mobilde Altta */}
+                    <div className="p-6 md:p-12 flex flex-col justify-center order-2 md:order-1">
+                        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                            <div className="p-1.5 md:p-2 rounded-lg bg-violet-500/20 text-violet-300"><Palette className="w-4 h-4 md:w-5 md:h-5" /></div>
+                            <span className="text-violet-200/60 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em]">Rüya Görseli</span>
                         </div>
-                        <h1 className="font-serif text-3xl md:text-4xl text-white mb-4 leading-tight">
+                        <h1 className="font-serif text-2xl md:text-4xl text-white mb-3 md:mb-4 leading-tight">
                             {dream.dream_title || "İsimsiz Rüya"}
                         </h1>
-                        <p className="text-gray-400 mb-8 leading-relaxed text-sm border-l-2 border-violet-500/30 pl-4 italic">
+                        <p className="text-gray-400 mb-6 md:mb-8 leading-relaxed text-xs md:text-sm border-l-2 border-violet-500/30 pl-3 md:pl-4 italic">
                            "{dream.dream_text.substring(0, 150)}..."
                         </p>
                         {hasAccess('pro') && !dream.image_url && (
-                             <button onClick={() => router.push(`/dashboard/gorsel-olustur/${dream.id}`)} className="self-start px-6 py-3 rounded-xl bg-violet-600/20 text-violet-300 border border-violet-500/30 font-bold text-xs uppercase tracking-widest hover:bg-violet-600/30 transition-all flex items-center gap-2">
-                                <ImageIcon className="w-4 h-4" /> Görsel Oluştur
+                             <button onClick={() => router.push(`/dashboard/gorsel-olustur/${dream.id}`)} className="self-start px-5 py-2.5 md:px-6 md:py-3 rounded-xl bg-violet-600/20 text-violet-300 border border-violet-500/30 font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-violet-600/30 transition-all flex items-center gap-2 w-full md:w-auto justify-center">
+                                <ImageIcon className="w-3 h-3 md:w-4 md:h-4" /> Görsel Oluştur
                              </button>
                         )}
                     </div>
-                    <div className="relative h-[300px] md:h-full bg-[#050505] border-t md:border-t-0 md:border-l border-white/10 overflow-hidden">
+                    
+                    {/* Görsel Alanı - Mobilde Üstte */}
+                    <div className="relative h-[250px] md:h-full bg-[#050505] border-b md:border-b-0 md:border-l border-white/10 overflow-hidden order-1 md:order-2">
                         {hasAccess('pro') ? (
                             dream.image_url ? (
                                 <>
                                     <img src={dream.image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                    <button onClick={handleDownloadImage} className="absolute top-4 right-4 p-2 bg-black/50 backdrop-blur-md rounded-full text-white hover:bg-black/70 transition-colors"><Download className="w-4 h-4" /></button>
+                                    <button onClick={handleDownloadImage} className="absolute top-3 right-3 md:top-4 md:right-4 p-2 bg-black/50 backdrop-blur-md rounded-full text-white hover:bg-black/70 transition-colors"><Download className="w-4 h-4" /></button>
                                 </>
                             ) : (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30">
-                                    <ImageIcon className="w-12 h-12 text-gray-600 mb-4" />
-                                    <span className="text-gray-500 text-xs uppercase tracking-widest">Görsel Yok</span>
+                                    <ImageIcon className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mb-3 md:mb-4" />
+                                    <span className="text-gray-500 text-[10px] md:text-xs uppercase tracking-widest">Görsel Yok</span>
                                 </div>
                             )
                         ) : (
@@ -232,44 +235,44 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
             </motion.div>
 
             {/* 2. ANALİZ ÖZETİ */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative p-8 md:p-10 rounded-[2rem] bg-[#0c0a09] border border-white/10 overflow-hidden">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative p-6 md:p-10 rounded-2xl md:rounded-[2rem] bg-[#0c0a09] border border-white/10 overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-[#fbbf24]"></div>
-                <div className="flex items-center gap-3 mb-6">
-                    <Sparkles className="w-5 h-5 text-[#fbbf24]" />
-                    <h3 className="font-serif text-[#fbbf24] text-sm tracking-[0.2em] uppercase font-bold">Rüyanın Özü</h3>
+                <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                    <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-[#fbbf24]" />
+                    <h3 className="font-serif text-[#fbbf24] text-xs md:text-sm tracking-[0.2em] uppercase font-bold">Rüyanın Özü</h3>
                 </div>
-                <p className="text-base md:text-lg leading-relaxed text-gray-300 font-light text-justify">
+                <p className="text-sm md:text-lg leading-relaxed text-gray-300 font-light text-justify">
                     {dream.ai_response?.summary}
                 </p>
             </motion.div>
 
-            {/* 3. PSİKOLOJİK & MANEVİ */}
+            {/* 3. PSİKOLOJİK & MANEVİ (MOBİLDE TEK KOLON) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                <div className="relative p-8 rounded-[2rem] bg-[#0f172a] border border-blue-500/10 hover:border-blue-500/20 transition-all overflow-hidden">
+                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#0f172a] border border-blue-500/10 hover:border-blue-500/20 transition-all overflow-hidden">
                     {!hasAccess('pro') && <LockedFeature title="Psikolojik Derinlik" />}
-                    <h3 className="font-serif text-xl text-blue-400 mb-6 flex items-center gap-3"><Brain className="w-5 h-5" /> Psikolojik Yorum</h3>
-                    <p className={`text-gray-400 leading-relaxed text-sm font-light ${!hasAccess('pro') ? 'blur-sm select-none opacity-50' : ''}`}>
+                    <h3 className="font-serif text-lg md:text-xl text-blue-400 mb-4 md:mb-6 flex items-center gap-3"><Brain className="w-5 h-5" /> Psikolojik Yorum</h3>
+                    <p className={`text-gray-400 leading-relaxed text-xs md:text-sm font-light ${!hasAccess('pro') ? 'blur-sm select-none opacity-50' : ''}`}>
                         {dream.ai_response?.psychological}
                     </p>
                 </div>
-                <div className="relative p-8 rounded-[2rem] bg-[#022c22] border border-emerald-500/10 hover:border-emerald-500/20 transition-all overflow-hidden">
+                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#022c22] border border-emerald-500/10 hover:border-emerald-500/20 transition-all overflow-hidden">
                     {!hasAccess('pro') && <LockedFeature title="Manevi Tabir" />}
-                    <h3 className="font-serif text-xl text-emerald-400 mb-6 flex items-center gap-3"><Moon className="w-5 h-5" /> Manevi İşaretler</h3>
-                    <p className={`text-gray-400 leading-relaxed text-sm font-light ${!hasAccess('pro') ? 'blur-sm select-none opacity-50' : ''}`}>
+                    <h3 className="font-serif text-lg md:text-xl text-emerald-400 mb-4 md:mb-6 flex items-center gap-3"><Moon className="w-5 h-5" /> Manevi İşaretler</h3>
+                    <p className={`text-gray-400 leading-relaxed text-xs md:text-sm font-light ${!hasAccess('pro') ? 'blur-sm select-none opacity-50' : ''}`}>
                         {dream.ai_response?.spiritual}
                     </p>
                 </div>
             </div>
 
-            {/* 4. WIDGET GRID */}
+            {/* 4. WIDGET GRID (MOBİLDE TEK KOLON) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
                 {/* A. DUYGU DURUMU */}
-                <div className="relative p-8 rounded-[2rem] bg-[#080808] border border-white/10 overflow-hidden flex flex-col justify-between min-h-[250px]">
+                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#080808] border border-white/10 overflow-hidden flex flex-col justify-between min-h-[220px] md:min-h-[250px]">
                     <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-rose-600/10 rounded-full blur-[60px] pointer-events-none"></div>
                     <div>
-                        <h4 className="text-gray-500 text-xs uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><Heart className="w-3 h-3" /> Ruh Hali</h4>
-                        <div className="text-3xl font-serif text-rose-400 mb-2">{dream.ai_response?.mood}</div>
+                        <h4 className="text-gray-500 text-[10px] md:text-xs uppercase tracking-[0.2em] mb-3 md:mb-4 flex items-center gap-2"><Heart className="w-3 h-3" /> Ruh Hali</h4>
+                        <div className="text-2xl md:text-3xl font-serif text-rose-400 mb-2">{dream.ai_response?.mood}</div>
                     </div>
                     <div>
                         <div className="flex justify-between text-[10px] text-gray-500 mb-1 uppercase tracking-wider">
@@ -282,14 +285,14 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
                     </div>
                 </div>
 
-                {/* B. ŞANSLI SAYILAR (Numerology tablosundan) */}
-                <div className="relative p-8 rounded-[2rem] bg-[#080808] border border-white/10 overflow-hidden min-h-[250px]">
+                {/* B. ŞANSLI SAYILAR */}
+                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#080808] border border-white/10 overflow-hidden min-h-[220px] md:min-h-[250px]">
                     <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-sky-600/10 rounded-full blur-[60px] pointer-events-none"></div>
-                    <h4 className="text-gray-500 text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-2"><Star className="w-3 h-3" /> İşaretler</h4>
-                    <div className="flex flex-wrap gap-3">
+                    <h4 className="text-gray-500 text-[10px] md:text-xs uppercase tracking-[0.2em] mb-4 md:mb-6 flex items-center gap-2"><Star className="w-3 h-3" /> İşaretler</h4>
+                    <div className="flex flex-wrap gap-2 md:gap-3">
                         {displayNumbers.length > 0 ? (
                             displayNumbers.slice(0, 3).map((num: any, i: number) => (
-                                <div key={i} className="w-12 h-14 rounded-xl bg-[#0f172a] border border-sky-500/20 flex items-center justify-center font-mono text-xl text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.1)]">
+                                <div key={i} className="w-10 h-12 md:w-12 md:h-14 rounded-xl bg-[#0f172a] border border-sky-500/20 flex items-center justify-center font-mono text-lg md:text-xl text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.1)]">
                                     {num}
                                 </div>
                             ))
@@ -299,21 +302,20 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
                     </div>
                 </div>
 
-                {/* C. TAROT (Veritabanından) */}
-                <div className="relative p-8 rounded-[2rem] bg-[#080808] border border-white/10 overflow-hidden min-h-[250px] flex flex-col items-center justify-center text-center">
+                {/* C. TAROT */}
+                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#080808] border border-white/10 overflow-hidden min-h-[220px] md:min-h-[250px] flex flex-col items-center justify-center text-center">
                     {!hasAccess('pro') && <LockedFeature title="Tarot" />}
                     <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-amber-600/10 rounded-full blur-[60px] pointer-events-none"></div>
                     
                     <div className="relative z-10 w-full">
-                        <div className="flex items-center justify-center gap-2 mb-6">
+                        <div className="flex items-center justify-center gap-2 mb-4 md:mb-6">
                             <Layers className="w-3 h-3 text-amber-500" />
-                            <span className="text-gray-500 text-xs uppercase tracking-[0.2em]">Rüya Tarotu</span>
+                            <span className="text-gray-500 text-[10px] md:text-xs uppercase tracking-[0.2em]">Rüya Tarotu</span>
                         </div>
                         
                         <div className="flex flex-col items-center gap-3">
-                            {/* Kart Görseli veya Sembolü */}
                             {tarot ? (
-                                <div className="w-16 h-24 rounded-lg overflow-hidden border border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                                <div className="w-14 h-20 md:w-16 md:h-24 rounded-lg overflow-hidden border border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
                                     {tarot.card_image_url ? (
                                         <img src={tarot.card_image_url} alt="Tarot Card" className="w-full h-full object-cover" />
                                     ) : (
@@ -323,13 +325,13 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
                                     )}
                                 </div>
                             ) : (
-                                <div className="w-16 h-24 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center">
-                                    <span className="text-gray-600 text-2xl opacity-30">?</span>
+                                <div className="w-14 h-20 md:w-16 md:h-24 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center">
+                                    <span className="text-gray-600 text-xl md:text-2xl opacity-30">?</span>
                                 </div>
                             )}
                             
                             <div>
-                                <h3 className="text-amber-400 font-serif text-lg">
+                                <h3 className="text-amber-400 font-serif text-base md:text-lg">
                                     {tarot ? tarot.card_name : "Bakılmadı"}
                                 </h3>
                                 <p className="text-amber-200/40 text-[10px] uppercase tracking-wider line-clamp-1 max-w-[150px] mx-auto">
@@ -343,20 +345,20 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
             </div>
 
             {/* 5. SOHBET BUTONU */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="relative rounded-[2rem] bg-[#0c0a09] border border-white/10 p-8 overflow-hidden group hover:border-orange-500/30 transition-all">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="relative rounded-2xl md:rounded-[2rem] bg-[#0c0a09] border border-white/10 p-6 md:p-8 overflow-hidden group hover:border-orange-500/30 transition-all">
                 {!hasAccess('elite') && <LockedFeature title="Kahin Sohbet" />}
                 <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-orange-600/5 to-transparent"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-start gap-4">
-                        <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg shadow-orange-500/20 hidden md:block">
-                            <MessageCircle className="w-6 h-6 text-white" />
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
+                    <div className="flex items-start gap-3 md:gap-4">
+                        <div className="p-2 md:p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg shadow-orange-500/20 hidden md:block">
+                            <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
                         </div>
                         <div className="text-center md:text-left">
-                            <h3 className="font-serif text-2xl text-white mb-1">Rüya Kahini</h3>
+                            <h3 className="font-serif text-xl md:text-2xl text-white mb-1">Rüya Kahini</h3>
                             <p className="text-gray-400 text-xs md:text-sm">Rüyanızdaki sembolleri yapay zeka ile tartışın.</p>
                         </div>
                     </div>
-                    <button onClick={() => router.push(`/dashboard/sohbet/${dream.id}`)} className="w-full md:w-auto px-8 py-3 rounded-full bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
+                    <button onClick={() => router.push(`/dashboard/sohbet/${dream.id}`)} className="w-full md:w-auto px-6 py-3 rounded-full bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-orange-50 transition-colors flex items-center justify-center gap-2 shadow-lg">
                         Sohbet Et <MessageCircle className="w-4 h-4" />
                     </button>
                 </div>

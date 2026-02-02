@@ -118,15 +118,15 @@ export default function MoodPage() {
   }, [router, supabase]);
 
   return (
-    // APP FIX: min-h-[100dvh] ve pb-24
-    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col pb-32">
+    // APP FIX: min-h-[100dvh] ve pb-24 (mobilde alt bar için boşluk)
+    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col pb-24 md:pb-32">
       
       {/* Arkaplan */}
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
       <div className="fixed top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-600/10 rounded-full blur-[100px] md:blur-[150px] pointer-events-none"></div>
 
       {/* HEADER (Sticky) */}
-      <nav className="sticky top-0 z-30 w-full bg-[#020617]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 mb-8 flex items-center justify-between">
+      <nav className="sticky top-0 z-30 w-full bg-[#020617]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 mb-6 md:mb-8 flex items-center justify-between">
         <button onClick={() => router.back()} className="p-2 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all border border-white/5">
           <ArrowLeft className="w-5 h-5 text-gray-300" />
         </button>
@@ -154,15 +154,15 @@ export default function MoodPage() {
             </div>
          ) : (
             <>
-               {/* 1. Özet Kartları */}
+               {/* 1. Özet Kartları (MOBİLDE TEK KOLON) */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                   {/* Ruhsal Denge */}
                   <motion.div 
                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                     className="p-5 md:p-6 rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-4 md:gap-6"
+                     className="p-5 md:p-6 rounded-2xl md:rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-4 md:gap-6"
                   >
                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent"></div>
-                     <div className="p-3 md:p-4 rounded-full bg-blue-500/20 text-blue-400">
+                     <div className="p-3 md:p-4 rounded-full bg-blue-500/20 text-blue-400 shrink-0">
                         <Activity className="w-6 h-6 md:w-8 md:h-8" />
                      </div>
                      <div>
@@ -174,10 +174,10 @@ export default function MoodPage() {
                   {/* Baskın Frekans */}
                   <motion.div 
                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                     className="p-5 md:p-6 rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-4 md:gap-6"
+                     className="p-5 md:p-6 rounded-2xl md:rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-4 md:gap-6"
                   >
                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent"></div>
-                     <div className="p-3 md:p-4 rounded-full bg-purple-500/20 text-purple-400">
+                     <div className="p-3 md:p-4 rounded-full bg-purple-500/20 text-purple-400 shrink-0">
                         <Zap className="w-6 h-6 md:w-8 md:h-8" />
                      </div>
                      <div>
@@ -193,7 +193,7 @@ export default function MoodPage() {
                   {/* Grafik */}
                   <motion.div 
                      initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
-                     className="md:col-span-1 p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col items-center justify-center relative overflow-hidden"
+                     className="md:col-span-1 p-6 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col items-center justify-center relative overflow-hidden"
                   >
                      <div className="relative w-40 h-40 md:w-48 md:h-48 group">
                         <div className="absolute inset-0 rounded-full blur-2xl opacity-20 bg-white animate-pulse-slow"></div>
@@ -216,7 +216,7 @@ export default function MoodPage() {
                   {/* Liste */}
                   <motion.div 
                      initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}
-                     className="md:col-span-2 p-5 md:p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md"
+                     className="md:col-span-2 p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md"
                   >
                      <div className="flex items-center gap-2 mb-4 md:mb-6 text-gray-400">
                         <PieChart className="w-4 h-4" />
@@ -243,7 +243,7 @@ export default function MoodPage() {
                {/* 3. Kişisel Analiz */}
                <motion.div 
                   initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}
-                  className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-[#1e1b4b] to-[#0f172a] border border-[#8b5cf6]/30 relative overflow-hidden group shadow-lg"
+                  className="p-6 md:p-8 rounded-2xl md:rounded-3xl bg-gradient-to-r from-[#1e1b4b] to-[#0f172a] border border-[#8b5cf6]/30 relative overflow-hidden group shadow-lg"
                >
                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                      <Sparkles className="w-24 h-24 md:w-32 md:h-32 text-[#8b5cf6]" />

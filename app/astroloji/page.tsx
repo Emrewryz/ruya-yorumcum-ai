@@ -89,7 +89,7 @@ export default function AstrologyPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#020617] text-gray-300 font-sans selection:bg-purple-500/30 pb-24">
+    <main className="min-h-screen bg-[#020617] text-gray-300 font-sans selection:bg-purple-500/30 pb-24 md:pb-32 overflow-x-hidden">
       
       <Script
         id="astro-schema"
@@ -98,29 +98,29 @@ export default function AstrologyPage() {
       />
 
       {/* --- HEADER (Minimal & Otoriter) --- */}
-      <header className="relative pt-32 pb-20 border-b border-white/5 bg-[#050a1f] overflow-hidden">
+      <header className="relative pt-24 pb-16 md:pt-32 md:pb-20 border-b border-white/5 bg-[#050a1f] overflow-hidden px-4">
          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10"></div>
          {/* Dekoratif Glow */}
-         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] md:w-[800px] h-[300px] md:h-[500px] bg-purple-900/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none"></div>
 
-         <div className="container mx-auto px-6 max-w-4xl text-center relative z-10">
-             <div className="inline-flex items-center gap-2 mb-6 text-purple-400 font-bold text-xs tracking-[0.2em] uppercase bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
-                <Compass className="w-4 h-4" /> Profesyonel Astroloji Yazılımı
+         <div className="container mx-auto max-w-4xl text-center relative z-10">
+             <div className="inline-flex items-center gap-2 mb-4 md:mb-6 text-purple-400 font-bold text-[10px] md:text-xs tracking-[0.2em] uppercase bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
+                <Compass className="w-3 h-3 md:w-4 md:h-4" /> Profesyonel Astroloji Yazılımı
              </div>
-             <h1 className="font-serif text-4xl md:text-7xl font-bold text-white mb-6 leading-[1.1]">
+             <h1 className="font-serif text-4xl md:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight md:leading-[1.1]">
                 Doğum Haritası ve <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
                    Yükselen Burç Hesaplama
                 </span>
              </h1>
-             <p className="text-lg md:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-10">
+             <p className="text-sm md:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-8 md:mb-10 px-2">
                 Astroloji, bir inanç değil; gökyüzü matematiğidir. NASA efemeris verileriyle gezegenlerin anlık konumunu hesaplayın, 
                 kişiliğinizin DNA'sını çözün. %100 Ücretsiz ve detaylı analiz.
              </p>
              
              <button 
                 onClick={handleStart}
-                className="px-10 py-4 bg-white text-purple-950 font-bold text-lg rounded-full hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 transition-all flex items-center gap-3 mx-auto"
+                className="w-full md:w-auto px-8 md:px-10 py-3.5 md:py-4 bg-white text-purple-950 font-bold text-base md:text-lg rounded-full hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 transition-all flex items-center justify-center gap-3 mx-auto"
              >
                 <Sparkles className="w-5 h-5"/> Haritamı Hemen Hesapla
              </button>
@@ -128,76 +128,80 @@ export default function AstrologyPage() {
       </header>
 
       {/* --- ANA İÇERİK (Makale Formatı) --- */}
-      <article className="container mx-auto px-6 max-w-6xl mt-20 space-y-32">
+      <article className="container mx-auto px-4 md:px-6 max-w-6xl mt-12 md:mt-20 space-y-20 md:space-y-32">
          
          {/* BÖLÜM 1: GÜNLÜK BURÇ NEDİR? (SEO: Günlük Transitler) */}
-         <section className="grid lg:grid-cols-2 gap-16 items-center">
-             <div className="space-y-8">
-                 <h2 className="text-3xl md:text-4xl font-serif font-bold text-white flex items-center gap-3">
-                    <Sun className="w-8 h-8 text-yellow-500" />
+         <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center">
+             <div className="space-y-6 md:space-y-8 order-2 lg:order-1">
+                 <h2 className="text-2xl md:text-4xl font-serif font-bold text-white flex items-center gap-3">
+                    <Sun className="w-6 h-6 md:w-8 md:h-8 text-yellow-500" />
                     Gerçek "Günlük Burç" Nasıl Hesaplanır?
                  </h2>
-                 <div className="prose prose-lg prose-invert text-gray-400 leading-8">
+                 <div className="prose prose-sm md:prose-lg prose-invert text-gray-400 leading-7 md:leading-8">
                     <p>
                         Çoğu astroloji sitesinde okuduğunuz "Koçlar bugün şanslı" gibi yorumlar, sadece Güneş Burcu baz alınarak yazılmış genel ifadelerdir. Buna "Gazete Astrolojisi" denir ve doğruluk payı düşüktür.
                     </p>
+                    
+
+[Image of the solar system with planetary positions]
+
                     <p>
                         <strong>Bilimsel Astroloji</strong> ise "Transit Haritası"na dayanır. Yani; şu an gökyüzünde süzülen <em>Transit Mars</em>'ın, sizin 1990 yılında doğduğunuz andaki <em>Natal Venüs</em>'ünüze yaptığı matematiksel açıyı (Trine, Square, Opposition) hesaplamaktır.
                     </p>
-                    <div className="bg-[#0f172a] p-6 rounded-2xl border-l-4 border-purple-500 my-6">
-                        <h4 className="text-white font-bold mb-2">Rüya Yorumcum Farkı:</h4>
-                        <p className="text-sm">
+                    <div className="bg-[#0f172a] p-5 md:p-6 rounded-2xl border-l-4 border-purple-500 my-4 md:my-6">
+                        <h4 className="text-white font-bold mb-2 text-sm md:text-base">Rüya Yorumcum Farkı:</h4>
+                        <p className="text-xs md:text-sm">
                             Biz fal bakmıyoruz. Algoritmamız, doğum saatiniz ve koordinatlarınızla size özel bir gökyüzü haritası çıkarır. Milyonlarca olasılık arasından, sadece o gün sizi etkileyen gezegen kombinasyonunu yapay zeka ile yorumlar.
                         </p>
                     </div>
                  </div>
-                 <button onClick={handleStart} className="text-purple-400 font-bold flex items-center gap-2 hover:gap-4 transition-all">
+                 <button onClick={handleStart} className="text-purple-400 font-bold flex items-center gap-2 hover:gap-4 transition-all text-sm md:text-base">
                     Bugünkü Özel Transitlerini Gör <ArrowRight className="w-4 h-4"/>
                  </button>
              </div>
              
              {/* Görsel / Grafik Alanı */}
-             <div className="relative group cursor-default">
-                 <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-blue-600/20 rounded-[3rem] blur-3xl group-hover:blur-[100px] transition-all duration-1000"></div>
-                 <div className="relative bg-[#0B0F1F] border border-white/10 rounded-[2rem] p-8 shadow-2xl">
-                     <div className="flex justify-between items-center mb-8 pb-6 border-b border-white/5">
+             <div className="relative group cursor-default order-1 lg:order-2">
+                 <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-blue-600/20 rounded-[2rem] md:rounded-[3rem] blur-3xl group-hover:blur-[100px] transition-all duration-1000"></div>
+                 <div className="relative bg-[#0B0F1F] border border-white/10 rounded-2xl md:rounded-[2rem] p-6 md:p-8 shadow-2xl">
+                     <div className="flex justify-between items-center mb-6 md:mb-8 pb-4 md:pb-6 border-b border-white/5">
                         <div>
-                            <div className="text-xs text-purple-400 font-bold uppercase tracking-widest mb-1">Transit Analizi</div>
-                            <div className="text-2xl font-bold text-white">21 Ekim 2026</div>
+                            <div className="text-[10px] md:text-xs text-purple-400 font-bold uppercase tracking-widest mb-1">Transit Analizi</div>
+                            <div className="text-xl md:text-2xl font-bold text-white">21 Ekim 2026</div>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
-                            <Clock className="w-5 h-5 text-purple-400"/>
+                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                            <Clock className="w-4 h-4 md:w-5 md:h-5 text-purple-400"/>
                         </div>
                      </div>
                      
-                     <div className="space-y-6">
-                        <div className="flex gap-4">
+                     <div className="space-y-4 md:space-y-6">
+                        <div className="flex gap-3 md:gap-4">
                             <div className="flex-col items-center gap-1 hidden sm:flex">
                                 <div className="w-px h-full bg-white/10"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-500 ring-4 ring-[#0B0F1F]"></div>
+                                <div className="w-2.5 h-2.5 rounded-full bg-green-500 ring-4 ring-[#0B0F1F]"></div>
                                 <div className="w-px h-full bg-white/10"></div>
                             </div>
                             <div>
-                                <h4 className="text-green-400 font-bold text-sm mb-1 flex items-center gap-2">
+                                <h4 className="text-green-400 font-bold text-xs md:text-sm mb-1 flex items-center gap-2">
                                     <CheckCircle2 className="w-4 h-4"/> Transit Jüpiter △ Natal Güneş (120°)
                                 </h4>
-                                <p className="text-gray-400 text-sm leading-relaxed">
+                                <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
                                     Bugün şans gezegeni Jüpiter, yaşam enerjinizi temsil eden Güneş'e destek veriyor. İş görüşmeleri, finansal yatırımlar veya yeni başlangıçlar için yılın en verimli günlerinden biri.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex gap-4">
+                        <div className="flex gap-3 md:gap-4">
                             <div className="flex-col items-center gap-1 hidden sm:flex">
                                 <div className="w-px h-full bg-white/10"></div>
-                                <div className="w-3 h-3 rounded-full bg-red-500 ring-4 ring-[#0B0F1F]"></div>
+                                <div className="w-2.5 h-2.5 rounded-full bg-red-500 ring-4 ring-[#0B0F1F]"></div>
                                 <div className="w-px h-full bg-white/10"></div>
                             </div>
                             <div>
-                                <h4 className="text-red-400 font-bold text-sm mb-1 flex items-center gap-2">
+                                <h4 className="text-red-400 font-bold text-xs md:text-sm mb-1 flex items-center gap-2">
                                     <Zap className="w-4 h-4"/> Transit Mars □ Natal Satürn (90°)
                                 </h4>
-                                <p className="text-gray-400 text-sm leading-relaxed">
+                                <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
                                     Otorite figürleriyle gerginlik yaşanabilir. İçinizdeki "harekete geçme" isteği (Mars), dış dünyadaki "engellerle" (Satürn) çarpışıyor. Sabırlı olun.
                                 </p>
                             </div>
@@ -208,52 +212,53 @@ export default function AstrologyPage() {
          </section>
 
          {/* BÖLÜM 2: DOĞUM HARİTASI (SEO: Natal Chart, Yükselen Burç) */}
-         <section className="bg-[#0f172a] rounded-[3rem] p-8 md:p-20 border border-white/5 relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+         <section className="bg-[#0f172a] rounded-2xl md:rounded-[3rem] p-6 md:p-20 border border-white/5 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-48 md:w-96 h-48 md:h-96 bg-indigo-500/10 rounded-full blur-[60px] md:blur-[100px] pointer-events-none"></div>
              
-             <div className="max-w-4xl mx-auto text-center mb-16">
-                 <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-6">
+             <div className="max-w-4xl mx-auto text-center mb-10 md:mb-16">
+                 <h2 className="text-2xl md:text-5xl font-serif font-bold text-white mb-4 md:mb-6">
                     Doğum Haritası: <br/> <span className="text-indigo-400">Ruhunuzun Kullanma Kılavuzu</span>
                  </h2>
-                 <p className="text-gray-400 text-lg leading-relaxed">
+                 
+                 <p className="text-gray-400 text-sm md:text-lg leading-relaxed mt-6">
                     Doğum haritası (Natal Chart), siz ilk nefesinizi aldığınız anda gökyüzünün çekilmiş bir fotoğrafıdır. 
                     Parmak iziniz gibi eşsizdir. İkiz kardeşlerin bile dakikalık doğum farklarıyla haritaları ve kaderleri değişebilir.
                  </p>
              </div>
 
-             <div className="grid md:grid-cols-3 gap-8">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                  {/* Kart 1: Güneş */}
-                 <div className="bg-[#020617] p-8 rounded-3xl border border-white/5 hover:border-yellow-500/30 transition-all group text-center">
-                     <div className="w-16 h-16 mx-auto bg-yellow-500/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                         <Sun className="w-8 h-8 text-yellow-500"/>
+                 <div className="bg-[#020617] p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 hover:border-yellow-500/30 transition-all group text-center">
+                     <div className="w-12 h-12 md:w-16 md:h-16 mx-auto bg-yellow-500/10 rounded-full flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                         <Sun className="w-6 h-6 md:w-8 md:h-8 text-yellow-500"/>
                      </div>
-                     <h3 className="text-xl font-bold text-white mb-3">Güneş Burcu</h3>
-                     <p className="text-sm text-gray-400 leading-relaxed">
+                     <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Güneş Burcu</h3>
+                     <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
                          "Ben Kimim?" sorusunun cevabıdır. Egonuzu, bilinçli kimliğinizi ve yaşam amacınızı temsil eder.
                      </p>
                  </div>
 
                  {/* Kart 2: Yükselen */}
-                 <div className="bg-[#020617] p-8 rounded-3xl border border-white/5 hover:border-purple-500/30 transition-all group text-center relative transform md:-translate-y-8">
-                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                 <div className="bg-[#020617] p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 hover:border-purple-500/30 transition-all group text-center relative md:transform md:-translate-y-8">
+                     <div className="absolute -top-3 md:-top-4 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[9px] md:text-[10px] font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full uppercase tracking-wider">
                          En Önemli
                      </div>
-                     <div className="w-16 h-16 mx-auto bg-purple-500/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                         <Compass className="w-8 h-8 text-purple-500"/>
+                     <div className="w-12 h-12 md:w-16 md:h-16 mx-auto bg-purple-500/10 rounded-full flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                         <Compass className="w-6 h-6 md:w-8 md:h-8 text-purple-500"/>
                      </div>
-                     <h3 className="text-xl font-bold text-white mb-3">Yükselen Burç (ASC)</h3>
-                     <p className="text-sm text-gray-400 leading-relaxed">
+                     <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Yükselen Burç (ASC)</h3>
+                     <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
                          Dış dünyaya taktığınız maskedir. Fiziksel görünüşünüzü, insanlardaki ilk izleniminizi ve hayat yolunuzu çizer.
                      </p>
                  </div>
 
                  {/* Kart 3: Ay */}
-                 <div className="bg-[#020617] p-8 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group text-center">
-                     <div className="w-16 h-16 mx-auto bg-blue-500/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                         <Moon className="w-8 h-8 text-blue-500"/>
+                 <div className="bg-[#020617] p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group text-center">
+                     <div className="w-12 h-12 md:w-16 md:h-16 mx-auto bg-blue-500/10 rounded-full flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                         <Moon className="w-6 h-6 md:w-8 md:h-8 text-blue-500"/>
                      </div>
-                     <h3 className="text-xl font-bold text-white mb-3">Ay Burcu</h3>
-                     <p className="text-sm text-gray-400 leading-relaxed">
+                     <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Ay Burcu</h3>
+                     <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
                          Duygularınız, bilinçaltınız ve annenizle ilişkiniz. Kimseye göstermediğiniz, evdeki halinizdir.
                      </p>
                  </div>
@@ -262,38 +267,39 @@ export default function AstrologyPage() {
 
          {/* BÖLÜM 3: BURÇLAR REHBERİ (Table/Grid) */}
          <section>
-             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-white/5 pb-6 gap-4">
+             <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-12 border-b border-white/5 pb-4 md:pb-6 gap-3 md:gap-4">
                  <div>
-                     <h2 className="text-3xl font-serif font-bold text-white mb-2">Zodyak Çemberi</h2>
-                     <p className="text-gray-400 text-sm">12 Burcun tarihleri, elementleri ve yönetici gezegenleri.</p>
+                     <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-1 md:mb-2">Zodyak Çemberi</h2>
+                     <p className="text-gray-400 text-xs md:text-sm">12 Burcun tarihleri, elementleri ve yönetici gezegenleri.</p>
                  </div>
-                 <button onClick={handleStart} className="text-sm font-bold text-purple-400 hover:text-white transition-colors">
+                 <button onClick={handleStart} className="text-xs md:text-sm font-bold text-purple-400 hover:text-white transition-colors">
                      Kendi Burcunu Hesapla →
                  </button>
              </div>
              
-             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+             {/* MOBİLDE: grid-cols-2, PC: grid-cols-4 */}
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                  {ZODIAC_SIGNS.map((sign) => (
-                     <div key={sign.name} className="group relative p-6 bg-[#0f172a] hover:bg-[#1e293b] rounded-2xl border border-white/5 transition-all overflow-hidden">
-                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-4xl font-serif">
+                     <div key={sign.name} className="group relative p-4 md:p-6 bg-[#0f172a] hover:bg-[#1e293b] rounded-xl md:rounded-2xl border border-white/5 transition-all overflow-hidden">
+                         <div className="absolute top-0 right-0 p-3 md:p-4 opacity-10 group-hover:opacity-20 transition-opacity text-3xl md:text-4xl font-serif">
                              {sign.symbol}
                          </div>
                          
                          <div className="relative z-10">
-                             <div className="flex justify-between items-start mb-4">
-                                 <span className="text-3xl">{sign.symbol}</span>
-                                 <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider ${
+                             <div className="flex justify-between items-start mb-3 md:mb-4">
+                                 <span className="text-2xl md:text-3xl">{sign.symbol}</span>
+                                 <span className={`text-[9px] md:text-[10px] px-1.5 py-0.5 md:px-2 md:py-1 rounded font-bold uppercase tracking-wider ${
                                      sign.element === 'Ateş' ? 'bg-red-500/10 text-red-400' : 
                                      sign.element === 'Su' ? 'bg-blue-500/10 text-blue-400' : 
                                      sign.element === 'Hava' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-green-500/10 text-green-400'
                                  }`}>{sign.element}</span>
                              </div>
                              
-                             <h3 className="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">{sign.name}</h3>
-                             <div className="text-xs text-gray-500 mb-4">{sign.date}</div>
+                             <h3 className="text-base md:text-xl font-bold text-white mb-0.5 md:mb-1 group-hover:text-purple-400 transition-colors">{sign.name}</h3>
+                             <div className="text-[10px] md:text-xs text-gray-500 mb-3 md:mb-4">{sign.date}</div>
                              
-                             <div className="flex items-center gap-2 text-xs text-gray-400 border-t border-white/5 pt-3 mt-auto">
-                                <Globe className="w-3 h-3"/> Yönetici: <span className="text-white">{sign.planet}</span>
+                             <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-gray-400 border-t border-white/5 pt-2 md:pt-3 mt-auto">
+                                 <Globe className="w-2.5 h-2.5 md:w-3 md:h-3"/> Yönetici: <span className="text-white">{sign.planet}</span>
                              </div>
                          </div>
                      </div>
@@ -302,49 +308,49 @@ export default function AstrologyPage() {
          </section>
 
          {/* BÖLÜM 4: SIKÇA SORULAN SORULAR (SEO FAQ) */}
-         <section className="pt-16 border-t border-white/5">
-             <div className="text-center mb-16">
-                 <h2 className="text-3xl font-serif font-bold text-white mb-4">Astroloji Hakkında Merak Edilenler</h2>
-                 <p className="text-gray-400">Doğru bilinen yanlışlar ve teknik detaylar.</p>
+         <section className="pt-10 md:pt-16 border-t border-white/5">
+             <div className="text-center mb-10 md:mb-16">
+                 <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2 md:mb-4">Astroloji Hakkında Merak Edilenler</h2>
+                 <p className="text-sm md:text-base text-gray-400">Doğru bilinen yanlışlar ve teknik detaylar.</p>
              </div>
 
-             <div className="grid md:grid-cols-2 gap-x-12 gap-y-10">
-                 <div className="space-y-3">
-                     <h3 className="text-white font-bold text-lg flex items-start gap-3">
-                         <span className="text-purple-500 mt-1"><HelpCircle className="w-5 h-5"/></span>
+             <div className="grid md:grid-cols-2 gap-x-12 gap-y-8 md:gap-y-10">
+                 <div className="space-y-2 md:space-y-3">
+                     <h3 className="text-white font-bold text-base md:text-lg flex items-start gap-3">
+                         <span className="text-purple-500 mt-1"><HelpCircle className="w-4 h-4 md:w-5 md:h-5"/></span>
                          Doğum saatimi bilmiyorum, harita çıkarabilir miyim?
                      </h3>
-                     <p className="text-gray-400 text-sm leading-relaxed pl-8">
+                     <p className="text-gray-400 text-xs md:text-sm leading-relaxed pl-7 md:pl-8">
                          Doğum saati olmadan "Yükselen Burç" ve "Ev Sistemleri" (House Systems) hesaplanamaz. Sadece Güneş ve Ay burcunuz (eğer o gün burç değiştirmediyse) hesaplanabilir. Kesin bir analiz için tahmini bir saat girmek yerine, aile büyüklerine danışmanız veya profesyonel bir astrologdan "Rektifikasyon" (Saat bulma işlemi) yaptırmanız önerilir.
                      </p>
                  </div>
 
-                 <div className="space-y-3">
-                     <h3 className="text-white font-bold text-lg flex items-start gap-3">
-                         <span className="text-purple-500 mt-1"><HelpCircle className="w-5 h-5"/></span>
+                 <div className="space-y-2 md:space-y-3">
+                     <h3 className="text-white font-bold text-base md:text-lg flex items-start gap-3">
+                         <span className="text-purple-500 mt-1"><HelpCircle className="w-4 h-4 md:w-5 md:h-5"/></span>
                          Burç yorumları ne kadar doğru?
                      </h3>
-                     <p className="text-gray-400 text-sm leading-relaxed pl-8">
+                     <p className="text-gray-400 text-xs md:text-sm leading-relaxed pl-7 md:pl-8">
                          Genel burç yorumları "Cold Reading" denilen genel geçer ifadeler içerebilir. Ancak bizim sistemimiz, sizin **spesifik doğum koordinatlarınıza (Enlem/Boylam)** göre matematiksel bir harita çıkarır. Bu, parmak iziniz kadar size özeldir ve doğruluğu istatistiksel olarak çok daha yüksektir.
                      </p>
                  </div>
 
-                 <div className="space-y-3">
-                     <h3 className="text-white font-bold text-lg flex items-start gap-3">
-                         <span className="text-purple-500 mt-1"><HelpCircle className="w-5 h-5"/></span>
+                 <div className="space-y-2 md:space-y-3">
+                     <h3 className="text-white font-bold text-base md:text-lg flex items-start gap-3">
+                         <span className="text-purple-500 mt-1"><HelpCircle className="w-4 h-4 md:w-5 md:h-5"/></span>
                          Yükselen burç neden 30 yaşından sonra etkili olur?
                      </h3>
-                     <p className="text-gray-400 text-sm leading-relaxed pl-8">
+                     <p className="text-gray-400 text-xs md:text-sm leading-relaxed pl-7 md:pl-8">
                          Bu yaygın bir mittir. Yükselen burç (Ascendant), doğduğunuz andan itibaren dış dünyayla kurduğunuz köprüdür. Çocuklukta, gençlikte ve yaşlılıkta daima etkilidir. Hatta bebeklerin fiziksel görünüşünü bile yükselen burç belirler.
                      </p>
                  </div>
 
-                 <div className="space-y-3">
-                     <h3 className="text-white font-bold text-lg flex items-start gap-3">
-                         <span className="text-purple-500 mt-1"><HelpCircle className="w-5 h-5"/></span>
+                 <div className="space-y-2 md:space-y-3">
+                     <h3 className="text-white font-bold text-base md:text-lg flex items-start gap-3">
+                         <span className="text-purple-500 mt-1"><HelpCircle className="w-4 h-4 md:w-5 md:h-5"/></span>
                          Ay Burcu nedir ve neden önemlidir?
                      </h3>
-                     <p className="text-gray-400 text-sm leading-relaxed pl-8">
+                     <p className="text-gray-400 text-xs md:text-sm leading-relaxed pl-7 md:pl-8">
                          Güneş burcunuz "isteklerinizi", Ay burcunuz ise "ihtiyaçlarınızı" anlatır. Duygusal güvenliğinizi, beslenme şeklinizi ve annenizle olan ilişkinizi Ay burcunuz yönetir. Birini gerçekten tanımak istiyorsanız, Ay burcunu öğrenmelisiniz.
                      </p>
                  </div>
@@ -354,27 +360,27 @@ export default function AstrologyPage() {
       </article>
 
       {/* --- ALT CTA (Harekete Geçirici Mesaj) --- */}
-      <section className="container mx-auto px-6 mt-32">
-          <div className="bg-gradient-to-r from-purple-900 to-indigo-900 rounded-[2.5rem] p-12 md:p-20 text-center relative overflow-hidden group">
+      <section className="container mx-auto px-4 md:px-6 mt-20 md:mt-32">
+          <div className="bg-gradient-to-r from-purple-900 to-indigo-900 rounded-3xl md:rounded-[2.5rem] p-8 md:p-20 text-center relative overflow-hidden group">
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
               {/* Animasyonlu Arkaplan */}
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-[1.5s] pointer-events-none"></div>
 
               <div className="relative z-10 max-w-3xl mx-auto">
-                  <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
+                  <h2 className="text-2xl md:text-5xl font-bold text-white mb-4 md:mb-6">
                       Kendi Yıldız Haritanızı Şimdi Keşfedin
                   </h2>
-                  <p className="text-indigo-200 text-lg mb-10 leading-relaxed">
+                  <p className="text-indigo-200 text-sm md:text-lg mb-8 md:mb-10 leading-relaxed">
                       Potansiyellerinizi, aşk hayatınızı ve kariyer yeteneklerinizi gezegenlerin diliyle okuyun. 
                       Sadece doğum tarihinizi girin, gerisini yapay zekaya bırakın.
                   </p>
                   <button 
                     onClick={handleStart}
-                    className="px-12 py-5 bg-white text-purple-900 font-bold text-lg rounded-full hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] transition-all flex items-center gap-3 mx-auto"
+                    className="w-full md:w-auto px-8 md:px-12 py-4 md:py-5 bg-white text-purple-900 font-bold text-base md:text-lg rounded-full hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] transition-all flex items-center justify-center gap-3 mx-auto"
                   >
                       <Sparkles className="w-5 h-5 text-purple-600"/> Ücretsiz Analiz Başlat
                   </button>
-                  <p className="mt-6 text-xs text-indigo-300 opacity-60">
+                  <p className="mt-4 md:mt-6 text-[10px] md:text-xs text-indigo-300 opacity-60">
                       * Kayıt olmak ücretsizdir. Temel analizler için ücret talep edilmez.
                   </p>
               </div>

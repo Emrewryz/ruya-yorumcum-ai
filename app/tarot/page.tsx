@@ -61,48 +61,49 @@ const schemaData = {
   ]
 };
 
-// --- STİL BİLEŞENLERİ ---
+// --- STİL BİLEŞENLERİ (MOBİL UYUMLU) ---
 const SectionTitle = ({ children, icon }: { children: React.ReactNode, icon: any }) => (
-    <h2 className="flex items-center gap-3 text-2xl md:text-3xl font-serif font-bold text-white mb-6">
-        <span className="p-2 rounded-lg bg-[#fbbf24]/10 text-[#fbbf24]">{icon}</span>
+    <h2 className="flex items-center gap-3 text-xl md:text-3xl font-serif font-bold text-white mb-4 md:mb-6">
+        <span className="p-1.5 md:p-2 rounded-lg bg-[#fbbf24]/10 text-[#fbbf24]">{icon}</span>
         {children}
     </h2>
 );
 
 const ContentBox = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
-    <div className={`bg-[#0f172a]/50 border border-white/5 rounded-3xl p-8 hover:border-[#fbbf24]/20 transition-all h-full ${className}`}>
+    <div className={`bg-[#0f172a]/50 border border-white/5 rounded-2xl md:rounded-3xl p-6 md:p-8 hover:border-[#fbbf24]/20 transition-all h-full ${className}`}>
         {children}
     </div>
 );
 
 export default function TarotPage() {
   return (
-    <main className="min-h-screen bg-[#020617] text-gray-300 selection:bg-[#fbbf24] selection:text-black font-sans leading-relaxed">
+    <main className="min-h-screen bg-[#020617] text-gray-300 selection:bg-[#fbbf24] selection:text-black font-sans leading-relaxed overflow-x-hidden">
       
       {/* Schema Injection */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }} />
 
       {/* ====================================================================================
-          BÖLÜM 1: HERO (H1 ANAHTAR KELİME ENTEGRASYONU)
+          BÖLÜM 1: HERO (MOBİL İÇİN PT VE BOŞLUKLAR DÜZENLENDİ)
       ==================================================================================== */}
-      <section id="hero-top" className="relative pt-32 pb-12 px-4 overflow-hidden min-h-[90vh] flex flex-col justify-center">
-         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none" />
+      <section id="hero-top" className="relative pt-24 md:pt-32 pb-12 px-4 overflow-hidden min-h-[85vh] md:min-h-[90vh] flex flex-col justify-center">
+         {/* Arkaplan Efekti - Mobilde küçültüldü */}
+         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] md:w-[800px] h-[300px] md:h-[800px] bg-purple-900/10 rounded-full blur-[80px] md:blur-[120px] pointer-events-none" />
          
          <div className="container mx-auto relative z-10">
-            <div className="text-center mb-8 max-w-4xl mx-auto">
+            <div className="text-center mb-8 max-w-4xl mx-auto px-2">
                 <h1 className="font-serif text-3xl md:text-5xl lg:text-6xl font-bold mb-4 text-white leading-tight">
-                   <span className="block text-xl md:text-2xl font-sans font-normal text-[#fbbf24] mb-2 tracking-widest uppercase">
+                   <span className="block text-sm md:text-2xl font-sans font-normal text-[#fbbf24] mb-2 tracking-widest uppercase">
                        Yapay Zeka Destekli
                    </span>
                    Ücretsiz 3 Kart Tarot Falı Bak
                 </h1>
-                <p className="text-base md:text-lg text-gray-400 max-w-2xl mx-auto">
+                <p className="text-sm md:text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
                    Aklındaki soruya odaklan. İster genel gelecek, ister <strong>tarot aşk falı 3 kart</strong> açılımı için niyet et. Yapay zeka, seçtiğin kartların gizli mesajını senin için çözsün.
                 </p>
             </div>
 
             {/* İNTERAKTİF TAROT MODÜLÜ */}
-            <div className="max-w-4xl mx-auto mb-12">
+            <div className="max-w-4xl mx-auto mb-8 md:mb-12 w-full">
                <TarotLandingClient />
             </div>
 
@@ -114,83 +115,85 @@ export default function TarotPage() {
       </section>
 
       {/* ====================================================================================
-          BÖLÜM 2: GÜVEN VE İSTATİSTİK
+          BÖLÜM 2: GÜVEN VE İSTATİSTİK (MOBİLDE SIKIŞMAMASI İÇİN DÜZENLENDİ)
       ==================================================================================== */}
-      <div className="border-y border-white/5 bg-[#020617]/50 py-8">
-          <div className="container mx-auto flex flex-wrap justify-center gap-12 text-center">
-              <div>
-                  <div className="text-3xl font-bold text-white font-serif">150K+</div>
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">Bakılan Fal</div>
+      <div className="border-y border-white/5 bg-[#020617]/50 py-6 md:py-8">
+          <div className="container mx-auto flex flex-wrap justify-center gap-8 md:gap-12 text-center px-4">
+              <div className="flex-1 min-w-[100px]">
+                  <div className="text-2xl md:text-3xl font-bold text-white font-serif">150K+</div>
+                  <div className="text-[9px] md:text-[10px] uppercase tracking-wider text-gray-500 mt-1">Bakılan Fal</div>
               </div>
-              <div>
-                  <div className="text-3xl font-bold text-white font-serif">%98</div>
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">Pozitif Geri Dönüş</div>
+              <div className="flex-1 min-w-[100px]">
+                  <div className="text-2xl md:text-3xl font-bold text-white font-serif">%98</div>
+                  <div className="text-[9px] md:text-[10px] uppercase tracking-wider text-gray-500 mt-1">Pozitif Geri Dönüş</div>
               </div>
-              <div>
-                  <div className="text-3xl font-bold text-white font-serif">AI</div>
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">Nöral Analiz</div>
+              <div className="flex-1 min-w-[100px]">
+                  <div className="text-2xl md:text-3xl font-bold text-white font-serif">AI</div>
+                  <div className="text-[9px] md:text-[10px] uppercase tracking-wider text-gray-500 mt-1">Nöral Analiz</div>
               </div>
           </div>
       </div>
 
       {/* ====================================================================================
-          BÖLÜM 3: ANA SEO İÇERİĞİ (KEYWORDS BURADA YEDİRİLDİ)
+          BÖLÜM 3: ANA SEO İÇERİĞİ
       ==================================================================================== */}
-      <article className="bg-[#050a1f] py-20 px-4">
-         <div className="container mx-auto max-w-6xl space-y-20">
+      <article className="bg-[#050a1f] py-12 md:py-20 px-4">
+         <div className="container mx-auto max-w-6xl space-y-12 md:space-y-20">
 
-            {/* BLOK 1: TAROT NEDİR & 3 KART VURGUSU */}
-            <section className="grid md:grid-cols-2 gap-12 items-center">
-                <div>
-                    <SectionTitle icon={<Compass className="w-6 h-6"/>}>Neden 3 Kart Tarot Falı?</SectionTitle>
-                    <div className="space-y-4 text-gray-300 leading-relaxed">
+            {/* BLOK 1: TAROT NEDİR */}
+            <section className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                <div className="order-2 md:order-1">
+                    <SectionTitle icon={<Compass className="w-5 h-5 md:w-6 md:h-6"/>}>Neden 3 Kart Tarot Falı?</SectionTitle>
+                    <div className="space-y-4 text-gray-300 leading-relaxed text-sm md:text-base">
                         <p>
-                            <strong>3 kart tarot falı bak</strong> işlemi, karmaşık açılımlara (Kelt Haçı gibi) göre çok daha net ve nokta atışı sonuçlar verir. Bu yöntemde seçilen her kart, zamanın belirli bir dilimini temsil eder.
+                            <strong>3 kart tarot falı bak</strong> işlemi, karmaşık açılımlara göre çok daha net ve nokta atışı sonuçlar verir. Bu yöntemde seçilen her kart, zamanın belirli bir dilimini temsil eder.
                         </p>
                         <p>
                             Yapay zeka sistemimiz, seçtiğiniz kartların (Büyük Arkana ve Küçük Arkana) enerjisini birleştirerek size özel bir hikaye oluşturur. Sıradan fal sitelerindeki gibi hazır metinler değil, tamamen sizin enerjinize özel bir <strong>tarot yorumu</strong> alırsınız.
                         </p>
-                        <div className="flex gap-4 mt-6">
-                            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm">
+                        
+                        {/* Mobil için Grid Yapısı */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+                            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs md:text-sm text-center sm:text-left">
                                 <span className="block text-[#fbbf24] font-bold">1. Kart</span> Geçmiş
                             </div>
-                            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm">
+                            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs md:text-sm text-center sm:text-left">
                                 <span className="block text-[#fbbf24] font-bold">2. Kart</span> Şimdi
                             </div>
-                            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm">
+                            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs md:text-sm text-center sm:text-left">
                                 <span className="block text-[#fbbf24] font-bold">3. Kart</span> Gelecek
                             </div>
                         </div>
                     </div>
                 </div>
-                {/* Sağ Taraf - Görsel veya Dekoratif Kutu */}
-                <div className="relative h-[300px] rounded-3xl overflow-hidden border border-white/10 group">
+                {/* Sağ Taraf - Görsel */}
+                <div className="order-1 md:order-2 relative h-[200px] md:h-[300px] rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 group">
                     <img 
                         src="/images/tarot-seo-cover.jpg" 
                         alt="3 Kart Tarot Falı Masası" 
                         className="w-full h-full object-cover opacity-70 group-hover:scale-110 transition-transform duration-700" 
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#050a1f] to-transparent"></div>
-                    <div className="absolute bottom-6 left-6 right-6">
-                        <p className="font-serif text-xl text-white italic">"Geçmişin gölgesi, geleceğin ışığını belirler."</p>
+                    <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6">
+                        <p className="font-serif text-lg md:text-xl text-white italic text-center md:text-left">"Geçmişin gölgesi, geleceğin ışığını belirler."</p>
                     </div>
                 </div>
             </section>
 
-            {/* BLOK 2: ÖZEL AÇILIM TÜRLERİ (AŞK FALI BURADA GÜÇLENDİRİLDİ) */}
+            {/* BLOK 2: ÖZEL AÇILIM TÜRLERİ */}
             <section>
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-4">Hangi Falı Bakmalısın?</h2>
-                    <p className="text-gray-400">Niyetine en uygun açılımı seç, kartların rehberliğine güven.</p>
+                <div className="text-center mb-8 md:mb-12 px-2">
+                    <h2 className="text-2xl md:text-4xl font-serif font-bold text-white mb-3 md:mb-4">Hangi Falı Bakmalısın?</h2>
+                    <p className="text-sm md:text-base text-gray-400">Niyetine en uygun açılımı seç, kartların rehberliğine güven.</p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-6">
-                    {/* AŞK FALI KUTUSU (KEYWORD ODAKLI) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
+                    {/* AŞK FALI KUTUSU */}
                     <ContentBox className="bg-gradient-to-b from-[#0f172a] to-rose-900/10 border-rose-500/20 hover:border-rose-500/50">
-                        <Heart className="w-10 h-10 text-rose-500 mb-6"/>
-                        <h3 className="text-xl font-bold text-white mb-3">Tarot Aşk Falı 3 Kart</h3>
-                        <p className="text-sm mb-4 text-gray-300">
-                            İlişkiler karmaşıktır, kartlar ise nettir. <strong>Tarot aşk falı 3 kart</strong> açılımı ile partnerinizin gerçek hislerini, ilişkinin şu anki enerjisini ve olası geleceğini öğrenin.
+                        <Heart className="w-8 h-8 md:w-10 md:h-10 text-rose-500 mb-4 md:mb-6"/>
+                        <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Tarot Aşk Falı 3 Kart</h3>
+                        <p className="text-xs md:text-sm mb-4 text-gray-300">
+                            İlişkiler karmaşıktır, kartlar ise nettir. <strong>Tarot aşk falı 3 kart</strong> açılımı ile partnerinizin gerçek hislerini ve ilişkinin geleceğini öğrenin.
                         </p>
                         <ul className="text-xs space-y-2 text-gray-400">
                             <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> O beni seviyor mu?</li>
@@ -201,9 +204,9 @@ export default function TarotPage() {
 
                     {/* KARİYER VE PARA */}
                     <ContentBox>
-                        <Layers className="w-10 h-10 text-[#fbbf24] mb-6"/>
-                        <h3 className="text-xl font-bold text-white mb-3">Kariyer ve Para Falı</h3>
-                        <p className="text-sm mb-4 text-gray-300">
+                        <Layers className="w-8 h-8 md:w-10 md:h-10 text-[#fbbf24] mb-4 md:mb-6"/>
+                        <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Kariyer ve Para Falı</h3>
+                        <p className="text-xs md:text-sm mb-4 text-gray-300">
                             İş hayatındaki belirsizlikler için 3 kart açılımı yapın. Terfi, yeni iş veya maddi kazanç kapılarını aralayın.
                         </p>
                         <ul className="text-xs space-y-2 text-gray-400">
@@ -214,9 +217,9 @@ export default function TarotPage() {
 
                     {/* EVET HAYIR / TEK KART */}
                     <ContentBox>
-                        <Star className="w-10 h-10 text-purple-400 mb-6"/>
-                        <h3 className="text-xl font-bold text-white mb-3">Tek Kart Tarot (Günlük)</h3>
-                        <p className="text-sm mb-4 text-gray-300">
+                        <Star className="w-8 h-8 md:w-10 md:h-10 text-purple-400 mb-4 md:mb-6"/>
+                        <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Tek Kart Tarot (Günlük)</h3>
+                        <p className="text-xs md:text-sm mb-4 text-gray-300">
                             Hızlı cevaplar için <strong>tek kart tarot</strong> seçin. "Bugün beni ne bekliyor?" veya net bir Evet/Hayır sorusu için idealdir.
                         </p>
                         <ul className="text-xs space-y-2 text-gray-400">
@@ -227,30 +230,31 @@ export default function TarotPage() {
                 </div>
             </section>
 
-            {/* BLOK 3: DETAYLI SEO MAKALEDİ (GİZLİ SİLAH) */}
-            <section className="border-t border-white/5 pt-12">
-                 <div className="grid md:grid-cols-2 gap-12">
+            {/* BLOK 3: DETAYLI SEO MAKALEDİ */}
+            <section className="border-t border-white/5 pt-8 md:pt-12">
+                 <div className="grid md:grid-cols-2 gap-8 md:gap-12">
                     <div>
-                        <SectionTitle icon={<BookOpen className="w-6 h-6"/>}>Tarot Kart Anlamları</SectionTitle>
-                        <p className="mb-6 text-gray-400">
+                        <SectionTitle icon={<BookOpen className="w-5 h-5 md:w-6 md:h-6"/>}>Tarot Kart Anlamları</SectionTitle>
+                        <p className="mb-6 text-sm md:text-base text-gray-400">
                             Tarot destesi toplam 78 karttan oluşur. Bu kartlar, insan hayatının evrelerini, psikolojik arketipleri ve günlük olayları sembolize eder.
                         </p>
-                        <div className="space-y-6">
+
+                        <div className="space-y-4 md:space-y-6">
                             <div className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
-                                <div className="w-12 h-12 rounded-full bg-purple-900/20 flex items-center justify-center text-purple-400 font-bold border border-purple-500/20 shrink-0">22</div>
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-900/20 flex items-center justify-center text-purple-400 font-bold border border-purple-500/20 shrink-0 text-sm md:text-base">22</div>
                                 <div>
-                                    <h4 className="text-white font-bold mb-1">Büyük Arkana (Major Arcana)</h4>
-                                    <p className="text-sm text-gray-400 leading-relaxed">
-                                        Ruhun yolculuğunu temsil eder. <em>Deli, Büyücü, İmparatoriçe, Ölüm, Şeytan, Kule</em> gibi kartlar buradadır. Hayatınızdaki büyük karmik dersleri ve dönüm noktalarını gösterir.
+                                    <h4 className="text-white font-bold mb-1 text-sm md:text-base">Büyük Arkana (Major Arcana)</h4>
+                                    <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
+                                        Ruhun yolculuğunu temsil eder. <em>Deli, Büyücü, İmparatoriçe, Ölüm, Şeytan</em> gibi kartlar buradadır.
                                     </p>
                                 </div>
                             </div>
                             <div className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
-                                <div className="w-12 h-12 rounded-full bg-blue-900/20 flex items-center justify-center text-blue-400 font-bold border border-blue-500/20 shrink-0">56</div>
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-900/20 flex items-center justify-center text-blue-400 font-bold border border-blue-500/20 shrink-0 text-sm md:text-base">56</div>
                                 <div>
-                                    <h4 className="text-white font-bold mb-1">Küçük Arkana (Minor Arcana)</h4>
-                                    <p className="text-sm text-gray-400 leading-relaxed">
-                                        Günlük olayları anlatır. 4 elemente ayrılır: <strong>Değnekler</strong> (Ateş/Tutku), <strong>Kupalar</strong> (Su/Aşk), <strong>Kılıçlar</strong> (Hava/Zihin) ve <strong>Tılsımlar</strong> (Toprak/Para).
+                                    <h4 className="text-white font-bold mb-1 text-sm md:text-base">Küçük Arkana (Minor Arcana)</h4>
+                                    <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
+                                        Günlük olayları anlatır. 4 elemente ayrılır: <strong>Değnekler</strong>, <strong>Kupalar</strong>, <strong>Kılıçlar</strong> ve <strong>Tılsımlar</strong>.
                                     </p>
                                 </div>
                             </div>
@@ -258,17 +262,17 @@ export default function TarotPage() {
                     </div>
                     
                     {/* SEO Metni Devamı */}
-                    <div className="prose prose-invert prose-lg max-w-none text-gray-400 pt-2">
-                        <h3 className="text-white font-serif text-xl mb-4">Aşk Hayatında 3 Kartın Önemi</h3>
-                        <p>
+                    <div className="prose prose-invert prose-lg max-w-none text-gray-400 pt-2 text-sm md:text-base leading-relaxed">
+                        <h3 className="text-white font-serif text-lg md:text-xl mb-3 md:mb-4">Aşk Hayatında 3 Kartın Önemi</h3>
+                        <p className="mb-4">
                             Birçok kullanıcı <strong>tarot aşk falı 3 kart</strong> yöntemini tercih eder çünkü ilişkiler "dün, bugün ve yarın" ekseninde yaşanır.
                         </p>
-                        <ul className="list-none pl-0 space-y-2 text-sm">
+                        <ul className="list-none pl-0 space-y-2 text-xs md:text-sm">
                             <li className="flex items-center gap-2"><span className="text-[#fbbf24]">✓</span> <strong>1. Kart:</strong> İlişkinin köklerini ve geçmiş travmaları gösterir.</li>
                             <li className="flex items-center gap-2"><span className="text-[#fbbf24]">✓</span> <strong>2. Kart:</strong> Şu anki tutkuyu, sorunları veya bağları gösterir.</li>
                             <li className="flex items-center gap-2"><span className="text-[#fbbf24]">✓</span> <strong>3. Kart:</strong> Bu enerjiyle devam edilirse ilişkinin nereye gideceğini söyler.</li>
                         </ul>
-                        <p className="mt-4 text-sm">
+                        <p className="mt-4 text-xs md:text-sm">
                             İster <em>Kılıçların Onlusu</em> gibi zorlu bir kart, ister <em>Güneş</em> gibi müjdeli bir kart çıksın; Rüya Yorumcum AI size bu sembollerin hayatınızdaki pratik karşılığını anlatır.
                         </p>
                     </div>
@@ -277,22 +281,22 @@ export default function TarotPage() {
 
             {/* BLOK 4: SIKÇA SORULAN SORULAR */}
             <section className="max-w-3xl mx-auto">
-                <div className="text-center mb-10">
-                    <h3 className="text-2xl font-serif font-bold text-white">Merak Edilenler</h3>
+                <div className="text-center mb-8 md:mb-10">
+                    <h3 className="text-xl md:text-2xl font-serif font-bold text-white">Merak Edilenler</h3>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                     {[
                         { q: "3 Kart Tarot falı ne kadar doğru?", a: "Kartların enerjisi evrenseldir. Sitemizdeki yapay zeka, kartların kombinasyonlarını milyonlarca veriyle analiz ettiği için yorumlar %90'ın üzerinde isabetli ve kişiye özeldir." },
                         { q: "Tarot aşk falı için hangi kartları seçmeliyim?", a: "Özel bir kart seçmenize gerek yok. Niyetinizi 'aşk hayatım' üzerine odaklayıp desteden rastgele 3 kart seçmeniz yeterlidir. Enerjiniz doğru kartları bulacaktır." },
                         { q: "Ücretsiz tarot falı bakabilir miyim?", a: "Evet, Rüya Yorumcum AI üzerinden her gün ücretsiz olarak 3 kart veya tek kart tarot açılımı yapabilirsiniz." },
                         { q: "Ters gelen kartların anlamı nedir?", a: "Ters kartlar genellikle o kartın enerjisinin bloke olduğunu, içselleştirildiğini veya zıttına döndüğünü işaret eder. Yapay zekamız ters kartları da yorumlar." },
                     ].map((faq, i) => (
-                        <details key={i} className="group bg-white/5 border border-white/5 rounded-2xl p-6 cursor-pointer open:bg-white/10 transition-all">
-                            <summary className="font-bold text-white flex justify-between list-none items-center">
+                        <details key={i} className="group bg-white/5 border border-white/5 rounded-xl md:rounded-2xl p-4 md:p-6 cursor-pointer open:bg-white/10 transition-all">
+                            <summary className="font-bold text-white flex justify-between list-none items-center text-sm md:text-base">
                                 {faq.q}
-                                <span className="group-open:rotate-180 transition-transform text-[#fbbf24]">▼</span>
+                                <span className="group-open:rotate-180 transition-transform text-[#fbbf24] ml-2">▼</span>
                             </summary>
-                            <p className="mt-4 text-gray-400 leading-relaxed text-sm">
+                            <p className="mt-3 md:mt-4 text-gray-400 leading-relaxed text-xs md:text-sm">
                                 {faq.a}
                             </p>
                         </details>
@@ -301,11 +305,11 @@ export default function TarotPage() {
             </section>
 
             {/* CTA */}
-            <div className="text-center py-8">
-                <h3 className="text-2xl font-bold text-white mb-6">Kartlar Senin İçin Hazır</h3>
+            <div className="text-center py-6 md:py-8">
+                <h3 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">Kartlar Senin İçin Hazır</h3>
                 <a 
                     href="#hero-top"
-                    className="inline-flex items-center gap-3 px-10 py-4 rounded-full bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_30px_rgba(251,191,36,0.3)]"
+                    className="w-full sm:w-auto inline-flex justify-center items-center gap-3 px-8 md:px-10 py-3 md:py-4 rounded-full bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black font-bold text-base md:text-lg hover:scale-105 transition-transform shadow-[0_0_30px_rgba(251,191,36,0.3)]"
                 >
                     <Flame className="w-5 h-5"/> Ücretsiz Falını Bak
                 </a>

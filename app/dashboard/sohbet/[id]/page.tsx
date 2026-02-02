@@ -3,9 +3,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Send, Sparkles, User, Loader2 ,Bot} from "lucide-react";
+import { ArrowLeft, Send, Sparkles, User, Loader2, Bot } from "lucide-react";
 import { sendChatMessage } from "@/app/actions/chat-actions";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface Message {
   id?: string;
@@ -45,7 +45,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     fetchHistory();
   }, [params.id, supabase]);
 
-  // Otomatik Scroll (Her mesajda en alta kaydır)
+  // Otomatik Scroll
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -57,20 +57,16 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     setInput("");
     setLoading(true);
 
-    // Haptik titreşim (Mobil destekliyorsa)
     if (navigator.vibrate) navigator.vibrate(10);
 
-    // Optimistik Update (Hemen ekranda göster)
     const tempMsg: Message = { role: 'user', content: userMsg };
     setMessages(prev => [...prev, tempMsg]);
 
-    // Backend'e Gönder
     try {
       const result = await sendChatMessage(params.id, userMsg);
       if (result.success && result.message) {
         setMessages(prev => [...prev, { role: 'assistant', content: result.message }]);
       } else {
-        // Hata durumunda son mesajı geri alabilir veya hata gösterebilirsin
         alert("Bağlantı koptu, tekrar dene.");
       }
     } catch (error) {
@@ -81,34 +77,34 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   };
 
   return (
-    // APP FIX: fixed inset-0 z-[60] ile bu sayfa alt menünün (MobileNav) ÜZERİNE biner. Tam odak modu.
-    // APP FIX: h-[100dvh] mobil tarayıcı çubuğu sorununu çözer.
-    <div className="fixed inset-0 z-[60] flex flex-col bg-[#020617] text-white overflow-hidden">
+    // APP FIX: fixed inset-0 z-[60] ile bu sayfa alt menünün (MobileNav) ÜZERİNE biner.
+    // h-[100dvh] mobil tarayıcı çubuğu sorununu çözer.
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#020617] text-white overflow-hidden h-[100dvh]">
       
       {/* --- HEADER (SABİT) --- */}
-      <header className="px-4 py-3 border-b border-white/10 bg-[#0f172a]/90 backdrop-blur-md flex items-center gap-3 z-20 shadow-lg">
+      <header className="px-4 py-3 border-b border-white/10 bg-[#0f172a]/90 backdrop-blur-md flex items-center gap-3 z-20 shadow-lg shrink-0">
         <button 
           onClick={() => router.back()} 
           className="p-2 -ml-2 rounded-full hover:bg-white/10 active:scale-90 transition-all"
         >
           <ArrowLeft className="w-6 h-6 text-gray-300" />
         </button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
              <h1 className="font-serif font-bold text-base text-[#fbbf24]">Kahin</h1>
              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
           </div>
-          <p className="text-xs text-gray-400 truncate max-w-[200px]">{dreamTitle || "Rüya Analizi Sohbeti"}</p>
+          <p className="text-xs text-gray-400 truncate">{dreamTitle || "Rüya Analizi Sohbeti"}</p>
         </div>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#fbbf24] to-orange-500 flex items-center justify-center shadow-[0_0_15px_rgba(251,191,36,0.4)]">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fbbf24] to-orange-500 flex items-center justify-center shadow-[0_0_15px_rgba(251,191,36,0.4)] shrink-0">
            <Bot className="w-5 h-5 text-black" />
         </div>
       </header>
 
       {/* --- MESAJ ALANI --- */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 relative scroll-smooth">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 relative scroll-smooth overscroll-contain">
         {/* Arka Plan Gürültüsü */}
-        <div className="fixed inset-0 pointer-events-none bg-noise opacity-50 z-0"></div>
+        <div className="fixed inset-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 z-0"></div>
         
         {initialLoading ? (
            <div className="flex flex-col items-center justify-center pt-32 gap-4">
@@ -145,7 +141,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                    {msg.content}
                 </div>
 
-                {/* Kullanıcı İkonu (Opsiyonel, mobilde yer kaplamasın diye gizlenebilir ama şık durur) */}
+                {/* Kullanıcı İkonu */}
                 {msg.role === 'user' && (
                   <div className="w-8 h-8 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center shrink-0 border border-[#8b5cf6]/30 mt-1">
                     <User className="w-4 h-4 text-[#8b5cf6]" />
@@ -157,7 +153,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
         
         {/* Yazıyor Animasyonu */}
         {loading && (
-           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 justify-start">
+           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 justify-start relative z-10">
               <div className="w-8 h-8 rounded-full bg-[#fbbf24]/20 flex items-center justify-center shrink-0">
                  <Sparkles className="w-4 h-4 text-[#fbbf24]" />
               </div>
@@ -172,28 +168,31 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* --- INPUT ALANI (SABİT ALT) --- */}
-      <div className="p-3 md:p-4 bg-[#020617] border-t border-white/10 relative z-20 pb-safe">
+      {/* pb-safe: iPhone X alt çizgisi için güvenli alan bırakır */}
+      <div className="p-3 md:p-4 bg-[#020617] border-t border-white/10 relative z-20 shrink-0 safe-area-pb">
          <form 
            onSubmit={(e) => { e.preventDefault(); handleSend(); }}
            className="flex items-center gap-2 max-w-4xl mx-auto"
          >
-            {/* APP FIX: text-base (Mobilde zoom'u engeller) */}
+            {/* TEXT-BASE: iOS zoom engellemek için kritik */}
             <input 
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Mesajını yaz..." 
-              className="flex-1 bg-[#1e293b] text-white text-base placeholder-gray-500 rounded-full px-5 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-[#fbbf24]/50 border border-white/5 transition-all shadow-inner"
+              className="flex-1 bg-[#1e293b] text-white text-base placeholder-gray-500 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[#fbbf24]/50 border border-white/5 transition-all shadow-inner"
             />
-            {/* APP FIX: active:scale-90 (Dokunma hissi) */}
+            
             <button 
               type="submit" 
               disabled={loading || !input.trim()}
-              className="p-3 md:p-4 rounded-full bg-[#fbbf24] text-black hover:scale-105 active:scale-90 transition-all disabled:opacity-50 disabled:grayscale shadow-[0_0_15px_rgba(251,191,36,0.4)]"
+              className="p-3 rounded-full bg-[#fbbf24] text-black hover:scale-105 active:scale-90 transition-all disabled:opacity-50 disabled:grayscale shadow-[0_0_15px_rgba(251,191,36,0.4)]"
             >
-               <Send className="w-5 h-5 md:w-6 md:h-6" />
+               <Send className="w-5 h-5" />
             </button>
          </form>
+         {/* iPhone Alt Çizgi Boşluğu */}
+         <div className="h-4 md:h-0 w-full"></div> 
       </div>
 
     </div>

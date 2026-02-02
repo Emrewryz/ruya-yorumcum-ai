@@ -9,7 +9,6 @@ import { analyzeDream } from "@/app/actions/analyze-dream";
 import { getMoonPhase } from "@/utils/moon"; 
 import { toast } from "sonner"; 
 
-// DOSYA YOLLARINI GÖRSELE GÖRE DÜZELTTİM
 import Sidebar from "./Sidebar"; 
 import DreamInputSection from "./DreamInputSection";
 import AnalysisResults from "./AnalysisResults";
@@ -81,38 +80,52 @@ export default function DashboardPage() {
   const userTier = profile?.subscription_tier?.toLowerCase() || 'free';
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white font-sans relative flex">
-      {/* SİDEBAR BURADA */}
+    <div className="min-h-screen bg-[#020617] text-white font-sans relative flex flex-col md:flex-row">
+      
+      {/* SİDEBAR (Masaüstü için solda sabit, mobil için layout.tsx içinde MobileNav var varsayıyoruz) */}
       <Sidebar activeTab="dream" />
 
-      {/* İÇERİK ALANI - md:pl-20 sidebar için boşluk bırakır */}
-      <main className="flex-1 relative z-10 w-full min-h-screen md:pl-20">
-        <div className="max-w-6xl mx-auto px-4 md:px-12 py-8 flex flex-col min-h-screen">
+      {/* İÇERİK ALANI */}
+      {/* MOBİL: pb-24 (Alt menü payı), pl-0 */}
+      {/* DESKTOP: pb-0, pl-20 (Sidebar payı) */}
+      <main className="flex-1 relative z-10 w-full min-h-screen md:pl-20 pb-24 md:pb-0">
+        <div className="max-w-6xl mx-auto px-4 md:px-12 py-6 md:py-8 flex flex-col min-h-screen">
           
           {/* HEADER */}
-          <header className="flex justify-between items-center mb-10">
+          <header className="flex justify-between items-start md:items-center mb-6 md:mb-10">
             <div>
-              <h1 className="font-serif text-3xl md:text-4xl text-white tracking-tight">
-                {greeting}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fbbf24] to-[#f59e0b]">{profile?.full_name?.split(' ')[0] || "Yolcu"}</span>
+              {/* MOBİL: Text-2xl, DESKTOP: Text-4xl */}
+              <h1 className="font-serif text-2xl md:text-4xl text-white tracking-tight leading-tight">
+                {greeting}, <br className="md:hidden" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fbbf24] to-[#f59e0b]">
+                    {profile?.full_name?.split(' ')[0] || "Yolcu"}
+                </span>
               </h1>
-              <p className="text-gray-400 text-sm mt-2 flex items-center gap-2"><Sparkles className="w-4 h-4 text-[#fbbf24]" /> Bilinçaltın bugün ne fısıldadı?</p>
+              <p className="text-gray-400 text-xs md:text-sm mt-1 md:mt-2 flex items-center gap-2">
+                <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-[#fbbf24]" /> Bilinçaltın bugün ne fısıldadı?
+              </p>
             </div>
             
-            <div className="flex items-center gap-3">
-               <button onClick={() => router.push('/dashboard/pricing')} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all font-bold text-xs uppercase">
-                 <Crown className="w-4 h-4 text-[#fbbf24]" /> {userTier}
+            <div className="flex items-center gap-2 md:gap-3">
+               {/* Tier Badge */}
+               <button onClick={() => router.push('/dashboard/pricing')} className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all font-bold text-[10px] md:text-xs uppercase whitespace-nowrap">
+                 <Crown className="w-3 h-3 md:w-4 md:h-4 text-[#fbbf24]" /> {userTier}
                </button>
                
-               {/* AY BUTONU - TIKLANABİLİR VE ESKİSİ GİBİ */}
+               {/* AY BUTONU - MOBİL UYUMLU */}
+               {/* Mobilde: Sadece İkon | Masaüstünde: Detaylı */}
                <button 
-                  onClick={() => router.push('/dashboard/ay-takvimi')}
-                  className="hidden md:flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-2 rounded-full backdrop-blur-md hover:bg-white/10 hover:border-[#fbbf24]/50 transition-all group"
+                 onClick={() => router.push('/dashboard/ay-takvimi')}
+                 className="flex items-center gap-0 md:gap-4 bg-white/5 border border-white/10 p-2 md:px-5 md:py-2 rounded-full backdrop-blur-md hover:bg-white/10 hover:border-[#fbbf24]/50 transition-all group"
                >
-                  <div className="text-2xl group-hover:scale-110 transition-transform">{currentMoon?.icon || "🌕"}</div>
-                  <div className="flex flex-col items-start text-left">
-                      <span className="text-xs font-bold text-[#fbbf24] uppercase group-hover:text-[#fcd34d] transition-colors">{currentMoon?.phase || "Ay Fazı"}</span>
-                      <span className="text-[10px] text-gray-400">Enerji: %{currentMoon?.percentage || "..."}</span>
-                  </div>
+                 <div className="text-lg md:text-2xl group-hover:scale-110 transition-transform">
+                    {currentMoon?.icon || "🌕"}
+                 </div>
+                 {/* Sadece masaüstünde görünen metin */}
+                 <div className="hidden md:flex flex-col items-start text-left">
+                     <span className="text-xs font-bold text-[#fbbf24] uppercase group-hover:text-[#fcd34d] transition-colors">{currentMoon?.phase || "Ay Fazı"}</span>
+                     <span className="text-[10px] text-gray-400">Enerji: %{currentMoon?.percentage || "..."}</span>
+                 </div>
                </button>
             </div>
           </header>
