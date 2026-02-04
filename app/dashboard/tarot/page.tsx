@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Sparkles, RefreshCcw, Layers, Star, Heart, Moon, Lock, Info, Play, X, Zap } from "lucide-react";
+import { ArrowLeft, Sparkles, RefreshCcw, Layers, Star, Heart, Moon, Lock, Info, Zap } from "lucide-react";
 import { TAROT_DECK } from "@/utils/tarot-deck";
 import { readTarot } from "@/app/actions/read-tarot";
 import { createClient } from "@/utils/supabase/client";
-import { toast } from "sonner"; // Toast bildirimi için
+import { toast } from "sonner";
 
 // --- TASARIM KONFİGÜRASYONU ---
 const SPREAD_CONFIG = [
@@ -75,6 +75,7 @@ const SPREAD_CONFIG = [
 
 export default function TarotPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   
   // --- STATE ---
@@ -86,18 +87,81 @@ export default function TarotPage() {
   const [readingResult, setReadingResult] = useState<any>(null);
   const [latestDream, setLatestDream] = useState<any>(null);
 
+  // --- 1. MİSAFİR FALINI YAKALAMA VE İŞLEME ---
+  useEffect(() => {
+    const processGuestReading = async () => {
+      const pendingData = localStorage.getItem('pending_tarot_reading');
+      
+      if (pendingData) {
+        try {
+          const parsedData = JSON.parse(pendingData);
+          
+          setPhase('reading');
+          
+          const targetSpread = SPREAD_CONFIG.find(s => s.id === 'three_card') || SPREAD_CONFIG[1];
+          setSelectedSpread(targetSpread);
+          setIntention(parsedData.question);
+
+          const guestCardNames = parsedData.cards.map((c: any) => c.name);
+          
+          const selectedCardsData = parsedData.cards.map((guestCard: any) => 
+            TAROT_DECK.find(master => master.id === guestCard.id) || guestCard
+          );
+
+          // --- DÜZELTME BURADA YAPILDI: null yerine undefined ---
+          const result = await readTarot(parsedData.question, guestCardNames, 'three_card', undefined);
+
+          if (result.success) {
+            setReadingResult({ ...result.data, selectedCardsData });
+            setPhase('result');
+            toast.success("Misafir falınız tamamlandı! (Hesabınıza işlendi)");
+            
+            localStorage.removeItem('pending_tarot_reading');
+          } else {
+             handleApiError(result);
+          }
+
+        } catch (error) {
+          console.error("Misafir falı işleme hatası", error);
+          setPhase('type_select');
+        }
+      }
+    };
+
+    processGuestReading();
+  }, []);
+
+  // --- MEVCUT RÜYA KONTROLÜ ---
   useEffect(() => {
     const checkLatestDream = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const { data } = await supabase.from('dreams').select('id, title, description, ai_response').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).single();
-        // ai_response.summary veya description hangisi varsa onu al
         if (data) setLatestDream({ ...data, description: data.description || data.ai_response?.summary });
       } catch (e) {}
     };
     checkLatestDream();
   }, [supabase]);
+
+  // --- YARDIMCI FONKSİYONLAR ---
+  const handleApiError = (result: any) => {
+    const errCode = result.code || result.error;
+    if (errCode === 'NO_CREDIT') {
+        toast.error("Yetersiz Bakiye", {
+            description: "Analiz için krediniz yetersiz.",
+            action: {
+                label: "Yükle",
+                onClick: () => router.push("/dashboard/pricing")
+            },
+            duration: 5000
+        });
+        setPhase('type_select');
+    } else {
+        toast.error(result.message || "Bir hata oluştu.");
+        setPhase('type_select');
+    }
+  };
 
   const shuffleDeck = () => {
     const array = Array.from({ length: 78 }, (_, i) => i);
@@ -145,7 +209,6 @@ export default function TarotPage() {
     }
   };
 
-  // --- KRİTİK DEĞİŞİKLİK BURADA: getReading Fonksiyonu ---
   const getReading = async (indices: number[]) => {
     setPhase('reading');
     const selectedCardsData = indices.map(idx => TAROT_DECK[deckOrder[idx] % TAROT_DECK.length]);
@@ -164,23 +227,7 @@ export default function TarotPage() {
             setPhase('result');
             toast.success("Kartlar yorumlandı! (2 Kredi düştü)");
         } else {
-            // Hata Yönetimi ve Kredi Kontrolü
-            const errCode = (result as any).code || (result as any).error; // Backend'den gelen hata kodu
-
-            if (errCode === 'NO_CREDIT') {
-                toast.error("Yetersiz Bakiye", {
-                    description: "Tarot falı için 2 krediye ihtiyacınız var.",
-                    action: {
-                        label: "Yükle",
-                        onClick: () => router.push("/dashboard/pricing")
-                    },
-                    duration: 5000
-                });
-                setPhase('type_select'); // Seçim ekranına geri at
-            } else {
-                toast.error(result.message || "Kozmik bir hata oluştu.");
-                setPhase('type_select');
-            }
+            handleApiError(result);
         }
     } catch (e) {
         toast.error("Bağlantı hatası.");
@@ -195,6 +242,7 @@ export default function TarotPage() {
       setReadingResult(null);
   };
 
+  // --- RENDER ---
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-200 relative flex flex-col font-sans selection:bg-white/20 transition-colors duration-1000 pb-20 md:pb-0`}>
       
@@ -267,7 +315,7 @@ export default function TarotPage() {
                                 {spread.id === 'dream_special' && latestDream && (
                                      <div className="relative z-10 mt-3 md:mt-4 w-full pt-3 md:pt-4 border-t border-white/5">
                                          <p className="text-[10px] md:text-xs text-amber-500/80 truncate flex items-center gap-2">
-                                             <Info className="w-3 h-3" /> Son: {latestDream.title}
+                                              <Info className="w-3 h-3" /> Son: {latestDream.title}
                                          </p>
                                      </div>
                                 )}
@@ -337,10 +385,10 @@ export default function TarotPage() {
         {phase === 'spread' && (
             <div className="w-full flex flex-col items-center h-full">
                 <div className="text-center py-4 md:py-6">
-                     <h3 className="text-xl md:text-2xl font-serif text-white">Kartlarını Seç</h3>
-                     <p className={`text-xs md:text-sm mt-1 md:mt-2 font-mono ${selectedSpread.theme.accent}`}>
-                        {selectedIndices.length} / {selectedSpread.count} SEÇİLDİ
-                     </p>
+                      <h3 className="text-xl md:text-2xl font-serif text-white">Kartlarını Seç</h3>
+                      <p className={`text-xs md:text-sm mt-1 md:mt-2 font-mono ${selectedSpread.theme.accent}`}>
+                         {selectedIndices.length} / {selectedSpread.count} SEÇİLDİ
+                      </p>
                 </div>
 
                 <div className="w-full max-w-6xl flex justify-center perspective-1000">
@@ -435,9 +483,10 @@ export default function TarotPage() {
                     </h2>
                     
                     <div className="prose prose-invert max-w-none text-slate-300 leading-7 md:leading-9 font-light text-sm md:text-lg space-y-4 md:space-y-6 text-justify">
-                        {readingResult.interpretation.split('\n').map((paragraph: string, i: number) => (
-                            paragraph.trim() && <p key={i}>{paragraph}</p>
-                        ))}
+                       {/* Değişiklik: (readingResult.interpretation || "") şeklinde paranteze aldık */}
+{(readingResult.interpretation || "").split('\n').map((paragraph: string, i: number) => (
+    paragraph.trim() && <p key={i}>{paragraph}</p>
+))}
                     </div>
 
                     <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-white/5 grid md:grid-cols-2 gap-6 md:gap-8">
@@ -474,4 +523,4 @@ export default function TarotPage() {
       </main>
     </div>
   );
-}
+}   

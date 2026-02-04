@@ -68,7 +68,7 @@ export async function POST(request: Request) {
         creditsToAdd = 5;
         packageName = 'Başlangıç Paketi';
     } 
-    else if (paidAmount >= 125 && paidAmount <= 135) { // 129 TL
+    else if (paidAmount >= 85&& paidAmount <= 95) { // 129 TL
         creditsToAdd = 20;
         packageName = 'Keşif Paketi';
     }

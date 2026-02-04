@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { 
-  BookOpen, Brain, Moon, Star, Layers, 
-  CheckCircle2, Fingerprint, Sparkles, Scroll,
-  ArrowRight, ShieldCheck, Search, Lightbulb,
-  FileText
+  BookOpen, Brain, Moon, Fingerprint, 
+  CheckCircle2, Lightbulb
 } from "lucide-react";
 import Script from "next/script";
+import HeroDreamInput from "../ruya-tabiri/HeroDreamInput"; // Import yolunu kontrol et
 
 // --- SEO SCHEMA ---
 const detailedSchema = {
@@ -38,98 +37,57 @@ export default function RuyaTabiriPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(detailedSchema) }}
       />
 
-      {/* --- 1. HERO SECTION --- */}
-      {/* MOBİL: pt-28 (daha az boşluk), pb-12 */}
-      <section className="relative pt-28 md:pt-32 pb-12 md:pb-20 px-4 md:px-6 overflow-hidden">
-        {/* Arkaplan Efektleri - Mobilde küçültüldü */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[300px] md:w-[1000px] md:h-[600px] bg-[#fbbf24]/5 rounded-[100%] blur-[80px] md:blur-[120px] pointer-events-none"></div>
+      {/* --- 1. HERO SECTION (YENİLENMİŞ MERKEZİ TASARIM) --- */}
+      <section className="relative pt-24 md:pt-32 pb-16 px-4 md:px-6 overflow-hidden">
+        
+        {/* Arkaplan Efektleri */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-[#fbbf24]/10 rounded-[100%] blur-[100px] pointer-events-none"></div>
 
-        <div className="container mx-auto max-w-6xl relative z-10">
+        <div className="container mx-auto max-w-5xl relative z-10 flex flex-col items-center text-center">
           
-          <div className="flex flex-col lg:flex-row items-center gap-10 md:gap-16">
-            
-             {/* SAĞ (MOBİLDE ÜSTTE): METİN */}
-             {/* Mobilde sıralamayı değiştirdik: Metin önce, görsel sonra */}
-             <div className="w-full lg:w-1/2 order-1 lg:order-2 space-y-6 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 text-[#fbbf24] font-bold text-xs md:text-sm uppercase tracking-widest justify-center lg:justify-start">
+            {/* ÜST METİN ALANI */}
+            <div className="space-y-6 max-w-3xl mx-auto mb-8">
+                <div className="inline-flex items-center gap-2 text-[#fbbf24] font-bold text-xs md:text-sm uppercase tracking-widest bg-[#fbbf24]/10 px-4 py-2 rounded-full border border-[#fbbf24]/20">
                    <Lightbulb className="w-4 h-4" /> Rüya Tabirinde Yeni Dönem
                 </div>
                 
-                {/* MOBİL: Text-4xl, TABLET: Text-6xl */}
-                <h1 className="font-serif text-4xl lg:text-6xl font-bold leading-tight">
+                <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
                    Geleneksel Tabirleri <br />
-                   <span className="text-gray-500">Yapay Zeka ile</span> <br />
+                   <span className="bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">Yapay Zeka ile</span> <br />
                    Yeniden Keşfedin.
                 </h1>
                 
-                <p className="text-gray-400 text-base md:text-lg leading-relaxed px-2 lg:px-0">
-                   Rüyalarınız sadece rastgele görüntüler değildir; bilinçaltınızın en derin mesajlarıdır. Platformumuz, <strong>Diyanet rüya tabirleri</strong> külliyatını ve modern <strong>psikanaliz</strong> yöntemlerini birleştirerek size %100 kişisel bir yol haritası sunar.
+                <p className="text-gray-400 text-base md:text-xl leading-relaxed max-w-2xl mx-auto">
+                   Rüyalarınız sadece rastgele görüntüler değildir. <strong>Diyanet rüya tabirleri</strong> ve modern <strong>psikanaliz</strong> yöntemlerini birleştirerek size özel mesajı çözüyoruz.
                 </p>
+            </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 pt-4 px-4 lg:px-0">
-                   <Link href="/auth?redirect=dashboard" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white text-black font-bold text-base md:text-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
-                      Detaylı Analiz Başlat
-                   </Link>
-                </div>
+            {/* --- KRİTİK NOKTA: YENİ INPUT BİLEŞENİ --- */}
+            {/* Burası sahnenin yıldızı. Tam ortada ve geniş. */}
+            <div className="w-full">
+                <HeroDreamInput />
+            </div>
 
-                <div className="pt-6 border-t border-white/5 mt-6 flex flex-col items-center lg:items-start">
-                   <p className="text-xs text-gray-500 mb-2">Analiz Kriterlerimiz:</p>
-                   <div className="flex flex-wrap justify-center gap-4 text-sm font-medium text-gray-300">
-                      <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-[#fbbf24]" /> İslami Kaynaklar</span>
-                      <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-blue-500" /> Jung Arketipleri</span>
-                   </div>
-                </div>
-             </div>
+            {/* ALT ÖZELLİK IKONLARI */}
+            <div className="mt-8 flex flex-col md:flex-row items-center gap-4 text-sm font-medium text-gray-400">
+               <span className="opacity-75">Analiz Kriterlerimiz:</span>
+               <div className="flex flex-wrap justify-center gap-4">
+                  <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                      <CheckCircle2 className="w-4 h-4 text-[#fbbf24]" /> İslami Kaynaklar
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                      <CheckCircle2 className="w-4 h-4 text-blue-500" /> Jung Arketipleri
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                      <CheckCircle2 className="w-4 h-4 text-purple-500" /> Gizli & Anonim
+                  </span>
+               </div>
+            </div>
 
-             {/* SOL (MOBİLDE ALTTA): GÖRSEL ODAK */}
-             <div className="w-full lg:w-1/2 order-2 lg:order-1 relative group perspective-1000 px-2 md:px-0">
-                <div className="relative z-30 bg-[#0f172a] border border-[#fbbf24]/20 rounded-2xl p-5 md:p-8 shadow-2xl">
-                   <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-                      <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-full bg-[#fbbf24]/10 flex items-center justify-center shrink-0">
-                            <FileText className="w-5 h-5 text-[#fbbf24]" />
-                         </div>
-                         <div>
-                            <h3 className="font-bold text-white text-sm md:text-base">Rüya Analiz Raporu</h3>
-                            <p className="text-[10px] md:text-xs text-gray-500">Kişiye Özel Hazırlanmıştır</p>
-                         </div>
-                      </div>
-                      <span className="px-2 py-1 md:px-3 md:py-1 rounded-full bg-green-500/10 text-green-400 text-[10px] md:text-xs font-bold border border-green-500/20 whitespace-nowrap">Tamamlandı</span>
-                   </div>
-                   
-                   <div className="space-y-4">
-                      <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                         <h4 className="text-[#fbbf24] font-bold text-sm mb-2 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4" /> Rüyanın Özü
-                         </h4>
-                         <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
-                           "Gördüğünüz yüksek dağ sembolü, kariyerinizdeki hedefleri temsil ederken; tırmanırken zorlanmanız sabır göstermeniz gereken bir sürece işaret ediyor."
-                         </p>
-                      </div>
-                      <div className="flex gap-3 md:gap-4">
-                         <div className="flex-1 p-3 md:p-4 rounded-xl bg-emerald-900/10 border border-emerald-500/10">
-                            <h4 className="text-emerald-400 font-bold text-xs md:text-sm mb-1">Manevi Yön</h4>
-                            <p className="text-[10px] text-gray-500">İhya ve Nablusi kaynaklı...</p>
-                         </div>
-                         <div className="flex-1 p-3 md:p-4 rounded-xl bg-blue-900/10 border border-blue-500/10">
-                            <h4 className="text-blue-400 font-bold text-xs md:text-sm mb-1">Psikolojik Yön</h4>
-                            <p className="text-[10px] text-gray-500">Bilinçaltı ve stres...</p>
-                         </div>
-                      </div>
-                   </div>
-
-                   {/* Arkadaki flu kartlar */}
-                   <div className="absolute -z-10 top-4 -right-4 w-full h-full bg-[#0f172a] border border-white/5 rounded-2xl opacity-50 scale-95"></div>
-                   <div className="absolute -z-20 top-8 -right-8 w-full h-full bg-[#0f172a] border border-white/5 rounded-2xl opacity-30 scale-90"></div>
-                </div>
-             </div>
-
-          </div>
         </div>
       </section>
 
       {/* --- 2. DETAYLI SÜREÇ --- */}
-      {/* MOBİL: py-16 (boşluk azaltıldı) */}
       <section id="nasil-calisir" className="py-16 md:py-24 bg-[#050a1f] border-t border-white/5 relative">
          <div className="container mx-auto px-4 md:px-6 max-w-6xl">
             

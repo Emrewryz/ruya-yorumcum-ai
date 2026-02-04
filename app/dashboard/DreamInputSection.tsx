@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react"; // <-- EKLENDİ
 import { Mic, PauseCircle, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -21,10 +22,29 @@ const loadingMessages = [
 export default function DreamInputSection({ 
   dreamText, setDreamText, status, onAnalyze, isRecording, setIsRecording, onReset 
 }: Props) {
+
+  // --- EKLENEN KISIM: OTOMATİK RÜYA YUKLEME ---
+  useEffect(() => {
+    // Sadece tarayıcı tarafında çalıştır
+    if (typeof window !== 'undefined') {
+      // 1. Hafızada bekleyen misafir rüyası var mı?
+      const savedDream = localStorage.getItem("pending_dream");
+      
+      // 2. Varsa ve kutu boşsa içeriği doldur
+      if (savedDream && !dreamText) {
+        setDreamText(savedDream);
+        
+        // 3. (Opsiyonel) Yükledikten sonra hafızadan sil ki tekrar tekrar gelmesin
+        localStorage.removeItem("pending_dream");
+      }
+    }
+  }, [setDreamText, dreamText]); 
+  // ---------------------------------------------
+
   return (
     <div className="flex-1 flex flex-col w-full relative transition-all duration-700 mb-8 md:mb-12">
       
-      {/* Bilgilendirme - Mobilde font küçültüldü */}
+      {/* Bilgilendirme */}
       <div className="mb-3 md:mb-4 flex items-center gap-2 px-1">
         <div className="w-1 h-6 md:h-8 bg-gradient-to-b from-[#8b5cf6] to-transparent rounded-full"></div>
         <p className="text-xs md:text-sm text-gray-400 leading-snug max-w-2xl">
@@ -40,13 +60,11 @@ export default function DreamInputSection({
             onChange={(e) => setDreamText(e.target.value)}
             disabled={status !== 'IDLE'} 
             placeholder="Dün gece gördüklerini buraya dök..."
-            // MOBİL İYİLEŞTİRME: p-5 (mobilde daha geniş alan), text-base (okunabilirlik)
             className={`w-full flex-1 bg-transparent text-base md:text-xl text-white placeholder-gray-600 font-medium font-sans border-none outline-none resize-none leading-relaxed tracking-wide p-5 pb-20 md:p-8 md:pb-20 scrollbar-thin scrollbar-thumb-[#8b5cf6]/20 scrollbar-track-transparent ${status === 'COMPLETED' ? 'blur-sm opacity-50' : 'opacity-100'}`}
           ></textarea>
           
           {/* Kontroller */}
           {status === 'IDLE' && (
-            // MOBİL İYİLEŞTİRME: bottom-3 (klavyeye daha az yapışık), padding ayarları
             <div className="absolute bottom-3 left-3 right-3 md:bottom-4 md:left-4 md:right-4 flex justify-between items-center bg-black/60 md:bg-black/40 backdrop-blur-md p-1.5 md:p-2 rounded-xl md:rounded-2xl border border-white/10 md:border-white/5">
               
               {/* Ses Kayıt Butonu */}
