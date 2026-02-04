@@ -6,7 +6,7 @@ import { getDailyHoroscope } from "@/app/actions/daily-horoscope";
 import Sidebar from "@/app/dashboard/Sidebar"; 
 import { 
   ArrowLeft, Sparkles, Loader2, Star, Heart, 
-  Briefcase, Quote, Zap, Calendar 
+  Briefcase, Quote, Zap, Calendar, Coins
 } from "lucide-react"; 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -28,7 +28,7 @@ export default function DailyHoroscopePage() {
     checkTodayData();
   }, []);
 
-  // 1. Veritabanı Kontrolü
+  // 1. Veritabanı Kontrolü (Cache varsa ücretsiz göster)
   const checkTodayData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -49,24 +49,32 @@ export default function DailyHoroscopePage() {
     setLoading(false);
   };
 
-  // 2. Butona basılınca AI çalıştır
+  // 2. Butona basılınca AI çalıştır (Yeni Analiz)
   const handleGenerate = async () => {
     setGenerating(true);
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
+    // Server Action Çağrısı (Kredi kontrolü burada yapılır)
     const res = await getDailyHoroscope(); 
     
     if (res.success) {
       setData(res.data);
-      toast.success("Yıldızlar haritanızı okudu!");
+      if (res.cached) {
+          toast.success("Bugünkü yorumunuz zaten hazırdı.");
+      } else {
+          toast.success("Yıldızlar haritanızı okudu! (1 Kredi düştü)");
+      }
     } else {
-      if (res.message?.includes("Pro üye")) {
-          toast.error("Bu detaylı analiz Premium üyelere özeldir.", {
+      // --- HATA VE KREDİ YÖNETİMİ ---
+      if (res.code === "NO_CREDIT") {
+          toast.error("Yetersiz Bakiye", {
+              description: "Günlük burç yorumu için 1 krediye ihtiyacınız var.",
               action: {
-                  label: "Yükselt",
+                  label: "Yükle",
                   onClick: () => router.push("/dashboard/pricing")
-              }
+              },
+              duration: 5000
           });
       } else {
           toast.error(res.error || "Bir hata oluştu");
@@ -84,8 +92,7 @@ export default function DailyHoroscopePage() {
   return (
     // APP FIX: pb-28 (Mobil alt menü payı)
     <div className="min-h-screen bg-[#020617] text-white flex pb-28 md:pb-0 overflow-x-hidden font-sans">
-      <Sidebar activeTab="astro" />
-      
+<Sidebar />      
       {/* Arkaplan Efektleri */}
       <div className="fixed inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none z-0 mix-blend-overlay"></div>
       <div className="fixed -top-[20%] -left-[10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-indigo-600/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none z-0 animate-pulse-slow"></div>
@@ -251,14 +258,15 @@ export default function DailyHoroscopePage() {
                             
                             <span className="relative flex items-center gap-2">
                                 {generating ? <Loader2 className="animate-spin w-5 h-5" /> : <Star className="w-5 h-5 fill-black" />}
-                                {generating ? "Yıldızlar Okunuyor..." : "Ücretsiz Günlük Analiz Al"}
+                                {generating ? "Yıldızlar Okunuyor..." : "Analizi Başlat (1 Kredi)"}
                             </span>
                         </button>
                         
                         {!generating && (
-                            <p className="mt-4 md:mt-6 text-[10px] md:text-xs text-gray-500">
-                                * Premium üyeler için detaylı gezegen açıları dahildir.
-                            </p>
+                            <div className="mt-4 flex items-center justify-center gap-2 text-[10px] md:text-xs text-gray-500">
+                                <Coins className="w-3 h-3 text-[#fbbf24]" />
+                                <span>Bu işlem için 1 jeton kullanılır.</span>
+                            </div>
                         )}
                     </div>
                 </motion.div>

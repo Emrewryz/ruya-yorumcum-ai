@@ -1,6 +1,4 @@
-// utils/astro-calc.ts
-
-const Astronomy = require("astronomy-engine");
+import Astronomy from "astronomy-engine";
 
 export const ZODIAC_SIGNS = [
   "Koç", "Boğa", "İkizler", "Yengeç", "Aslan", "Başak",
@@ -12,7 +10,7 @@ const PLANETS = [
   "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"
 ];
 
-// TypeScript için Arayüz Tanımı (Hataları Çözen Kısım)
+// TypeScript Interface
 export interface NatalChartOutput {
   sun: string;
   moon: string;
@@ -25,21 +23,12 @@ export interface NatalChartOutput {
   neptune: string;
   pluto: string;
   ascendant: string;
-  [key: string]: string; // Ekstra alanlar için esneklik
+  [key: string]: string;
 }
 
-// Transit Harita Çıktı Tipi
 export interface TransitChartOutput {
   transit_sun: string;
   transit_moon: string;
-  transit_mercury: string;
-  transit_venus: string;
-  transit_mars: string;
-  transit_jupiter: string;
-  transit_saturn: string;
-  transit_uranus: string;
-  transit_neptune: string;
-  transit_pluto: string;
   [key: string]: string;
 }
 
@@ -51,14 +40,25 @@ function getSignFromLongitude(longitude: number) {
 }
 
 function getPlanetPosition(body: string, date: Date) {
-  const vec = Astronomy.GeoVector(body, date, true);
-  const ecliptic = Astronomy.Ecliptic(vec);
-  return getSignFromLongitude(ecliptic.elon);
+  try {
+    // DÜZELTME 1: 'body as any' diyerek TypeScript'i susturuyoruz.
+    // Kütüphane "Sun" | "Moon" bekliyor, biz string gönderiyoruz.
+    const vec = Astronomy.GeoVector(body as any, date, true);
+    
+    if (!vec) return "Bilinmiyor";
+    const ecliptic = Astronomy.Ecliptic(vec);
+    return getSignFromLongitude(ecliptic.elon);
+  } catch (e) {
+    return "Bilinmiyor";
+  }
 }
 
 function calculateAscendant(date: Date, lat: number, lng: number): string {
   try {
+      // DÜZELTME 2: Astronomy.DayValue yerine Manuel Jülyen Tarihi (JD) Hesabı
+      // Bu formül standart astronomi formülüdür.
       const jd = (date.getTime() / 86400000) + 2440587.5;
+      
       const T = (jd - 2451545.0) / 36525.0;
       let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + T * T * (0.000387933 - T / 38710000.0);
       
@@ -89,31 +89,29 @@ function calculateAscendant(date: Date, lat: number, lng: number): string {
   }
 }
 
-// ANA FONKSİYON 1: NATAL HARİTA
+// NATAL HARİTA
 export function calculateNatalChart(date: Date, lat: number, lng: number): NatalChartOutput {
   if (isNaN(date.getTime())) throw new Error("Geçersiz tarih.");
 
   const chart: any = {};
   
   PLANETS.forEach(planet => {
-    // lowercase anahtar kullanıyoruz (sun, moon, mercury...)
     chart[planet.toLowerCase()] = getPlanetPosition(planet, date);
   });
 
   chart.ascendant = calculateAscendant(date, lat, lng);
 
-  // TypeScript'e bu objenin NatalChartOutput yapısında olduğunu garanti ediyoruz
   return chart as NatalChartOutput;
 }
 
-// ANA FONKSİYON 2: TRANSIT HARİTA
+// TRANSIT HARİTA
 export function calculateTransitChart(date: Date = new Date()): TransitChartOutput {
    if (isNaN(date.getTime())) throw new Error("Geçersiz tarih.");
 
   const transits: any = {};
   
-  PLANETS.forEach(planet => {
-    // transit_sun, transit_moon şeklinde anahtarlar
+  // Sadece önemli gezegenleri alalım performans için
+  ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"].forEach(planet => {
     transits[`transit_${planet.toLowerCase()}`] = getPlanetPosition(planet, date);
   });
 

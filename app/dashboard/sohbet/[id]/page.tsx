@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, Send, Sparkles, User, Loader2, Bot } from "lucide-react";
 import { sendChatMessage } from "@/app/actions/chat-actions";
 import { motion } from "framer-motion";
+import { toast } from "sonner"; // Toast bildirimi eklendi
 
 interface Message {
   id?: string;
@@ -50,27 +51,55 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  // --- YENİ MESAJ GÖNDERME FONKSİYONU ---
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
     const userMsg = input;
-    setInput("");
+    setInput(""); // Inputu temizle
     setLoading(true);
 
     if (navigator.vibrate) navigator.vibrate(10);
 
+    // Optimistic Update: Kullanıcı mesajını hemen ekranda göster
     const tempMsg: Message = { role: 'user', content: userMsg };
     setMessages(prev => [...prev, tempMsg]);
 
     try {
+      // Server Action'ı çağır (Kredi kontrolü burada yapılır)
       const result = await sendChatMessage(params.id, userMsg);
+
       if (result.success && result.message) {
+        // Başarılı: AI cevabını ekle
         setMessages(prev => [...prev, { role: 'assistant', content: result.message }]);
       } else {
-        alert("Bağlantı koptu, tekrar dene.");
+        // --- HATA YÖNETİMİ ---
+        
+        // Eklenen son mesajı geri al (Çünkü işlem başarısız oldu)
+        setMessages(prev => prev.slice(0, -1)); 
+        setInput(userMsg); // Kullanıcının yazdığı metni geri getir
+
+        // Kredi Hatası Kontrolü
+        // Backend 'error' string'i içinde "Yetersiz" kelimesi geçiyorsa veya code 'NO_CREDIT' ise
+        const err = result as any;
+        
+        if (err.error?.includes("Yetersiz") || err.code === "NO_CREDIT") {
+            toast.error("Bakiyeniz Yetersiz", {
+                description: "Kahin ile konuşmak için 1 krediye ihtiyacınız var.",
+                action: {
+                    label: "Yükle",
+                    onClick: () => router.push("/dashboard/pricing")
+                },
+                duration: 5000,
+            });
+        } else {
+            toast.error(result.error || "Bağlantı hatası, tekrar deneyin.");
+        }
       }
     } catch (error) {
       console.error(error);
+      setMessages(prev => prev.slice(0, -1)); // Hata varsa mesajı geri al
+      toast.error("Bir hata oluştu.");
     } finally {
       setLoading(false);
     }
@@ -179,7 +208,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Mesajını yaz..." 
+              placeholder="Mesajını yaz... (1 Kredi)" 
               className="flex-1 bg-[#1e293b] text-white text-base placeholder-gray-500 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[#fbbf24]/50 border border-white/5 transition-all shadow-inner"
             />
             

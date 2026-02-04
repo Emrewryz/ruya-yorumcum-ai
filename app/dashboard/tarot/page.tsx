@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Sparkles, RefreshCcw, Layers, Star, Heart, Moon, Lock, Info, Play, X } from "lucide-react";
+import { ArrowLeft, Sparkles, RefreshCcw, Layers, Star, Heart, Moon, Lock, Info, Play, X, Zap } from "lucide-react";
 import { TAROT_DECK } from "@/utils/tarot-deck";
 import { readTarot } from "@/app/actions/read-tarot";
 import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner"; // Toast bildirimi için
 
 // --- TASARIM KONFİGÜRASYONU ---
 const SPREAD_CONFIG = [
@@ -90,12 +91,13 @@ export default function TarotPage() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const { data } = await supabase.from('dreams').select('id, title, description, analysis').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).single();
-        if (data) setLatestDream(data);
+        const { data } = await supabase.from('dreams').select('id, title, description, ai_response').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).single();
+        // ai_response.summary veya description hangisi varsa onu al
+        if (data) setLatestDream({ ...data, description: data.description || data.ai_response?.summary });
       } catch (e) {}
     };
     checkLatestDream();
-  }, []);
+  }, [supabase]);
 
   const shuffleDeck = () => {
     const array = Array.from({ length: 78 }, (_, i) => i);
@@ -143,6 +145,7 @@ export default function TarotPage() {
     }
   };
 
+  // --- KRİTİK DEĞİŞİKLİK BURADA: getReading Fonksiyonu ---
   const getReading = async (indices: number[]) => {
     setPhase('reading');
     const selectedCardsData = indices.map(idx => TAROT_DECK[deckOrder[idx] % TAROT_DECK.length]);
@@ -150,21 +153,37 @@ export default function TarotPage() {
     let finalQuestion = intention;
     
     if (selectedSpread.id === 'dream_special' && latestDream) {
-        finalQuestion += ` (RÜYA İÇERİĞİ: ${latestDream.description || latestDream.analysis})`;
+        finalQuestion += ` (RÜYA İÇERİĞİ: ${latestDream.description})`;
     }
 
     try {
         const result = await readTarot(finalQuestion, cardNames, selectedSpread.id, latestDream?.id);
+        
         if (result.success) {
             setReadingResult({ ...result.data, selectedCardsData });
             setPhase('result');
+            toast.success("Kartlar yorumlandı! (2 Kredi düştü)");
         } else {
-            alert(result.message);
-            if (result.error === 'NO_CREDIT') router.push('/dashboard'); 
-            else setPhase('type_select');
+            // Hata Yönetimi ve Kredi Kontrolü
+            const errCode = (result as any).code || (result as any).error; // Backend'den gelen hata kodu
+
+            if (errCode === 'NO_CREDIT') {
+                toast.error("Yetersiz Bakiye", {
+                    description: "Tarot falı için 2 krediye ihtiyacınız var.",
+                    action: {
+                        label: "Yükle",
+                        onClick: () => router.push("/dashboard/pricing")
+                    },
+                    duration: 5000
+                });
+                setPhase('type_select'); // Seçim ekranına geri at
+            } else {
+                toast.error(result.message || "Kozmik bir hata oluştu.");
+                setPhase('type_select');
+            }
         }
     } catch (e) {
-        alert("Bir hata oluştu.");
+        toast.error("Bağlantı hatası.");
         setPhase('type_select');
     }
   };
@@ -208,7 +227,9 @@ export default function TarotPage() {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full">
                 <div className="text-center mb-8 md:mb-12">
                     <h1 className="text-3xl md:text-5xl font-serif text-white mb-2 md:mb-4 drop-shadow-2xl">Rehberini Seç</h1>
-                    <p className="text-slate-400 font-light text-sm md:text-lg">Hangi konuda aydınlanmak istiyorsun?</p>
+                    <p className="text-slate-400 font-light text-sm md:text-lg flex items-center justify-center gap-2">
+                        <Zap className="w-4 h-4 text-purple-400" /> Her açılım 2 Kredi değerindedir.
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

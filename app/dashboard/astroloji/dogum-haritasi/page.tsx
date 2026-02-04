@@ -6,7 +6,7 @@ import { getAstrologyAnalysis } from "@/app/actions/astrology"; // Server Action
 import Sidebar from "@/app/dashboard/Sidebar"; 
 import { 
   ArrowLeft, ScrollText, Loader2, Sparkles, Lock, 
-  Sun, Moon, ArrowUpCircle, MapPin, Calendar, Clock 
+  Sun, Moon, ArrowUpCircle, MapPin, Calendar, Clock, Coins
 } from "lucide-react"; 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ export default function NatalChartPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [data, setData] = useState<any>(null); // Analiz Verisi
   const [profile, setProfile] = useState<any>(null); // Kullanıcı Bilgileri
-  const [isFreeUser, setIsFreeUser] = useState(false);
+  const [isLockedMode, setIsLockedMode] = useState(false); // Kredi yetersizse kilitli mod
 
   useEffect(() => {
     initPage();
@@ -40,7 +40,7 @@ export default function NatalChartPage() {
         .single();
     setProfile(userProfile);
 
-    // 2. KAYITLI VERİYİ ÇEK
+    // 2. KAYITLI VERİYİ ÇEK (Cache Varsa Ücretsiz Göster)
     const { data: existing } = await supabase
       .from('astrology_readings')
       .select('analysis, sun_sign, moon_sign, ascendant_sign') 
@@ -57,36 +57,50 @@ export default function NatalChartPage() {
           ascendant_sign: existing.ascendant_sign 
       });
       
-      setIsFreeUser(false); 
+      setIsLockedMode(false); 
     }
     
     setLoading(false);
   };
 
-  // 3. Yeni Analiz Yap
+  // 3. Yeni Analiz Yap (Kredi Kontrollü)
   const handleAnalyze = async () => {
     setAnalyzing(true);
+    
+    // Server Action Çağrısı (Kredi kontrolü burada yapılır)
     const res = await getAstrologyAnalysis(null); 
     
     if (res.success) {
       setData(res.data);
-      setIsFreeUser(false);
-      toast.success("Analiz tamamlandı!");
+      setIsLockedMode(false);
+      toast.success("Analiz tamamlandı! (5 Kredi düştü)");
     } else {
-      if (res.code === "LIMIT_REACHED" || res.isFreeTier) {
-        setIsFreeUser(true);
+      // --- KREDİ VE HATA YÖNETİMİ ---
+      if (res.code === "NO_CREDIT") {
+        
+        // Kredi yetersiz olsa bile temel matematiksel veriyi gösterelim (Önizleme)
         if(res.basicData) {
+             setIsLockedMode(true); // Detayları kilitle
              setData({
                  sun_sign: res.basicData.sun_sign,
                  moon_sign: res.basicData.moon_sign,
                  ascendant_sign: res.basicData.ascendant_sign,
-                 character_analysis: "Bu detaylı analiz Premium üyelere özeldir.",
-                 career_love: "Bu detaylı analiz Premium üyelere özeldir."
+                 character_analysis: "Bu detaylı analiz için 5 krediye ihtiyacınız var.",
+                 career_love: "Bu detaylı analiz için 5 krediye ihtiyacınız var."
              });
         }
-        toast.info(res.error || "Ücretsiz planda sadece temel burçlar görünür.");
+
+        toast.error("Yetersiz Bakiye", {
+            description: "Detaylı Natal Harita analizi için 5 krediye ihtiyacınız var.",
+            action: {
+                label: "Yükle",
+                onClick: () => router.push("/dashboard/pricing")
+            },
+            duration: 5000
+        });
+
       } else {
-        toast.error(res.error);
+        toast.error(res.error || "Bir hata oluştu.");
       }
     }
     setAnalyzing(false);
@@ -95,7 +109,7 @@ export default function NatalChartPage() {
   return (
     // APP FIX: pb-28 (Mobil alt menü payı)
     <div className="min-h-screen bg-[#020617] text-white flex pb-28 md:pb-0 font-sans">
-      <Sidebar activeTab="astro" />
+  <Sidebar />
       
       {/* Arkaplan */}
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none z-0"></div>
@@ -114,7 +128,7 @@ export default function NatalChartPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 md:mb-8">
                 <h1 className="text-2xl md:text-3xl font-serif font-bold">Doğum Haritası Analizi</h1>
                 
-                {/* --- PROFİL BİLGİLERİ KARTI (Mobilde Stack) --- */}
+                {/* --- PROFİL BİLGİLERİ KARTI --- */}
                 {profile && (
                     <div className="flex flex-wrap items-center gap-2 md:gap-4 bg-white/5 border border-white/10 px-3 py-2 md:px-4 md:py-2 rounded-xl md:rounded-full text-[10px] md:text-xs text-gray-300 backdrop-blur-sm w-fit">
                         <div className="flex items-center gap-1">
@@ -161,7 +175,8 @@ export default function NatalChartPage() {
                             <div>
                                 <div className="text-[10px] md:text-xs text-gray-400 uppercase font-bold">Yükselen</div>
                                 <div className="text-xl md:text-2xl font-serif font-bold text-white">
-                                    {isFreeUser && data.ascendant_sign === "Gizli" ? "Gizli" : data.ascendant_sign}
+                                    {/* Kilitli modda bile burç adı görünür, detay gizlenir */}
+                                    {data.ascendant_sign}
                                 </div>
                             </div>
                         </div>
@@ -185,11 +200,12 @@ export default function NatalChartPage() {
                             <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-purple-300">
                                 <Sparkles className="w-4 h-4 md:w-5 md:h-5" /> Karakter & Ruh
                             </h3>
-                            {isFreeUser && !data.character_analysis?.includes(" ") ? (
+                            {isLockedMode ? (
                                 <div className="flex flex-col items-center justify-center py-8 md:py-10 text-center">
                                     <p className="blur-sm select-none text-gray-600 mb-3 text-xs md:text-base">Lorem ipsum dolor sit amet character analysis hidden.</p>
                                     <Lock className="w-6 h-6 md:w-8 md:h-8 text-purple-500 mb-2"/> 
-                                    <p className="text-gray-400 text-xs md:text-sm">Detaylı analiz için Premium'a geç.</p>
+                                    <p className="text-gray-400 text-xs md:text-sm">Bu analiz için 5 kredi gereklidir.</p>
+                                    <button onClick={() => router.push('/dashboard/pricing')} className="mt-3 px-4 py-2 bg-purple-600 rounded-full text-xs font-bold hover:bg-purple-500">Kredi Yükle</button>
                                 </div>
                             ) : (
                                 <p className="text-gray-300 leading-relaxed text-xs md:text-sm whitespace-pre-line">
@@ -203,11 +219,12 @@ export default function NatalChartPage() {
                             <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-pink-300">
                                 <ScrollText className="w-4 h-4 md:w-5 md:h-5" /> Kariyer & Aşk
                             </h3>
-                             {isFreeUser && !data.career_love?.includes(" ") ? (
+                             {isLockedMode ? (
                                 <div className="flex flex-col items-center justify-center py-8 md:py-10 text-center">
                                     <p className="blur-sm select-none text-gray-600 mb-3 text-xs md:text-base">Lorem ipsum dolor sit amet career analysis hidden.</p>
                                     <Lock className="w-6 h-6 md:w-8 md:h-8 text-pink-500 mb-2"/> 
-                                    <p className="text-gray-400 text-xs md:text-sm">Detaylı analiz için Premium'a geç.</p>
+                                    <p className="text-gray-400 text-xs md:text-sm">Bu analiz için 5 kredi gereklidir.</p>
+                                    <button onClick={() => router.push('/dashboard/pricing')} className="mt-3 px-4 py-2 bg-pink-600 rounded-full text-xs font-bold hover:bg-pink-500">Kredi Yükle</button>
                                 </div>
                             ) : (
                                 <p className="text-gray-300 leading-relaxed text-xs md:text-sm whitespace-pre-line">
@@ -246,8 +263,15 @@ export default function NatalChartPage() {
                         className="w-full md:w-auto px-6 py-3 md:px-8 md:py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 shadow-lg shadow-purple-500/25 text-sm md:text-base"
                     >
                         {analyzing ? <Loader2 className="animate-spin w-4 h-4 md:w-5 md:h-5" /> : <Sparkles className="w-4 h-4 md:w-5 md:h-5" />}
-                        {analyzing ? "Yıldızlar Hesaplanıyor..." : "Analiz Et ve Kaydet"}
+                        {analyzing ? "Yıldızlar Hesaplanıyor..." : "Analiz Et ve Kaydet (5 Kredi)"}
                     </button>
+                    
+                    {!analyzing && (
+                        <div className="mt-4 flex items-center justify-center gap-2 text-[10px] md:text-xs text-gray-500">
+                            <Coins className="w-3 h-3 text-[#fbbf24]" />
+                            <span>Bu detaylı analiz için 5 kredi kullanılır.</span>
+                        </div>
+                    )}
                 </motion.div>
             )}
 

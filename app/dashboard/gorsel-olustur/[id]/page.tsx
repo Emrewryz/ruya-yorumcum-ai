@@ -5,12 +5,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { 
   ArrowLeft, Sparkles, Download, Share2, 
-  Loader2, Check, Lock, Wand2, Paintbrush, Quote
+  Loader2, Check, Lock, Wand2, Paintbrush, Quote, Coins
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { generateDreamImage } from "@/app/actions/generate-image";
 import { toast } from "sonner";
-import UpgradeModal from "@/components/ui/upgrade-modal"; 
 
 export default function ImageStudioPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -20,13 +19,8 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true); 
   const [generating, setGenerating] = useState(false); 
   const [dream, setDream] = useState<any>(null);
-  const [userTier, setUserTier] = useState<'free' | 'pro' | 'elite'>('free');
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
-
-  // --- Limit Yönetimi ---
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [limitMessage, setLimitMessage] = useState("");
 
   const loadingMessages = [
     "Bilinçaltının renkleri taranıyor...",
@@ -45,20 +39,8 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('subscription_tier')
-        .eq('id', user.id)
-        .single();
-
-      const tier = profile?.subscription_tier?.toLowerCase() || 'free';
-      setUserTier(tier);
-
-      if (tier === 'free') {
-        toast.error("Bu stüdyoya sadece Kaşif ve Kahinler girebilir.");
-        router.push('/dashboard/pricing');
-        return;
-      }
+      // Not: Artık "Tier" kontrolü yapıp kullanıcıyı atmıyoruz.
+      // Herkes stüdyoya girebilir, kredisi varsa üretir.
 
       const { data: dreamData, error } = await supabase
         .from('dreams')
@@ -90,7 +72,7 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
     }
   }, [generating]);
 
-  // --- Görsel Oluşturma ---
+  // --- Görsel Oluşturma (YENİ SİSTEM) ---
   const handleGenerate = async () => {
     if (!dream) return;
     
@@ -102,23 +84,29 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
     const promptText = dream.ai_response?.summary || dream.dream_text.substring(0, 300);
 
     try {
+      // Server Action Çağrısı (Kredi burada düşer)
       const result = await generateDreamImage(promptText, dream.id);
-
-      if (result.error) {
-        if (result.code === 'UPGRADE' || result.code === 'LIMIT' || result.code === 'ALREADY') {
-             setLimitMessage(result.error);
-             setShowUpgradeModal(true);
-        } else {
-             toast.error(result.error || "Bir sorun oluştu.");
-        }
-        setGenerating(false);
-        return; 
-      }
 
       if (result.success && result.imageUrl) {
         setDream((prev: any) => ({ ...prev, image_url: result.imageUrl }));
-        toast.success("Eseriniz hazır! 🎨");
-      } 
+        toast.success("Eseriniz hazır! (3 Kredi düştü)");
+      } else {
+        // --- HATA VE KREDİ YÖNETİMİ ---
+        const errCode = (result as any).code;
+
+        if (errCode === 'NO_CREDIT') {
+             toast.error("Yetersiz Bakiye", {
+                 description: "Bu işlem için 3 krediye ihtiyacınız var.",
+                 action: {
+                     label: "Yükle",
+                     onClick: () => router.push("/dashboard/pricing")
+                 },
+                 duration: 5000
+             });
+        } else {
+             toast.error(result.error || "Bir sorun oluştu.");
+        }
+      }
 
     } catch (e) {
       toast.error("Beklenmedik bir hata oluştu.");
@@ -178,13 +166,6 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
     // APP FIX: min-h-[100dvh], pb-32 (mobilde alt bar için boşluk)
     <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col pb-24 md:pb-32">
       
-      {/* --- LİMİT MODALI --- */}
-      <UpgradeModal 
-        isOpen={showUpgradeModal} 
-        onClose={() => setShowUpgradeModal(false)} 
-        message={limitMessage}
-      />
-
       {/* Arkaplan Efektleri */}
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
       <div className="fixed top-[-10%] left-[-10%] w-[250px] h-[250px] md:w-[500px] md:h-[500px] bg-purple-900/30 rounded-full blur-[80px] md:blur-[120px] pointer-events-none animate-pulse-slow"></div>
@@ -234,7 +215,7 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
                   className="px-6 py-3 md:px-8 md:py-4 rounded-full bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform shadow-[0_0_30px_rgba(251,191,36,0.3)] mx-auto text-xs md:text-base tracking-wide"
                 >
                   <Sparkles className="w-4 h-4 md:w-5 md:h-5" /> 
-                  <span>Eseri Oluştur</span>
+                  <span>Eseri Oluştur (3 Kredi)</span>
                 </button>
               </div>
             )}
@@ -269,7 +250,7 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
                   className="w-full h-full object-cover animate-fade-in"
                 />
                 
-                {/* Alt Kontrol Barı (Mobilde her zaman görünür, Masaüstünde hover ile) */}
+                {/* Alt Kontrol Barı */}
                 <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-500">
                   <div className="text-center md:text-left">
                     <p className="text-[#fbbf24] text-[10px] md:text-xs font-bold uppercase tracking-widest mb-0.5">Rüya Görseli Hazır</p>
@@ -326,13 +307,15 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-black/40 rounded-xl border border-white/5">
                   <span className="text-[9px] md:text-[10px] text-gray-500 block mb-1">Model</span>
-                  <span className={`text-[10px] md:text-xs font-bold ${userTier === 'elite' ? 'text-amber-400' : 'text-blue-400'}`}>
-                    {userTier === 'elite' ? 'FLUX (Ultra HD)' : 'Turbo (Standart)'}
-                  </span>
+                  {/* HERKES İÇİN EN İYİ MODEL */}
+                  <span className="text-[10px] md:text-xs font-bold text-amber-400">FLUX (Ultra HD)</span>
                 </div>
                 <div className="p-3 bg-black/40 rounded-xl border border-white/5">
-                  <span className="text-[9px] md:text-[10px] text-gray-500 block mb-1">Stil</span>
-                  <span className="text-[10px] md:text-xs font-bold text-white">Mistik Sürrealizm</span>
+                  <span className="text-[9px] md:text-[10px] text-gray-500 block mb-1">Maliyet</span>
+                  <div className="flex items-center gap-1">
+                     <Coins className="w-3 h-3 text-[#fbbf24]" />
+                     <span className="text-[10px] md:text-xs font-bold text-white">3 Kredi</span>
+                  </div>
                 </div>
               </div>
             </div>

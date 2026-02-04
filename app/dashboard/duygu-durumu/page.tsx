@@ -49,6 +49,7 @@ export default function MoodPage() {
         .from('dreams')
         .select('ai_response')
         .eq('user_id', user.id)
+        .not('ai_response', 'is', null) // GÜVENLİK: Boş analizleri filtrele
         .order('created_at', { ascending: false })
         .limit(50); // Son 50 rüya
 
@@ -94,7 +95,7 @@ export default function MoodPage() {
         setChartData(sortedData);
         setGradientString(`conic-gradient(${gradientParts.join(', ')})`);
 
-        // 4. DİNAMİK ANALİZ
+        // 4. DİNAMİK ANALİZ (Insight)
         const topMood = sortedData[0]?.mood || "Nötr";
         const topScore = sortedData[0]?.percent || 0;
         
@@ -148,8 +149,9 @@ export default function MoodPage() {
                <Heart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                <h3 className="text-lg font-bold text-gray-300">Henüz Veri Yok</h3>
                <p className="text-gray-500 mt-2 text-sm">Rüya yorumlattıkça duygu haritan burada oluşacak.</p>
+               {/* YENİ SİSTEM BUTONU */}
                <button onClick={() => router.push('/dashboard')} className="mt-6 px-6 py-2 bg-[#fbbf24] rounded-full text-black font-bold text-xs uppercase tracking-wide hover:scale-105 transition-transform active:scale-95">
-                  İlk Rüyayı Yaz
+                  Rüya Analizi Başlat (1 Kredi)
                </button>
             </div>
          ) : (

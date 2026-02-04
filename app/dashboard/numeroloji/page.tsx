@@ -1,183 +1,99 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Sparkles, Hash, Star, Compass, Loader2 } from "lucide-react";
-import { explainNumbers } from "@/app/actions/explain-numerology";
+import { Hash, Binary, ArrowRight, User, Sparkles } from "lucide-react";
+import { Suspense } from "react";
 
-interface NumerologyItem {
-  number: number;
-  title: string;
-  meaning: string;
-}
-
-export default function NumerologyPage() {
+function NumerologyHub() {
   const router = useRouter();
-  const supabase = createClient();
+  const searchParams = useSearchParams();
   
-  const [loading, setLoading] = useState(true);
-  const [dreamDate, setDreamDate] = useState<string | null>(null);
-  const [luckyNumbers, setLuckyNumbers] = useState<number[]>([]);
-  
-  // Veriler
-  const [explanations, setExplanations] = useState<NumerologyItem[]>([]);
-  const [lifeAnalysis, setLifeAnalysis] = useState<string>("");
+  // URL'den parametreleri al (Eğer rüya analizinden gelindiyse dolu olur)
+  const dreamId = searchParams.get('dreamId');
+  const numbers = searchParams.get('numbers');
 
-  useEffect(() => {
-    const initData = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { router.push('/auth'); return; }
-
-        const { data: lastDream } = await supabase
-          .from('dreams')
-          .select('id, ai_response, created_at') 
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (lastDream && lastDream.ai_response?.lucky_numbers) {
-          const numbers = lastDream.ai_response.lucky_numbers;
-          setLuckyNumbers(numbers);
-          setDreamDate(new Date(lastDream.created_at).toLocaleDateString('tr-TR'));
-
-          // Backend'den veriyi al
-          const result = await explainNumbers(numbers, lastDream.id);
-          
-          if (result.success && result.data) {
-            // ÖNEMLİ: Gelen verinin yapısını kontrol ediyoruz
-            if (Array.isArray(result.data)) {
-               // ESKİ FORMAT (Sadece Array gelirse)
-               setExplanations(result.data);
-            } else if (result.data.numbers) {
-               // YENİ FORMAT (Object gelirse)
-               setExplanations(result.data.numbers);
-               setLifeAnalysis(result.data.life_analysis || "");
-            }
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initData();
-  }, [router, supabase]);
+  const handleNavigation = (path: string) => {
+    // Eğer rüya parametreleri varsa onları da taşıyalım
+    if (path === 'ruya' && dreamId && numbers) {
+      router.push(`/dashboard/numeroloji/ruya?dreamId=${dreamId}&numbers=${numbers}`);
+    } else {
+      router.push(`/dashboard/numeroloji/${path}`);
+    }
+  };
 
   return (
-    // APP FIX: min-h-[100dvh] ve pb-20 (mobilde alt bar için boşluk)
-    <div className="min-h-[100dvh] bg-[#020617] text-white relative overflow-x-hidden flex flex-col items-center pb-24 md:pb-32">
+    <div className="min-h-screen bg-[#020617] text-white p-6 md:p-10 flex flex-col items-center">
       
-      {/* Arkaplan */}
-      <div className="fixed inset-0 pointer-events-none">
-         <div className="absolute bottom-[-20%] right-[-10%] w-[250px] h-[250px] md:w-[600px] md:h-[600px] bg-amber-600/10 rounded-full blur-[60px] md:blur-[120px]" />
-         <div className="absolute top-[-10%] left-[-10%] w-[250px] h-[250px] md:w-[500px] md:h-[500px] bg-purple-900/20 rounded-full blur-[60px] md:blur-[100px]" />
-         <div className="bg-noise fixed inset-0 opacity-20"></div>
+      {/* BAŞLIK */}
+      <div className="text-center max-w-2xl mb-12">
+        <h1 className="text-3xl md:text-5xl font-serif text-white mb-4">Numeroloji Merkezi</h1>
+        <p className="text-gray-400">Sayıların gizemli dünyasına hoş geldiniz. Hangi kapıyı aralamak istersiniz?</p>
       </div>
 
-      {/* HEADER (Sticky) */}
-      <nav className="sticky top-0 z-30 w-full bg-[#020617]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 mb-6 md:mb-8 flex items-center justify-between">
-        <button onClick={() => router.back()} className="p-2 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all border border-white/5">
-          <ArrowLeft className="w-5 h-5 text-gray-300" />
-        </button>
-        <h1 className="font-serif text-sm md:text-xl tracking-[0.2em] text-[#fbbf24] flex items-center gap-2">
-            <Hash className="w-4 h-4" /> SAYILARIN GİZEMİ
-        </h1>
-        <div className="w-9"></div> {/* Dengeleyici */}
-      </nav>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
+        
+        {/* KUTU 1: GENEL NUMEROLOJİ (Profil Analizi) */}
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => handleNavigation('genel')}
+          className="cursor-pointer group relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900/40 to-black border border-emerald-500/30 p-8 h-[300px] flex flex-col justify-between"
+        >
+          <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl -translate-y-10 translate-x-10 transition-all group-hover:bg-emerald-500/20"></div>
+          
+          <div>
+            <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4 text-emerald-400">
+              <Hash className="w-6 h-6" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Kişisel Analiz</h2>
+            <p className="text-gray-400 text-sm">Doğum tarihiniz ve isminizle ruhunuzun şifrelerini, Yaşam Yolu ve Kader sayınızı keşfedin.</p>
+          </div>
 
-      <div className="w-full max-w-4xl relative z-10 px-4 md:px-6">
-        {loading ? (
-           <div className="flex flex-col items-center justify-center py-20 md:py-40">
-              <Loader2 className="w-10 h-10 md:w-16 md:h-16 text-[#fbbf24] animate-spin mb-4 md:mb-6" />
-              <p className="text-gray-400 animate-pulse text-xs md:text-base">Sayıların frekansı çözülüyor...</p>
-           </div>
-        ) : luckyNumbers.length === 0 ? (
-           <div className="text-center py-16 md:py-20 px-6 bg-white/5 rounded-3xl border border-white/10 mx-auto max-w-sm">
-              <Hash className="w-10 h-10 md:w-12 md:h-12 text-gray-500 mx-auto mb-4" />
-              <h3 className="text-lg md:text-xl font-serif text-gray-300">Henüz Bir Sayı Yok</h3>
-              <p className="text-gray-500 mt-2 text-xs md:text-sm">Önce bir rüya yorumlatmalısın.</p>
-              <button onClick={() => router.push('/dashboard')} className="mt-6 px-6 py-2.5 md:px-8 md:py-3 bg-purple-600 rounded-full text-xs md:text-sm font-bold shadow-lg shadow-purple-500/20 active:scale-95 transition-transform">
-                 Rüya Yorumla
-              </button>
-           </div>
-        ) : (
-           <>
-              <div className="text-center mb-8 md:mb-12">
-                 <span className="inline-block px-3 py-1 md:px-4 md:py-1 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24]/20 text-[#fbbf24] text-[10px] md:text-xs font-bold tracking-widest mb-3 md:mb-4">
-                   SON RÜYANDAN GELEN İŞARETLER • {dreamDate}
-                 </span>
-                 <h2 className="text-2xl md:text-4xl font-serif text-white leading-tight px-2 md:px-4">
-                   Evren Sana Ne Söylüyor?
-                 </h2>
-              </div>
+          <div className="flex items-center text-emerald-400 text-sm font-bold uppercase tracking-wider gap-2 group-hover:gap-4 transition-all">
+            Analizi Başlat <ArrowRight className="w-4 h-4" />
+          </div>
+        </motion.div>
 
-              {/* 1. KARTLAR (MOBİLDE TEK KOLON) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-12">
-                 {explanations.map((item, idx) => (
-                    <motion.div 
-                       key={idx}
-                       initial={{ opacity: 0, y: 20 }}
-                       animate={{ opacity: 1, y: 0 }}
-                       transition={{ delay: idx * 0.1 }}
-                       className="group relative bg-[#0f172a] border border-white/10 rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-lg active:scale-[0.98] transition-transform duration-200"
-                    >
-                       <div className="absolute inset-0 bg-gradient-to-br from-[#fbbf24]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl md:rounded-3xl"></div>
-                       <div className="relative z-10 flex flex-col items-center text-center">
-                          <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-black border border-[#fbbf24]/50 flex items-center justify-center mb-4 md:mb-6 shadow-[0_0_20px_rgba(251,191,36,0.15)]">
-                             <span className="text-xl md:text-3xl font-mono font-bold text-[#fbbf24]">{item.number}</span>
-                          </div>
-                          <h3 className="text-base md:text-lg font-serif text-white mb-2 md:mb-3 flex items-center gap-2">
-                             <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
-                             {item.title}
-                          </h3>
-                          <p className="text-gray-400 text-xs md:text-sm leading-relaxed font-light">
-                             {item.meaning}
-                          </p>
-                       </div>
-                    </motion.div>
-                 ))}
-              </div>
+        {/* KUTU 2: RÜYA NUMEROLOJİSİ (Dream Sync) */}
+        <motion.div 
+          whileHover={{ scale: dreamId ? 1.02 : 1 }}
+          whileTap={{ scale: dreamId ? 0.98 : 1 }}
+          onClick={() => dreamId ? handleNavigation('ruya') : null}
+          className={`relative overflow-hidden rounded-3xl border p-8 h-[300px] flex flex-col justify-between transition-all ${
+            dreamId 
+              ? "cursor-pointer bg-gradient-to-br from-indigo-900/40 to-black border-indigo-500/30 group" 
+              : "cursor-not-allowed bg-white/5 border-white/5 opacity-50 grayscale"
+          }`}
+        >
+          {dreamId && <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl -translate-y-10 translate-x-10 transition-all group-hover:bg-indigo-500/20"></div>}
+          
+          <div>
+            <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-4 text-indigo-400">
+              <Binary className="w-6 h-6" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Rüya & Uyum Analizi</h2>
+            <p className="text-gray-400 text-sm">
+              {dreamId 
+                ? "Son gördüğünüz rüyanın sayılarıyla kendi numerolojik haritanızın uyumunu analiz edin." 
+                : "Bu analiz için önce bir rüya yorumlatmalısınız."}
+            </p>
+          </div>
 
-              {/* 2. HAYAT YOLU SENTEZİ */}
-              {lifeAnalysis && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="relative p-6 md:p-10 rounded-2xl md:rounded-3xl bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] border border-indigo-500/30 shadow-2xl overflow-hidden"
-                >
-                   <div className="absolute top-0 right-0 p-4 md:p-8 opacity-10 pointer-events-none"><Compass className="w-24 h-24 md:w-40 md:h-40 text-indigo-400" /></div>
-                   <div className="relative z-10">
-                      <div className="flex items-center gap-3 mb-4 md:mb-6">
-                         <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-indigo-500/20 text-indigo-300"><Star className="w-4 h-4 md:w-6 md:h-6 fill-current" /></div>
-                         <h3 className="text-lg md:text-2xl font-serif font-bold text-white">Hayat Yolu Sentezi</h3>
-                      </div>
-                      <p className="text-gray-300 text-sm md:text-lg leading-relaxed md:leading-loose font-light text-justify">
-                         {lifeAnalysis}
-                      </p>
-                   </div>
-                </motion.div>
-              )}
+          <div className={`flex items-center text-sm font-bold uppercase tracking-wider gap-2 ${dreamId ? "text-indigo-400 group-hover:gap-4 transition-all" : "text-gray-600"}`}>
+            {dreamId ? "Uyumu Keşfet" : "Rüya Verisi Yok"} <ArrowRight className="w-4 h-4" />
+          </div>
+        </motion.div>
 
-              {/* Alt Bilgi */}
-              <div className="mt-8 md:mt-12 p-4 md:p-6 bg-white/5 rounded-xl md:rounded-2xl border border-white/5 flex gap-3 md:gap-4 items-start">
-                 <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-gray-500 shrink-0 mt-0.5 md:mt-1" />
-                 <div>
-                    <h4 className="text-white font-bold text-xs md:text-sm mb-1">Bunu Biliyor Muydun?</h4>
-                    <p className="text-gray-400 text-[10px] md:text-xs leading-relaxed">
-                       Bu sayılar rüyanızdaki sembollerin "Ebcet" değeri ve evrensel numeroloji frekanslarının kişisel hayat hikayenizle harmanlanmasıyla hesaplanmıştır.
-                    </p>
-                 </div>
-              </div>
-           </>
-        )}
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Yükleniyor...</div>}>
+      <NumerologyHub />
+    </Suspense>
   );
 }

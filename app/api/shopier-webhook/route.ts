@@ -1,40 +1,50 @@
+
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 
+// Webhook loglarında tutarlılık için tip tanımı
+type WebhookData = {
+  platform_order_id: string;
+  price: string;
+  buyer_email: string; // Shopier bazen 'email', bazen 'buyer_email' gönderebilir, formData kontrolünde bakacağız.
+};
+
 export async function POST(request: Request) {
   try {
-    console.log("📢 --- SHOPIER OSB WEBHOOK GELDİ ---");
+    console.log("📢 --- SHOPIER WEBHOOK GELDİ ---");
 
     // 1. Form Verisini Al
     const formData = await request.formData();
-    const resData = formData.get('res'); // Şifreli Veri (Base64 JSON)
-    const hash = formData.get('hash');   // Güvenlik İmzası
+    // Shopier bazen 'res' ve 'hash', bazen direkt field'ları dönebilir.
+    // Senin kodun 'res' (base64) üzerinden gidiyor, bu Shopier'in "Secure Mode"udur. Doğru.
+    const resData = formData.get('res'); 
+    const hash = formData.get('hash'); 
 
-    // Kontrol: Veri var mı?
+    // Kontrol: Parametreler eksik mi?
     if (!resData || !hash) {
-        console.error("❌ HATA: Eksik Parametre. 'res' veya 'hash' yok.");
-        return new Response('Missing parameters', { status: 400 });
+        console.error("❌ HATA: Shopier parametreleri eksik.");
+        return new NextResponse('Missing parameters', { status: 400 });
     }
 
-    // 2. Kimlik Bilgilerini Al (.env'den)
-    const osbUser = process.env.SHOPIER_API_USER;
-    const osbPass = process.env.SHOPIER_SECRET;
+    // 2. Kimlik Bilgilerini Al
+    const shopierUser = process.env.SHOPIER_API_USER;
+    const shopierPass = process.env.SHOPIER_API_SECRET; // .env isimlendirmene dikkat et
 
-    if (!osbUser || !osbPass) {
+    if (!shopierUser || !shopierPass) {
         console.error("❌ HATA: .env dosyasında SHOPIER bilgileri eksik!");
-        return new Response('Server Config Error', { status: 500 });
+        return new NextResponse('Server Config Error', { status: 500 });
     }
 
-    // 3. İMZA DOĞRULAMA
+    // 3. İMZA DOĞRULAMA (Güvenlik)
     const expectedHash = crypto
-        .createHmac('sha256', osbPass)
-        .update(String(resData) + osbUser)
+        .createHmac('sha256', shopierPass)
+        .update(String(resData) + shopierUser)
         .digest('hex');
 
     if (String(hash) !== expectedHash) {
-        console.error("❌ HATA: Geçersiz İmza! Shopier'den gelmiyor olabilir.");
-        return new Response('Invalid Hash', { status: 400 });
+        console.error("❌ HATA: Geçersiz İmza! (Fake Request Olabilir)");
+        return new NextResponse('Invalid Hash', { status: 400 });
     }
 
     // 4. Şifreli Veriyi Çöz
@@ -42,93 +52,118 @@ export async function POST(request: Request) {
     const jsonString = buffer.toString('utf-8');
     const data = JSON.parse(jsonString);
 
-    console.log(`✅ Doğrulama Başarılı. Sipariş: #${data.orderid}, Email: ${data.email}`);
+    // Veri isimlerini normalize edelim (Shopier dönüşüne göre)
+    const orderId = String(data.orderid || data.platform_order_id);
+    const paidAmount = parseFloat(String(data.price || data.total_order_value));
+    const rawEmail = String(data.email || data.buyer_email || "");
 
-    // --- PAKET VE KREDİ BELİRLEME ---
-    const paidAmount = parseFloat(String(data.price));
-    let planType = '';
-    let startCredits = 0; // Varsayılan kredi
+    console.log(`✅ Doğrulama Başarılı. Sipariş: #${orderId}, Tutar: ${paidAmount} TL`);
 
-    // KAŞİF: 119 TL (110 - 130 arası kabul) -> 3 Kredi
-    if (paidAmount >= 60 && paidAmount <= 130) {
-        planType = 'pro';
-        startCredits = 3;
+    // 5. KREDİ MİKTARINI BELİRLEME
+    let creditsToAdd = 0;
+    let packageName = 'Özel Yükleme';
+
+    // Fiyat aralıklarını biraz toleranslı yapalım (Kuruş farkları için)
+    if (paidAmount >= 38 && paidAmount <= 45) { // 39 TL
+        creditsToAdd = 5;
+        packageName = 'Başlangıç Paketi';
     } 
-    // KAHİN: 299 TL (290 - 310 arası kabul) -> 10 Kredi
-    else if (paidAmount >= 290 && paidAmount <= 310) {
-        planType = 'elite';
-        startCredits = 10;
-    } 
+    else if (paidAmount >= 125 && paidAmount <= 135) { // 129 TL
+        creditsToAdd = 20;
+        packageName = 'Keşif Paketi';
+    }
+    else if (paidAmount >= 240) { // 249 TL ve üzeri
+        creditsToAdd = 50;
+        packageName = 'Kahin Paketi';
+    }
     else {
-        console.log(`⚠️ Tanımsız Fiyat: ${paidAmount} TL. İşlem yapılmıyor.`);
-        return new Response('success', { status: 200 });
+        console.log(`⚠️ Tanımsız Fiyat Aralığı: ${paidAmount} TL.`);
+        // Yine de işlemi 'success' dönüyoruz ki Shopier sürekli denemesin.
+        // Ama loglara "resolved: false" olarak düşeceğiz.
     }
 
-    // --- SUPABASE BAĞLANTISI ---
+    // --- SUPABASE BAĞLANTISI (SERVICE ROLE - ADMIN YETKİSİ) ---
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY! 
     );
 
-    const cleanEmail = String(data.email).trim().toLowerCase();
+    const cleanEmail = rawEmail.trim().toLowerCase();
 
-    // A) Kullanıcıyı Bul
+    // 6. Kullanıcıyı Bul
     const { data: userProfile, error: userError } = await supabase
         .from('profiles')
         .select('id')
         .eq('email', cleanEmail)
         .single();
 
-    // --- GÜVENLİK AĞI: KULLANICI YOKSA LOGLA ---
+    // KULLANICI YOKSA -> LOGLA
     if (userError || !userProfile) {
-        console.error(`❌ Kullanıcı Bulunamadı: ${cleanEmail} -> Admin Paneline Kaydediliyor.`);
+        console.error(`❌ Kullanıcı Bulunamadı: ${cleanEmail}`);
         
         await supabase.from('webhook_logs').insert({
             shopier_email: cleanEmail,
-            shopier_order_id: String(data.orderid),
-            plan_type: planType,
+            shopier_order_id: orderId,
+            plan_type: packageName,
             amount: paidAmount,
-            error_message: 'User not found in profiles table',
+            error_message: `User not found. Credits pending: ${creditsToAdd}`,
             is_resolved: false
         });
 
-        return new Response('success', { status: 200 });
+        return new NextResponse('success', { status: 200 });
+        
     }
 
     const userId = userProfile.id;
 
-    // B) Eski Abonelikleri Kapat
-    await supabase.from('subscriptions').update({ is_active: false }).eq('user_id', userId);
+    // 7. GÜVENLİ KREDİ YÜKLEME (RPC)
+    // Eğer fiyat tanımsızsa (creditsToAdd 0 ise) işlem yapma
+    if (creditsToAdd > 0) {
+        // Idempotency (Çift işlem önleme): Bu sipariş ID'si daha önce işlendi mi?
+        const { data: existingTx } = await supabase
+            .from('credit_transactions')
+            .select('id')
+            .eq('description', `Shopier Sipariş #${orderId}`)
+            .single();
 
-    // C) Yeni Abonelik Ekle
-    const { error: subError } = await supabase
-        .from('subscriptions')
-        .insert({
-            user_id: userId,
-            provider: 'shopier',
-            package_key: planType,
-            start_date: new Date().toISOString(),
-            end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 Gün
-            is_active: true
+        if (existingTx) {
+             console.log("ℹ️ Bu sipariş zaten işlenmiş.");
+             return new NextResponse('success', { status: 200 });
+        }
+
+        const { data: txResult, error: rpcError } = await supabase.rpc('handle_credit_transaction', {
+            p_user_id: userId,
+            p_amount: creditsToAdd, 
+            p_process_type: 'purchase', 
+            p_description: `Shopier Sipariş #${orderId}`,
+            p_metadata: { 
+                shopier_order_id: orderId, 
+                price: paidAmount,
+                package: packageName 
+            }
         });
 
-    if (subError) {
-        console.error("❌ Veritabanı Hatası (Insert):", subError);
-        return new Response('DB Error', { status: 500 });
+        if (rpcError || (txResult && !txResult.success)) {
+            console.error("❌ RPC Hatası:", rpcError);
+            
+            await supabase.from('webhook_logs').insert({
+                shopier_email: cleanEmail,
+                shopier_order_id: orderId,
+                plan_type: packageName,
+                amount: paidAmount,
+                error_message: `RPC Error: ${JSON.stringify(rpcError)}`,
+                is_resolved: false
+            });
+            return new NextResponse('DB Error', { status: 500 });
+        }
+        
+        console.log(`🎉 KREDİ YÜKLENDİ: ${creditsToAdd} Kredi -> ${cleanEmail}`);
     }
 
-    // D) Profili Güncelle (PAKET + KREDİ YÜKLEME)
-    await supabase.from('profiles').update({ 
-        subscription_tier: planType,
-        tarot_credits: startCredits // <-- KREDİ GÜNCELLEMESİ EKLENDİ
-    }).eq('id', userId);
-
-    console.log(`🎉 BAŞARILI! ${cleanEmail} kullanıcısına ${planType} ve ${startCredits} kredi tanımlandı.`);
-    
-    return new Response('success', { status: 200 });
+    return new NextResponse('success', { status: 200 });
 
   } catch (err: any) {
-    console.error("🔥 Sunucu Hatası:", err.message);
-    return new Response('Internal Error', { status: 500 });
+    console.error("🔥 Webhook Fatal Error:", err.message);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }
