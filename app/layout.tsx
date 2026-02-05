@@ -23,21 +23,39 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
+  // BU SATIR KRİTİK: Canonical URL hatalarını çözer
   metadataBase: new URL('https://www.ruyayorumcum.com.tr'),
+  
   alternates: {
     canonical: './',
   },
+  
   title: {
     default: "Rüya Yorumcum AI - İslami ve Psikolojik Rüya Tabirleri",
     template: "%s | Rüya Yorumcum AI", 
   },
   description: "Rüyalarınızın gizli mesajlarını yapay zeka ile çözün. İslami kaynaklar ve modern psikoloji ışığında size özel rüya yorumları.",
+  
+  // ROBOTS AYARI (EKLENDİ): Google'a sayfaları nasıl taraması gerektiğini net söyler
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+
   manifest: "/manifest.json",
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
     apple: '/icon.png',
   },
+  
   openGraph: {
     title: 'Rüya Yorumcum AI',
     description: 'Rüyalarınızın gizli mesajlarını yapay zeka ile çözün.',
@@ -46,9 +64,11 @@ export const metadata: Metadata = {
     locale: 'tr_TR',
     type: 'website',
   },
+  
+  // BURAYI GÜNCELLEMEYİ UNUTMAYIN!
   verification: {
-    google: 'google-site-verification-kodun-buraya', 
-    yandex: 'yandex-verification-kodun',
+    google: 'google-site-verification-kodunuzu-buraya-yazin', // GSC'den alınan kod
+    yandex: 'yandex-verification-kodunuz',
   },
   category: 'lifestyle',
 };
@@ -89,12 +109,14 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
+        {/* AdSense Scripti */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+        {/* Schema Markup */}
         <Script
           id="json-ld-website"
           type="application/ld+json"
@@ -104,6 +126,7 @@ export default function RootLayout({
       
       <body className={`${cinzel.variable} ${manrope.variable} font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh]`}>
         
+        {/* Google Analytics & GTM */}
         <Script
           strategy="afterInteractive"
           src="https://www.googletagmanager.com/gtag/js?id=G-W3T96RLZHL"
@@ -120,7 +143,7 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* 1. ÜST NAVBAR: Dashboard'da gizlenir */}
+        {/* 1. NAVBAR: Dashboard ve Auth sayfalarında otomatik gizlenir (NavbarWrapper içinde kontrol var) */}
         <HideOnDashboard>
            <NavbarWrapper /> 
         </HideOnDashboard>
@@ -136,7 +159,7 @@ export default function RootLayout({
           </HideOnDashboard>
         </div>
 
-        {/* 3. MOBİL MENÜ: Dashboard'da gizlenir (Çakışmayı önlemek için) */}
+        {/* 3. MOBİL MENÜ: Dashboard'da gizlenir */}
         <HideOnDashboard>
            <MobileNav />
         </HideOnDashboard>

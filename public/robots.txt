@@ -1,7 +1,9 @@
 User-agent: *
 Allow: /
-Allow: /llms.txt
 Disallow: /dashboard/
 Disallow: /api/
+Disallow: /_next/
+Disallow: /*opengraph-image*
+Disallow: /*twitter-image*
 
 Sitemap: https://www.ruyayorumcum.com.tr/sitemap.xml

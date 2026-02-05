@@ -50,57 +50,54 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.9,
     },
-    // --- YENİ EKLENEN LANDING PAGES ---
+    // --- LANDING PAGES (Hizmet Sayfaları) ---
     {
-      url: `${baseUrl}/astroloji`, // YENİ: Astroloji Ana Sayfası
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9, // Yüksek öncelik
-    },
-    {
-      url: `${baseUrl}/ruya-tabiri`, // Rüya Analizi
+      url: `${baseUrl}/astroloji`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/ruya-gorsellestirme`, // Görsel Oluşturma
+      url: `${baseUrl}/ruya-tabiri`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/numeroloji`, // Numeroloji
+      url: `${baseUrl}/ruya-gorsellestirme`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/duygu-analizi`, // Duygu Analizi
+      url: `${baseUrl}/numeroloji`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/tarot`, // Tarot
+      url: `${baseUrl}/duygu-analizi`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
-    // ----------------------------------
+    {
+      url: `${baseUrl}/tarot`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    // --- DİĞER SAYFALAR ---
     {
       url: `${baseUrl}/pricing`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
     },
-    {
-      url: `${baseUrl}/dashboard`, // Kullanıcı Paneli (Login gerektirir ama indexlenebilir)
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    // Yasal Sayfalar
+    // NOT: Dashboard robots.txt'de engelli olduğu için buradan kaldırıldı.
+    // Google botlarının kafasını karıştırmamak için sitemap'te olmamalıdır.
+
+    // --- YASAL SAYFALAR ---
     {
       url: `${baseUrl}/yasal/gizlilik-politikasi`,
       lastModified: new Date(),
