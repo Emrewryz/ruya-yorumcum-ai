@@ -75,10 +75,10 @@ export const config = {
      * - _next/static (statik dosyalar)
      * - _next/image (resim optimizasyonu)
      * - favicon.ico (favicon)
+     * - ads.txt (Google AdSense) -> EKLENDİ
+     * - robots.txt (SEO Botları) -> EKLENDİ
      * - api (API route'ları etkilenmesin)
-     * Not: Shopier webhook için yukarıya kodla da istisna ekledik, 
-     * buradaki regex bazen kaçırabiliyor, kod tarafı garantidir.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|ads.txt|robots.txt|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

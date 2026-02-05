@@ -6,14 +6,21 @@ import Navbar from "./Navbar";
 export default function NavbarWrapper() {
   const pathname = usePathname();
   
-  // Mantık: Eğer adres "/auth" ise YA DA "/dashboard" ile başlıyorsa Navbar'ı GİZLE.
-  // Bu sayede dashboard'un alt sayfaları (günlük, tarot vs.) otomatik dahil olur.
-  const shouldHide = pathname === '/auth' || pathname?.startsWith('/dashboard');
+  // Mantık: 
+  // 1. /auth (Giriş/Kayıt)
+  // 2. /dashboard ve alt sayfaları (Panel)
+  // 3. /bio ve alt sayfaları (TikTok Link Sayfası) -> EKLENDİ
+  // Bu sayfalarda Navbar GİZLENİR.
+  
+  const shouldHide = 
+    pathname === '/auth' || 
+    pathname?.startsWith('/dashboard') || 
+    pathname?.startsWith('/bio');
 
   if (shouldHide) {
     return null;
   }
 
-  // Diğer tüm sayfalarda (Ana sayfa, Blog, Sözlük) GÖSTER
+  // Diğer tüm sayfalarda (Anasayfa, Blog, Sözlük vb.) GÖSTER
   return <Navbar />;
 }
