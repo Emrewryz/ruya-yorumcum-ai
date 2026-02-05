@@ -1,4 +1,4 @@
-import Astronomy from "astronomy-engine";
+import * as Astronomy from 'astronomy-engine';
 
 export const ZODIAC_SIGNS = [
   "Koç", "Boğa", "İkizler", "Yengeç", "Aslan", "Başak",
