@@ -9,6 +9,9 @@ import { readTarot } from "@/app/actions/read-tarot";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 
+// Build hatasını önlemek için (useSearchParams kullanımı nedeniyle)
+export const dynamic = "force-dynamic"; 
+
 // --- TASARIM KONFİGÜRASYONU ---
 const SPREAD_CONFIG = [
   {
@@ -75,7 +78,7 @@ const SPREAD_CONFIG = [
 
 export default function TarotPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // force-dynamic olduğu için sorun çıkarmaz
   const supabase = createClient();
   
   // --- STATE ---
@@ -108,7 +111,7 @@ export default function TarotPage() {
             TAROT_DECK.find(master => master.id === guestCard.id) || guestCard
           );
 
-          // --- DÜZELTME BURADA YAPILDI: null yerine undefined ---
+          // --- MİSAFİR FALI ÇAĞRISI (undefined ile) ---
           const result = await readTarot(parsedData.question, guestCardNames, 'three_card', undefined);
 
           if (result.success) {
@@ -220,7 +223,8 @@ export default function TarotPage() {
     }
 
     try {
-        const result = await readTarot(finalQuestion, cardNames, selectedSpread.id, latestDream?.id);
+        // --- NORMAL FALDADA undefined DÜZELTMESİ (dreamId null ise undefined gönder) ---
+        const result = await readTarot(finalQuestion, cardNames, selectedSpread.id, latestDream?.id || undefined);
         
         if (result.success) {
             setReadingResult({ ...result.data, selectedCardsData });
@@ -314,9 +318,9 @@ export default function TarotPage() {
                                 </div>
                                 {spread.id === 'dream_special' && latestDream && (
                                      <div className="relative z-10 mt-3 md:mt-4 w-full pt-3 md:pt-4 border-t border-white/5">
-                                         <p className="text-[10px] md:text-xs text-amber-500/80 truncate flex items-center gap-2">
-                                              <Info className="w-3 h-3" /> Son: {latestDream.title}
-                                         </p>
+                                          <p className="text-[10px] md:text-xs text-amber-500/80 truncate flex items-center gap-2">
+                                               <Info className="w-3 h-3" /> Son: {latestDream.title}
+                                          </p>
                                      </div>
                                 )}
                             </motion.div>
@@ -387,7 +391,7 @@ export default function TarotPage() {
                 <div className="text-center py-4 md:py-6">
                       <h3 className="text-xl md:text-2xl font-serif text-white">Kartlarını Seç</h3>
                       <p className={`text-xs md:text-sm mt-1 md:mt-2 font-mono ${selectedSpread.theme.accent}`}>
-                         {selectedIndices.length} / {selectedSpread.count} SEÇİLDİ
+                          {selectedIndices.length} / {selectedSpread.count} SEÇİLDİ
                       </p>
                 </div>
 
@@ -483,10 +487,9 @@ export default function TarotPage() {
                     </h2>
                     
                     <div className="prose prose-invert max-w-none text-slate-300 leading-7 md:leading-9 font-light text-sm md:text-lg space-y-4 md:space-y-6 text-justify">
-                       {/* Değişiklik: (readingResult.interpretation || "") şeklinde paranteze aldık */}
-{(readingResult.interpretation || "").split('\n').map((paragraph: string, i: number) => (
-    paragraph.trim() && <p key={i}>{paragraph}</p>
-))}
+                        {(readingResult.interpretation || "").split('\n').map((paragraph: string, i: number) => (
+                            paragraph.trim() && <p key={i}>{paragraph}</p>
+                        ))}
                     </div>
 
                     <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-white/5 grid md:grid-cols-2 gap-6 md:gap-8">
@@ -523,4 +526,4 @@ export default function TarotPage() {
       </main>
     </div>
   );
-}   
+}
