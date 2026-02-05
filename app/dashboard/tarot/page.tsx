@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react"; // Suspense eklendi
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Sparkles, RefreshCcw, Layers, Star, Heart, Moon, Lock, Info, Zap } from "lucide-react";
@@ -9,8 +9,8 @@ import { readTarot } from "@/app/actions/read-tarot";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 
-// Build hatasını önlemek için (useSearchParams kullanımı nedeniyle)
-export const dynamic = "force-dynamic"; 
+// Build hatasını önlemek için dinamik render (Yine de kalsın, garanti olsun)
+export const dynamic = "force-dynamic";
 
 // --- TASARIM KONFİGÜRASYONU ---
 const SPREAD_CONFIG = [
@@ -76,9 +76,10 @@ const SPREAD_CONFIG = [
   }
 ];
 
-export default function TarotPage() {
+// --- ASIL İÇERİK BİLEŞENİ (Logic Burada) ---
+function TarotPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams(); // force-dynamic olduğu için sorun çıkarmaz
+  const searchParams = useSearchParams();
   const supabase = createClient();
   
   // --- STATE ---
@@ -111,7 +112,7 @@ export default function TarotPage() {
             TAROT_DECK.find(master => master.id === guestCard.id) || guestCard
           );
 
-          // --- MİSAFİR FALI ÇAĞRISI (undefined ile) ---
+          // --- MİSAFİR FALI ÇAĞRISI ---
           const result = await readTarot(parsedData.question, guestCardNames, 'three_card', undefined);
 
           if (result.success) {
@@ -223,7 +224,6 @@ export default function TarotPage() {
     }
 
     try {
-        // --- NORMAL FALDADA undefined DÜZELTMESİ (dreamId null ise undefined gönder) ---
         const result = await readTarot(finalQuestion, cardNames, selectedSpread.id, latestDream?.id || undefined);
         
         if (result.success) {
@@ -246,7 +246,7 @@ export default function TarotPage() {
       setReadingResult(null);
   };
 
-  // --- RENDER ---
+  // --- COMPONENT RENDER ---
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-200 relative flex flex-col font-sans selection:bg-white/20 transition-colors duration-1000 pb-20 md:pb-0`}>
       
@@ -396,7 +396,6 @@ export default function TarotPage() {
                 </div>
 
                 <div className="w-full max-w-6xl flex justify-center perspective-1000">
-                    {/* MOBİL: grid-cols-6, TABLET: grid-cols-8, PC: grid-cols-12 */}
                     <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2 md:gap-3">
                         {deckOrder.map((deckIndex, i) => { 
                             const isSelected = selectedIndices.includes(i);
@@ -417,11 +416,9 @@ export default function TarotPage() {
                                         animate={{ rotateY: isSelected ? 180 : 0 }}
                                         style={{ transformStyle: "preserve-3d" }}
                                     >
-                                        {/* ARKA */}
                                         <div className={`absolute inset-0 backface-hidden rounded md:rounded-lg flex items-center justify-center shadow-md bg-slate-900 border border-white/10 ${isSelected ? 'opacity-0' : 'opacity-100'}`} style={{ backfaceVisibility: "hidden" }}>
                                             <div className={`w-full h-full absolute bg-gradient-to-tr ${selectedSpread.theme.ambient} opacity-40`}></div>
                                         </div>
-                                        {/* ÖN */}
                                         <div className="absolute inset-0 backface-hidden rounded md:rounded-lg overflow-hidden border border-white/20 shadow-sm" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
                                             <img src={cardData.image} alt="Tarot" className="w-full h-full object-cover" />
                                         </div>
@@ -525,5 +522,15 @@ export default function TarotPage() {
 
       </main>
     </div>
+  );
+}
+
+// --- ANA EXPORT (SUSPENSE WRAPPER) ---
+// useSearchParams kullanan client component'ler Suspense içinde olmalıdır.
+export default function TarotPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white font-serif">Kozmik veri yükleniyor...</div>}>
+       <TarotPageContent />
+    </Suspense>
   );
 }
