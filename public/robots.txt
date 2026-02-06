@@ -3,6 +3,7 @@ Allow: /
 # Gereksiz sistem dosyalarını engelle
 Disallow: /dashboard/
 Disallow: /api/
+Disallow: /auth/
 Disallow: /_next/
 Disallow: /static/
 

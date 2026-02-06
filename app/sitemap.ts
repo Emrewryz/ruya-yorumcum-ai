@@ -89,11 +89,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     // --- DİĞER SAYFALAR ---
     {
-      url: `${baseUrl}/pricing`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
+  url: `${baseUrl}/dashboard/pricing`, // Başına dashboard eklendi
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.8,
+},
     // NOT: Dashboard robots.txt'de engelli olduğu için buradan kaldırıldı.
     // Google botlarının kafasını karıştırmamak için sitemap'te olmamalıdır.
 

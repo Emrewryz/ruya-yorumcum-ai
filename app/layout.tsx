@@ -86,11 +86,6 @@ const jsonLd = {
   '@type': 'WebSite',
   name: 'Rüya Yorumcum AI',
   url: 'https://www.ruyayorumcum.com.tr',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: 'https://www.ruyayorumcum.com.tr/arama?q={search_term_string}',
-    'query-input': 'required name=search_term_string'
-  },
   publisher: {
     '@type': 'Organization',
     name: 'Rüya Yorumcum AI',
