@@ -109,13 +109,7 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
-        {/* AdSense Scripti (Doğru Yerleşim) */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+      
         
         {/* Schema Markup */}
         <Script
