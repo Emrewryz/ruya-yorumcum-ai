@@ -1,9 +1,23 @@
 User-agent: *
 Allow: /
+# Gereksiz sistem dosyalarını engelle
 Disallow: /dashboard/
 Disallow: /api/
 Disallow: /_next/
+Disallow: /static/
+
+# Hata veren ikon ve yapılandırma dosyalarını engelle
+Disallow: /favicon.ico
+Disallow: /manifest.json
+Disallow: /llms.txt
+
+# O listeyi dolduran resim uzantılarını engelle
 Disallow: /*opengraph-image*
 Disallow: /*twitter-image*
+
+# Kod ve veri dosyalarını engelle
+Disallow: /*.json$
+Disallow: /*.js$
+Disallow: /*.css$
 
 Sitemap: https://www.ruyayorumcum.com.tr/sitemap.xml
