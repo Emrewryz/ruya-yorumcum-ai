@@ -23,7 +23,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  // BU SATIR KRİTİK: Canonical URL hatalarını çözer
+  // Canonical URL ayarı
   metadataBase: new URL('https://www.ruyayorumcum.com.tr'),
   
   alternates: {
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   description: "Rüyalarınızın gizli mesajlarını yapay zeka ile çözün. İslami kaynaklar ve modern psikoloji ışığında size özel rüya yorumları.",
   
-  // ROBOTS AYARI (EKLENDİ): Google'a sayfaları nasıl taraması gerektiğini net söyler
+  // Robots ayarı
   robots: {
     index: true,
     follow: true,
@@ -65,9 +65,9 @@ export const metadata: Metadata = {
     type: 'website',
   },
   
-  // BURAYI GÜNCELLEMEYİ UNUTMAYIN!
+  // Google Search Console doğrulama kodunuzu buraya yazmayı unutmayın
   verification: {
-    google: 'google-site-verification-kodunuzu-buraya-yazin', // GSC'den alınan kod
+    google: 'google-site-verification-kodunuzu-buraya-yazin', 
     yandex: 'yandex-verification-kodunuz',
   },
   category: 'lifestyle',
@@ -109,13 +109,14 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
-        {/* AdSense Scripti */}
+        {/* AdSense Scripti (Doğru Yerleşim) */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+        
         {/* Schema Markup */}
         <Script
           id="json-ld-website"
@@ -143,7 +144,7 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* 1. NAVBAR: Dashboard ve Auth sayfalarında otomatik gizlenir (NavbarWrapper içinde kontrol var) */}
+        {/* 1. NAVBAR */}
         <HideOnDashboard>
            <NavbarWrapper /> 
         </HideOnDashboard>
@@ -152,14 +153,14 @@ export default function RootLayout({
           {children}
         </main>
 
-        {/* 2. FOOTER: Dashboard'da gizlenir */}
+        {/* 2. FOOTER */}
         <div className="hidden md:block">
           <HideOnDashboard>
              <Footer />
           </HideOnDashboard>
         </div>
 
-        {/* 3. MOBİL MENÜ: Dashboard'da gizlenir */}
+        {/* 3. MOBİL MENÜ */}
         <HideOnDashboard>
            <MobileNav />
         </HideOnDashboard>
