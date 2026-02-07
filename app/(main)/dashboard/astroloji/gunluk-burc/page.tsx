@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { getDailyHoroscope } from "@/app/actions/daily-horoscope";
-import Sidebar from "@/app/dashboard/Sidebar"; 
+import Sidebar from "@/components/Sidebar";
 import { 
   ArrowLeft, Sparkles, Loader2, Star, Heart, 
   Briefcase, Quote, Zap, Calendar, Coins
@@ -22,6 +22,7 @@ export default function DailyHoroscopePage() {
   const [formattedDate, setFormattedDate] = useState("");
 
   useEffect(() => {
+    // Tarih formatı (Örn: 12 Şubat 2026 Perşembe)
     const dateOptions: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' };
     setFormattedDate(new Date().toLocaleDateString('tr-TR', dateOptions));
     
@@ -30,41 +31,54 @@ export default function DailyHoroscopePage() {
 
   // 1. Veritabanı Kontrolü (Cache varsa ücretsiz göster)
   const checkTodayData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+            router.push('/login');
+            return;
+        }
 
-    // Backend ile aynı tarih formatı
-    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
+        // Backend ile aynı tarih formatı (YYYY-MM-DD)
+        const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
 
-    const { data: existing } = await supabase
-      .from('daily_horoscopes')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('date', today)
-      .single();
+        const { data: existing, error } = await supabase
+            .from('daily_horoscopes')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('date', today)
+            .single();
 
-    if (existing) {
-      setData(existing);
+        if (existing) {
+            setData(existing);
+        }
+    } catch (error) {
+        console.error("Veri çekme hatası:", error);
+    } finally {
+        setLoading(false);
     }
-    setLoading(false);
   };
 
   // 2. Butona basılınca AI çalıştır (Yeni Analiz)
   const handleGenerate = async () => {
     setGenerating(true);
     
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Server Action Çağrısı (Kredi kontrolü burada yapılır)
+    // Server Action Çağrısı (Kredi kontrolü serverda yapılır)
     const res = await getDailyHoroscope(); 
     
     if (res.success) {
       setData(res.data);
+      
+      // Kullanıcıya bilgi ver
       if (res.cached) {
           toast.success("Bugünkü yorumunuz zaten hazırdı.");
       } else {
           toast.success("Yıldızlar haritanızı okudu! (1 Kredi düştü)");
       }
+      
+      // Sayfayı yukarı kaydır
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
     } else {
       // --- HATA VE KREDİ YÖNETİMİ ---
       if (res.code === "NO_CREDIT") {
@@ -83,16 +97,19 @@ export default function DailyHoroscopePage() {
     setGenerating(false);
   };
 
+  // Skor rengini belirle
   const getScoreColor = (score: number) => {
+    if (!score) return "text-gray-400 border-gray-500/50";
     if (score >= 80) return "text-emerald-400 border-emerald-500/50 shadow-emerald-500/20";
     if (score >= 50) return "text-indigo-400 border-indigo-500/50 shadow-indigo-500/20";
     return "text-amber-400 border-amber-500/50 shadow-amber-500/20";
   };
 
   return (
-    // APP FIX: pb-28 (Mobil alt menü payı)
+    // APP FIX: pb-28 (Mobil alt menü payı), overflow-x-hidden (Yatay taşmayı önle)
     <div className="min-h-screen bg-[#020617] text-white flex pb-28 md:pb-0 overflow-x-hidden font-sans">
-<Sidebar />      
+      <Sidebar />      
+      
       {/* Arkaplan Efektleri */}
       <div className="fixed inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none z-0 mix-blend-overlay"></div>
       <div className="fixed -top-[20%] -left-[10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-indigo-600/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none z-0 animate-pulse-slow"></div>
@@ -101,9 +118,9 @@ export default function DailyHoroscopePage() {
       {/* MAIN CONTENT */}
       {/* md:pl-24 -> Masaüstü Sidebar boşluğu | p-4 -> Mobil kenar boşluğu */}
       <main className="flex-1 md:pl-24 p-4 md:p-10 relative z-10 w-full flex flex-col items-center">
-         
-         {/* Üst Header */}
-         <div className="max-w-4xl w-full mb-6 md:mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-6 md:pt-0">
+          
+          {/* Üst Header */}
+          <div className="max-w-4xl w-full mb-6 md:mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-6 md:pt-0">
             <div>
                 <button onClick={() => router.back()} className="flex items-center gap-2 text-indigo-300/60 hover:text-white transition-colors mb-3 md:mb-4 text-xs md:text-sm font-medium tracking-wide">
                     <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" /> Astroloji Merkezi
@@ -116,10 +133,10 @@ export default function DailyHoroscopePage() {
                     <span>{formattedDate}</span>
                 </div>
             </div>
-         </div>
+          </div>
 
-         <div className="max-w-4xl w-full min-h-[400px]">
-           <AnimatePresence mode="wait">
+          <div className="max-w-4xl w-full min-h-[400px]">
+            <AnimatePresence mode="wait">
             
             {loading ? (
                 // LOADING STATE
@@ -149,7 +166,7 @@ export default function DailyHoroscopePage() {
                         {/* İç Dekorasyon */}
                         <div className="absolute top-0 right-0 w-48 md:w-96 h-48 md:h-96 bg-indigo-500/10 rounded-full blur-[40px] md:blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
-                        {/* ÜST BÖLÜM: Skor ve Başlık (Mobilde Dikey Ters) */}
+                        {/* ÜST BÖLÜM: Skor ve Başlık */}
                         <div className="flex flex-col-reverse md:flex-row md:items-start justify-between gap-6 mb-8 md:mb-10 border-b border-white/5 pb-6 md:pb-8">
                             <div className="flex-1 text-center md:text-left">
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-3 md:mb-4">
@@ -164,7 +181,7 @@ export default function DailyHoroscopePage() {
                             <div className="flex flex-col items-center">
                                 <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full border-4 flex items-center justify-center bg-black/20 backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.3)] ${getScoreColor(data.lucky_score)}`}>
                                     <div className="text-center">
-                                        <span className="text-2xl md:text-3xl font-bold block leading-none">{data.lucky_score}</span>
+                                        <span className="text-2xl md:text-3xl font-bold block leading-none">{data.lucky_score || "?"}</span>
                                         <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest opacity-70">Puan</span>
                                     </div>
                                 </div>
@@ -193,7 +210,7 @@ export default function DailyHoroscopePage() {
                                 </div>
                                 <h3 className="text-base md:text-lg font-bold text-white">Aşk & İlişkiler</h3>
                              </div>
-                             <p className="text-xs md:text-base text-gray-400 leading-relaxed">
+                             <p className="text-xs md:text-base text-gray-400 leading-relaxed text-justify">
                                 {data.love_focus}
                              </p>
                           </motion.div>
@@ -209,7 +226,7 @@ export default function DailyHoroscopePage() {
                                 </div>
                                 <h3 className="text-base md:text-lg font-bold text-white">Kariyer & Para</h3>
                              </div>
-                             <p className="text-xs md:text-base text-gray-400 leading-relaxed">
+                             <p className="text-xs md:text-base text-gray-400 leading-relaxed text-justify">
                                 {data.career_focus}
                              </p>
                           </motion.div>
@@ -253,7 +270,6 @@ export default function DailyHoroscopePage() {
                             disabled={generating}
                             className="group relative w-full md:w-auto inline-flex items-center justify-center gap-3 px-8 md:px-10 py-4 md:py-5 bg-white text-black font-bold text-base md:text-lg rounded-xl md:rounded-2xl hover:scale-105 transition-all disabled:opacity-70 disabled:scale-100 overflow-hidden shadow-xl"
                         >
-                            {/* Buton içi animasyonlu gradient */}
                             <div className="absolute inset-0 bg-gradient-to-r from-indigo-200 via-white to-indigo-200 opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
                             
                             <span className="relative flex items-center gap-2">
@@ -271,8 +287,8 @@ export default function DailyHoroscopePage() {
                     </div>
                 </motion.div>
             )}
-           </AnimatePresence>
-         </div>
+            </AnimatePresence>
+          </div>
 
       </main>
     </div>

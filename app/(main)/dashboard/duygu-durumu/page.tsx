@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, Heart, Activity, PieChart, Zap, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
+
 // GENİŞLETİLMİŞ RENK PALETİ
 const MOOD_COLORS: { [key: string]: string } = {
   "Mutlu": "#10b981",      // Zümrüt Yeşili

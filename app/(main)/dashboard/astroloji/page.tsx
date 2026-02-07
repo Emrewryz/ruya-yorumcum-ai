@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { getMoonPhase } from "@/utils/moon"; 
-import Sidebar from "@/app/dashboard/Sidebar"; 
+import Sidebar from "@/components/Sidebar";
 import { useRouter } from "next/navigation";
 import { TURKEY_CITIES } from "@/constants/cities"; 
 import { 

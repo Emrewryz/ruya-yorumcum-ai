@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { 
-  Moon, LogOut, PenLine, FileText, Settings, 
-  Plus, Layers, Hash, Activity, Grid, Wand2, Gem, ChevronRight, X 
+  Moon, LogOut, FileText, Settings, 
+  Plus, Layers, Hash, Activity, Grid, Wand2, Gem, ChevronRight, X, LayoutDashboard
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
@@ -16,8 +16,8 @@ export default function Sidebar() {
   const supabase = createClient();
   
   const [credits, setCredits] = useState<number | null>(null);
-  const [isServicesHovered, setIsServicesHovered] = useState(false); // Masaüstü Hover
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);   // Mobil Tıklama
+  const [isServicesHovered, setIsServicesHovered] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // --- Realtime Kredi Takibi ---
   useEffect(() => {
@@ -26,11 +26,9 @@ export default function Sidebar() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // İlk yükleme
       const { data: profile } = await supabase.from('profiles').select('credits').eq('id', user.id).single();
       if (profile) setCredits(profile.credits);
 
-      // Canlı dinleme (Realtime)
       channel = supabase
         .channel('sidebar-credits')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
@@ -47,17 +45,16 @@ export default function Sidebar() {
     router.push('/');
   };
 
-  // --- HİZMET LİSTESİ VE MATCH MANTIĞI ---
-  // match: Bu fonksiyon, şu anki URL'in bu servise ait olup olmadığını kontrol eder.
+  // --- HİZMET LİSTESİ VE GÜNCELLENMİŞ ROTALAR ---
   const services = [
     { 
         id: 'dream', 
-        label: 'Rüya', 
-        fullLabel: 'Rüya Yorumu',
-        icon: PenLine, 
+        label: 'Panel', 
+        fullLabel: 'Rüya Paneli',
+        icon: LayoutDashboard,
         path: '/dashboard', 
-        match: (p: string) => p === '/dashboard' || p.startsWith('/dashboard/ruya'), // Anasayfa
-        desc: 'Yapay zeka analizi', 
+        match: (p: string) => p === '/dashboard',
+        desc: 'Ana Sayfa', 
         color: 'text-indigo-400',
         bgColor: 'bg-indigo-400/10'
     },
@@ -77,7 +74,8 @@ export default function Sidebar() {
         label: 'Astroloji', 
         fullLabel: 'Natal Harita',
         icon: Moon, 
-        path: '/dashboard/astroloji', 
+        // DİKKAT: Astroloji klasöründe direkt page.tsx yoksa alt klasöre yönlendiriyoruz
+        path: '/dashboard/astroloji/dogum-haritasi', 
         match: (p: string) => p.startsWith('/dashboard/astroloji'),
         desc: 'Natal ve transit', 
         color: 'text-blue-400',
@@ -88,6 +86,7 @@ export default function Sidebar() {
         label: 'Numeroloji', 
         fullLabel: 'Numeroloji',
         icon: Hash, 
+        // DÜZELTME: Numeroloji klasöründe direkt page.tsx olmadığı için 'genel'e atıyoruz.
         path: '/dashboard/numeroloji', 
         match: (p: string) => p.startsWith('/dashboard/numeroloji'),
         desc: 'Sayıların gizemi', 
@@ -99,7 +98,8 @@ export default function Sidebar() {
         label: 'Görsel', 
         fullLabel: 'Rüya Görseli',
         icon: Wand2, 
-        path: '/dashboard/gorsel-olustur/yeni', // Varsayılan yeni görsel sayfası
+        // DÜZELTME: [id] yapısı olduğu için '/yeni' parametresi ile gönderiyoruz.
+        path: '/dashboard/gorsel-olustur/yeni', 
         match: (p: string) => p.startsWith('/dashboard/gorsel-olustur'),
         desc: 'AI Sanat Stüdyosu', 
         color: 'text-pink-400',
@@ -118,8 +118,6 @@ export default function Sidebar() {
     },
   ];
 
-  // --- AKTİF SERVİSİ BUL ---
-  // Şu anki URL hangi servise aitse onu bul, yoksa varsayılan olarak Rüya (Dream) getir.
   const activeService = services.find(s => s.match(pathname)) || services[0];
 
   return (
@@ -155,14 +153,14 @@ export default function Sidebar() {
         md:top-0 md:bottom-0 md:left-0 md:w-20 md:h-full md:flex-col md:py-6 md:border-r md:border-t-0 md:justify-start
       ">
         
-        {/* --- LOGO (Masaüstü) --- */}
-        <Link href="/" className="hidden md:flex mb-8 items-center justify-center w-full">
+        {/* LOGO */}
+        <Link href="/dashboard" className="hidden md:flex mb-8 items-center justify-center w-full">
           <div className="w-10 h-10 rounded-xl bg-[#fbbf24] flex items-center justify-center text-black shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:scale-105 transition-transform">
             <Moon className="w-6 h-6" />
           </div>
         </Link>
 
-        {/* --- KREDİ GÖSTERGESİ --- */}
+        {/* KREDİ */}
         <button 
           onClick={() => router.push('/dashboard/pricing')}
           className="hidden md:flex flex-col items-center gap-1 mb-6 group w-full px-2"
@@ -176,26 +174,22 @@ export default function Sidebar() {
            </span>
         </button>
 
-        {/* --- NAVİGASYON --- */}
+        {/* NAVİGASYON */}
         <nav className="flex flex-row md:flex-col gap-1 md:gap-4 w-full px-2 justify-around md:justify-start items-center">
           
-          {/* 1. DİNAMİK ANA BUTON (AKTİF SERVİS) */}
-          {/* Bu buton kullanıcının o an hangi modülde olduğunu gösterir */}
+          {/* AKTİF SERVİS BUTONU */}
           <button 
             onClick={() => router.push(activeService.path)} 
             className={`group flex flex-col items-center gap-1 p-2 rounded-xl transition-all relative ${activeService.color}`}
           >
-             {/* Aktif olduğunu belirten arka plan (sadece o anki sayfadaysa daha belirgin) */}
              <div className={`p-2 rounded-lg ${activeService.bgColor} border border-white/5 shadow-[0_0_10px_rgba(255,255,255,0.05)]`}>
                 <activeService.icon className="w-5 h-5 md:w-5 md:h-5" />
              </div>
              <span className="text-[9px] font-bold uppercase tracking-wider hidden md:block">{activeService.label}</span>
-             
-             {/* Aktif İşaretçisi (Nokta) */}
              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-current rounded-full animate-pulse md:hidden"></span>
           </button>
 
-          {/* 2. HİZMETLER MENÜSÜ (DİĞERLERİNE GEÇİŞ İÇİN) */}
+          {/* MENÜ BUTONU (Diğerleri için) */}
           <div 
             className="relative flex flex-col items-center group"
             onMouseEnter={() => setIsServicesHovered(true)}
@@ -211,7 +205,7 @@ export default function Sidebar() {
                 <span className="text-[9px] font-bold uppercase tracking-wider">Menü</span>
              </button>
 
-             {/* MASAÜSTÜ FLYOUT MENU */}
+             {/* FLYOUT MENU */}
              <AnimatePresence>
                {isServicesHovered && (
                  <motion.div 
@@ -245,18 +239,18 @@ export default function Sidebar() {
              </AnimatePresence>
           </div>
 
-          {/* 3. ARŞİV */}
+          {/* ARŞİV */}
           <button 
             onClick={() => router.push('/dashboard/gunluk')} 
-            className={`group flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${pathname.includes('/gunluk') ? 'text-[#fbbf24]' : 'text-gray-500 hover:text-white'}`}
+            className={`group flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${pathname.includes('/dashboard/gunluk') ? 'text-[#fbbf24]' : 'text-gray-500 hover:text-white'}`}
           >
-             <div className={`p-2 rounded-lg ${pathname.includes('/gunluk') ? 'bg-[#fbbf24]/10' : 'group-hover:bg-white/5'}`}>
+             <div className={`p-2 rounded-lg ${pathname.includes('/dashboard/gunluk') ? 'bg-[#fbbf24]/10' : 'group-hover:bg-white/5'}`}>
                 <FileText className="w-5 h-5 md:w-5 md:h-5" />
              </div>
              <span className="text-[9px] font-bold uppercase tracking-wider hidden md:block">Arşiv</span>
           </button>
 
-          {/* 4. AYARLAR */}
+          {/* AYARLAR */}
           <button 
             onClick={() => router.push('/dashboard/settings')} 
             className={`group flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${pathname === '/dashboard/settings' ? 'text-[#fbbf24]' : 'text-gray-500 hover:text-white'}`}
@@ -269,7 +263,7 @@ export default function Sidebar() {
 
         </nav>
 
-        {/* ÇIKIŞ BUTONU */}
+        {/* ÇIKIŞ */}
         <button onClick={handleSignOut} className="hidden md:flex flex-col items-center p-3 text-gray-600 hover:text-red-500 transition-colors mt-auto mb-4">
           <LogOut className="w-5 h-5" />
         </button>

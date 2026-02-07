@@ -6,9 +6,9 @@ import OpenAI from "openai";
 import { calculateTransitChart, calculateNatalChart } from "@/utils/astro-calc"; 
 
 const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
+  baseURL: '[https://openrouter.ai/api/v1](https://openrouter.ai/api/v1)',
   apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: { "HTTP-Referer": "https://ruyayorumcum.com", "X-Title": "Rüya Yorumcum" },
+  defaultHeaders: { "HTTP-Referer": "[https://ruyayorumcum.com](https://ruyayorumcum.com)", "X-Title": "Rüya Yorumcum" },
 });
 
 export async function getDailyHoroscope() {
@@ -18,9 +18,10 @@ export async function getDailyHoroscope() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Giriş yapmalısınız." };
 
-  // 1. CACHE KONTROLÜ
+  // Bugünün tarihi (Kanada formatı veritabanı ile uyumludur: YYYY-MM-DD)
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" }); 
   
+  // 1. CACHE KONTROLÜ (Bugün zaten yapılmış mı?)
   const { data: existing } = await supabase
     .from('daily_horoscopes')
     .select('*')
@@ -30,14 +31,16 @@ export async function getDailyHoroscope() {
 
   if (existing && existing.general_vibe) {
     return { success: true, data: existing, cached: true };
-  } else if (existing && !existing.general_vibe) {
+  } else if (existing) {
+    // Eğer kayıt var ama içi boşsa sil (Hatalı kayıt temizliği)
     await supabase.from('daily_horoscopes').delete().eq('id', existing.id);
   }
 
+  // Profil verilerini çek
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
   if (!profile?.birth_date) return { error: "Profilinizde doğum tarihi eksik." };
 
-  // 2. ÖDEME AL (Peşin)
+  // 2. ÖDEME AL (Analizden Önce)
   const { data: txResult, error: txError } = await supabase.rpc('handle_credit_transaction', {
       p_user_id: user.id,
       p_amount: -COST,
@@ -50,44 +53,67 @@ export async function getDailyHoroscope() {
   }
 
   try {
+    // 3. ASTROLOJİK HESAPLAMA (Yeni düzelttiğimiz fonksiyonlar)
     const birthDate = new Date(`${profile.birth_date}T${profile.birth_time || "12:00"}`);
-    const natal = calculateNatalChart(birthDate, Number(profile.birth_lat || 41), Number(profile.birth_lng || 29));
+    
+    // Natal Harita (Doğum)
+    const natal = calculateNatalChart(
+        birthDate, 
+        Number(profile.birth_lat || 41), 
+        Number(profile.birth_lng || 29)
+    );
+    
+    // Transit Harita (Şu an)
     const transit = calculateTransitChart(new Date()); 
 
-    // 3. AI İSTEĞİ
+    // 4. AI PROMPT HAZIRLIĞI
     const prompt = `
-      Sen Astrologsun.
-      NATAL: Güneş ${natal.sun}, Ay ${natal.moon}, Yükselen ${natal.ascendant}.
-      TRANSİT: Güneş ${transit.transit_sun}, Ay ${transit.transit_moon}.
+      Sen profesyonel bir Astrologsun.
+      NATAL HARİTA: Güneş ${natal.sun}, Ay ${natal.moon}, Yükselen ${natal.ascendant}.
+      TRANSİT ETKİLER: Güneş ${transit.transit_sun}, Ay ${transit.transit_moon}.
       
-      Bugün (${today}) için KISA ve ÖZ bir yorum yap.
+      Bugün (${today}) için KISA, MİSTİK ve ÖZ bir yorum yap.
       
-      JSON FORMATINDA CEVAP VER (Markdown yok):
+      ÇOK ÖNEMLİ: Cevabı SADECE ve SAF JSON formatında ver. Markdown, backticks veya açıklama ekleme.
+      
+      Beklenen JSON Formatı:
       {
-        "general_vibe": "Ruh hali (Max 2 cümle)",
-        "love_focus": "Aşk tavsiyesi (Kısa)",
-        "career_focus": "İş tavsiyesi (Kısa)",
+        "general_vibe": "Günün genel ruh hali (Max 2 etkileyici cümle)",
+        "love_focus": "Aşk ve ilişki tavsiyesi (Kısa ve net)",
+        "career_focus": "Kariyer ve para tavsiyesi (Kısa ve net)",
         "lucky_score": 75
       }
     `;
 
+    // 5. AI İSTEĞİ
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: "google/gemini-2.0-flash-lite-001",
       response_format: { type: "json_object" }
     });
 
-    const content = completion.choices[0].message.content;
-    if (!content) throw new Error("AI boş yanıt döndü");
+    const content = completion.choices[0].message.content || "{}";
 
-    // --- KRİTİK DÜZELTME: Markdown Temizliği ---
-    const cleanedContent = content.replace(/```json/g, "").replace(/```/g, "").trim();
-    const aiData = JSON.parse(cleanedContent);
+    // --- GÜÇLENDİRİLMİŞ JSON TEMİZLİĞİ ---
+    // AI bazen ```json ... ``` içinde, bazen düz metin verir. Hepsini yakalıyoruz.
+    let aiData;
+    try {
+        // 1. Adım: Basit temizlik
+        const cleanJson = content.replace(/```json/g, "").replace(/```/g, "").trim();
+        aiData = JSON.parse(cleanJson);
+    } catch (e) {
+        // 2. Adım: Eğer parse hatası verirse, süslü parantezleri Regex ile bulup çekiyoruz.
+        const match = content.match(/\{[\s\S]*\}/);
+        if (match) {
+            aiData = JSON.parse(match[0]);
+        } else {
+            throw new Error("AI yanıtı okunamadı (JSON Format Hatası).");
+        }
+    }
 
-    // Validation
-    if (!aiData.general_vibe) throw new Error("Eksik veri.");
+    if (!aiData.general_vibe) throw new Error("Eksik veri döndü.");
 
-    // 4. DB KAYIT
+    // 6. DB KAYIT
     const { data: savedData, error: saveError } = await supabase.from('daily_horoscopes').insert({
       user_id: user.id,
       date: today,
@@ -104,7 +130,7 @@ export async function getDailyHoroscope() {
   } catch (error: any) {
     console.error("Günlük Burç Hatası:", error);
     
-    // 5. HATA İADESİ
+    // 7. HATA DURUMUNDA İADE
     await supabase.rpc('handle_credit_transaction', {
         p_user_id: user.id, p_amount: COST, p_process_type: 'refund', p_description: 'İade: Günlük Burç Hatası'
     });

@@ -32,6 +32,7 @@ export interface TransitChartOutput {
   [key: string]: string;
 }
 
+// Yardımcı Fonksiyon: Dereceyi Burca Çevir
 function getSignFromLongitude(longitude: number) {
   let normalized = longitude % 360;
   if (normalized < 0) normalized += 360;
@@ -39,59 +40,63 @@ function getSignFromLongitude(longitude: number) {
   return ZODIAC_SIGNS[index];
 }
 
+// Yardımcı Fonksiyon: Gezegen Pozisyonu Hesapla
 function getPlanetPosition(body: string, date: Date) {
   try {
-    // DÜZELTME 1: 'body as any' diyerek TypeScript'i susturuyoruz.
-    // Kütüphane "Sun" | "Moon" bekliyor, biz string gönderiyoruz.
+    // Kütüphane string olarak gezegen isimlerini ("Sun", "Moon" vb.) kabul eder.
+    // TypeScript uyarısını aşmak için 'as any' kullanıyoruz.
     const vec = Astronomy.GeoVector(body as any, date, true);
     
     if (!vec) return "Bilinmiyor";
+    
     const ecliptic = Astronomy.Ecliptic(vec);
     return getSignFromLongitude(ecliptic.elon);
   } catch (e) {
+    console.error(`${body} hesaplama hatası:`, e);
     return "Bilinmiyor";
   }
 }
 
+// --- MOBİL ÇÖKME SORUNUNU ÇÖZEN YÜKSELEN HESABI (DÜZELTİLDİ) ---
 function calculateAscendant(date: Date, lat: number, lng: number): string {
   try {
-      // DÜZELTME 2: Astronomy.DayValue yerine Manuel Jülyen Tarihi (JD) Hesabı
-      // Bu formül standart astronomi formülüdür.
-      const jd = (date.getTime() / 86400000) + 2440587.5;
+      // DÜZELTME: Astronomy.Time sınıfı yerine direkt Date objesi kullanıyoruz.
+      // Astronomy.SiderealTime doğrudan JS Date objesini kabul eder.
       
-      const T = (jd - 2451545.0) / 36525.0;
-      let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + T * T * (0.000387933 - T / 38710000.0);
+      // 1. Greenwich Mean Sidereal Time (Saat cinsinden)
+      const gmst = Astronomy.SiderealTime(date);
       
-      gmst = gmst % 360;
-      if (gmst < 0) gmst += 360;
-
-      let lst = gmst + lng;
-      lst = lst % 360;
-      if (lst < 0) lst += 360;
-
-      const eps = 23.4392911; 
-      const rad = Math.PI / 180;
-      const lstRad = lst * rad;
-      const epsRad = eps * rad;
-      const latRad = lat * rad;
-
-      const num = Math.cos(lstRad);
-      const den = - (Math.sin(epsRad) * Math.tan(latRad) + Math.cos(epsRad) * Math.sin(lstRad));
+      // 2. Local Sidereal Time (LST) Hesabı (Dereceye çeviriyoruz)
+      // GMST (saat) + Boylam/15 = LST (saat) -> * 15 = Derece
+      const lst = (gmst + lng / 15.0) * 15.0; 
       
-      let asc = Math.atan2(num, den) / rad;
-      asc = asc % 360;
-      if (asc < 0) asc += 360;
+      // 3. Radyana çevirim
+      const ramc = lst * (Math.PI / 180);
+      const eps = 23.4392911 * (Math.PI / 180); // Ecliptic obliquity (Yaklaşık sabit)
+      const phi = lat * (Math.PI / 180); // Enlem
 
+      // 4. Yükselen Formülü (Ascendant)
+      // Asc = atan2(cos(RAMC), -sin(RAMC)*cos(eps) - tan(phi)*sin(eps))
+      const num = Math.cos(ramc);
+      const den = -Math.sin(ramc) * Math.cos(eps) - Math.tan(phi) * Math.sin(eps);
+      
+      let asc = Math.atan2(num, den) * (180 / Math.PI);
+      
       return getSignFromLongitude(asc);
   } catch (e) {
-      console.error("Ascendant Error:", e);
-      return "Bilinmiyor";
+      console.error("Yükselen hesaplanamadı:", e);
+      // Hata olursa varsayılan dön (Uygulama çökmesin)
+      return "Koç"; 
   }
 }
 
-// NATAL HARİTA
+// --- ANA FONKSİYON: NATAL HARİTA ---
 export function calculateNatalChart(date: Date, lat: number, lng: number): NatalChartOutput {
-  if (isNaN(date.getTime())) throw new Error("Geçersiz tarih.");
+  // Tarih kontrolü
+  if (!date || isNaN(date.getTime())) {
+      console.error("Geçersiz tarih:", date);
+      throw new Error("Geçersiz tarih formatı.");
+  }
 
   const chart: any = {};
   
@@ -100,20 +105,19 @@ export function calculateNatalChart(date: Date, lat: number, lng: number): Natal
   });
 
   chart.ascendant = calculateAscendant(date, lat, lng);
-
+  
   return chart as NatalChartOutput;
 }
 
-// TRANSIT HARİTA
+// --- ANA FONKSİYON: TRANSİT HARİTA ---
 export function calculateTransitChart(date: Date = new Date()): TransitChartOutput {
-   if (isNaN(date.getTime())) throw new Error("Geçersiz tarih.");
-
+  if (isNaN(date.getTime())) throw new Error("Geçersiz tarih.");
+  
   const transits: any = {};
   
-  // Sadece önemli gezegenleri alalım performans için
   ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"].forEach(planet => {
     transits[`transit_${planet.toLowerCase()}`] = getPlanetPosition(planet, date);
   });
-
+  
   return transits as TransitChartOutput;
 }

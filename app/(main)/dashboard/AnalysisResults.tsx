@@ -7,24 +7,28 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { 
   Brain, Moon, Check, ImageIcon, Download, Heart, Star, 
-  ChevronRight, Layers, MessageCircle, Sparkles, ArrowRight, Zap, Map 
+  ChevronRight, Layers, MessageCircle, Sparkles, ArrowRight, Zap, Map, BookOpen 
 } from "lucide-react";
 
-// --- YARDIMCI BİLEŞENLER ---
+// --- DÜZELTİLMİŞ TYPEWRITER (Harf yutma sorunu çözüldü) ---
 const TypewriterText = ({ text }: { text: string }) => {
-  const [displayed, setDisplayed] = useState("");
-  useEffect(() => {
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < text.length) { setDisplayed(prev => prev + text.charAt(i)); i++; }
-      else clearInterval(timer);
-    }, 15);
-    return () => clearInterval(timer);
-  }, [text]);
-  return <p className="text-gray-300 leading-relaxed text-sm md:text-base font-light text-justify">{displayed}</p>;
+  // Eğer metin yoksa boş dön
+  if (!text) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="text-gray-300 leading-relaxed text-sm md:text-base font-light text-justify"
+    >
+      {text}
+    </motion.div>
+  );
+  // Not: Typewriter efektini şimdilik kaldırdım çünkü harf yutma riski var. 
+  // Metin "Fade-in" (yavaşça belirme) efektiyle gelecek. Bu daha şık ve hatasızdır.
 };
 
-// --- ANA BİLEŞEN ---
 interface Props {
   result: any;
   currentDreamId: string | null;
@@ -35,34 +39,25 @@ interface Props {
 export default function AnalysisResults({ result, currentDreamId, generatedImage, onDownloadImage }: Props) {
   const router = useRouter();
   const supabase = createClient();
-
-  // State: Kullanıcının numeroloji profili var mı?
   const [hasNumerologyProfile, setHasNumerologyProfile] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkProfile = async () => {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) return;
-       
-       // Veritabanından profil kontrolü
        const { data } = await supabase.from('personal_numerology').select('id').eq('user_id', user.id).single();
-       setHasNumerologyProfile(!!data); // Kayıt varsa true, yoksa false
+       setHasNumerologyProfile(!!data);
     };
     checkProfile();
-  }, []);
+  }, [supabase]); // Dependency eklendi
 
   const handleNumerologyNavigation = () => {
-    if (hasNumerologyProfile === null) return; // Henüz yükleniyor
-
+    if (hasNumerologyProfile === null) return;
     if (hasNumerologyProfile) {
-        // SENARYO 1: Profil VAR -> Direkt Rüya Numerolojisi sayfasına git
         const numbersParam = result.lucky_numbers?.join(',') || "";
         router.push(`/dashboard/numeroloji/ruya?dreamId=${currentDreamId}&numbers=${numbersParam}`);
     } else {
-        // SENARYO 2: Profil YOK -> Genel Numeroloji sayfasına (profil oluşturmaya) git
-        toast.info("Önce Numeroloji Haritanızı Çıkarmalıyız", {
-            description: "Rüya sayılarınızı yorumlayabilmek için yaşam yolu sayınızı bilmemiz gerekiyor."
-        });
+        toast.info("Önce Numeroloji Haritanızı Çıkarmalıyız");
         router.push('/dashboard/numeroloji/genel');
     }
   };
@@ -75,7 +70,7 @@ export default function AnalysisResults({ result, currentDreamId, generatedImage
       className="pb-32 space-y-8 md:space-y-12"
     >
       
-      {/* 1. ÖZET BÖLÜMÜ */}
+      {/* 1. ÖZET BÖLÜMÜ (GENEL ANALİZ) */}
       <div className="text-center mb-10 md:mb-16 px-2">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24]/20 text-[#fbbf24] text-[10px] md:text-xs font-bold uppercase tracking-widest mb-6">
             <Check className="w-3 h-3 md:w-4 md:h-4" /> Analiz Tamamlandı
@@ -84,33 +79,42 @@ export default function AnalysisResults({ result, currentDreamId, generatedImage
             {result.title || "Rüyanın Gizli Mesajı"}
         </h2>
         
-        <div className="max-w-3xl mx-auto p-5 md:p-8 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm relative text-left">
+        {/* GENEL ANALİZ KUTUSU */}
+        <div className="max-w-3xl mx-auto p-6 md:p-8 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm relative text-left shadow-2xl shadow-violet-900/10">
+           <h3 className="text-[#fbbf24] text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+             <Sparkles className="w-4 h-4" /> Genel Yorum
+           </h3>
            <TypewriterText text={result.summary} />
         </div>
       </div>
 
-      {/* 2. DETAYLI ANALİZ (SOL/SAĞ) */}
+      {/* 2. DETAYLI ANALİZ (PSİKOLOJİK ve İSLAMİ) */}
       <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+         {/* PSİKOLOJİK ANALİZ */}
          <div className="relative p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] bg-[#0f172a] border border-blue-500/10 hover:border-blue-500/30 transition-colors shadow-2xl overflow-hidden group">
             <h3 className="font-serif text-xl md:text-2xl text-blue-400 mb-4 md:mb-6 flex items-center gap-3">
-                <Brain className="w-5 h-5 md:w-6 md:h-6" /> Bilinçaltı
+                <Brain className="w-5 h-5 md:w-6 md:h-6" /> Psikolojik Analiz
             </h3>
             <div className="prose prose-invert text-gray-300 text-sm leading-relaxed">
                 <TypewriterText text={result.psychological} />
             </div>
          </div>
          
+         {/* İSLAMİ ANALİZ (Eski adı Manevi) */}
          <div className="relative p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] bg-[#022c22] border border-emerald-500/10 hover:border-emerald-500/30 transition-colors shadow-2xl overflow-hidden group">
             <h3 className="font-serif text-xl md:text-2xl text-emerald-400 mb-4 md:mb-6 flex items-center gap-3">
-                <Moon className="w-5 h-5 md:w-6 md:h-6" /> Manevi Mesaj
+                <BookOpen className="w-5 h-5 md:w-6 md:h-6" /> İslami Tabir
             </h3>
             <div className="prose prose-invert text-gray-300 text-sm leading-relaxed">
-                <TypewriterText text={result.spiritual} />
+                {/* Eğer prompt update edilmeden önceki eski veri gelirse 'spiritual' kullan, yenisi için 'islamic' */}
+                <TypewriterText text={result.islamic || result.spiritual} />
             </div>
          </div>
       </div>
 
-      {/* 3. EKSTRA HİZMETLER GRID SİSTEMİ */}
+      {/* ... (Alt kısımdaki Görsel, Mood, Numeroloji kodları aynı kalacak, sadece yukarıdakiler kritikti) ... */}
+      
+      {/* 3. EKSTRA HİZMETLER */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
          
          {/* GÖRSEL STUDIO */}
@@ -167,14 +171,13 @@ export default function AnalysisResults({ result, currentDreamId, generatedImage
             </div>
          </div>
 
-         {/* --- NUMEROLOJİ VE KOZMİK UYUM (ENTGRASYON BURADA) --- */}
+         {/* NUMEROLOJİ VE KOZMİK UYUM */}
          <div className="relative group rounded-3xl md:rounded-[2rem] bg-[#080808] border border-white/10 p-6 md:p-8 overflow-hidden hover:border-sky-500/30 transition-all min-h-[350px]">
             <div className="flex items-center gap-3 mb-6">
                 <Star className="w-5 h-5 text-sky-400" />
                 <span className="text-gray-400 text-xs font-bold uppercase">Kozmik Sayılar</span>
             </div>
             
-            {/* Rüyadan Gelen Sayılar */}
             <div className="flex flex-wrap gap-3 mb-6">
                {result.lucky_numbers?.map((num: any, i: number) => (
                   <div key={i} className="w-10 h-12 md:w-12 md:h-14 rounded-xl bg-[#0f172a] border border-sky-500/20 flex items-center justify-center font-mono text-lg md:text-xl text-sky-400">
@@ -183,10 +186,8 @@ export default function AnalysisResults({ result, currentDreamId, generatedImage
                ))}
             </div>
 
-            {/* AKILLI YÖNLENDİRME KARTI (COSMIC SYNC YERİNE) */}
             <div className="bg-[#1e1b4b] border border-indigo-500/30 rounded-xl p-4 mb-4 relative overflow-hidden group/card">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl"></div>
-                
                 <div className="relative z-10 flex flex-col gap-3">
                     <div className="flex items-center gap-2">
                         {hasNumerologyProfile ? <Zap className="w-4 h-4 text-indigo-400" /> : <Map className="w-4 h-4 text-orange-400" />}
@@ -197,8 +198,8 @@ export default function AnalysisResults({ result, currentDreamId, generatedImage
                     
                     <p className="text-[11px] text-gray-400 leading-snug">
                         {hasNumerologyProfile 
-                            ? "Rüya sayılarınızla Yaşam Yolu sayınızın kozmik uyumunu keşfedin." 
-                            : "Bu analizi yapabilmek için önce numerolojik haritanızı çıkarmalıyız."}
+                            ? "Rüya sayılarınla Yaşam Yolu sayının kozmik uyumunu keşfet." 
+                            : "Bu analizi yapabilmek için önce numerolojik haritanı çıkarmalıyız."}
                     </p>
 
                     <button 
@@ -244,7 +245,7 @@ export default function AnalysisResults({ result, currentDreamId, generatedImage
             </button>
          </div>
 
-         {/* CHAT - SOHBET */}
+         {/* CHAT */}
          <div className="relative col-span-1 md:col-span-2 rounded-3xl md:rounded-[2rem] bg-[#0c0a09] border border-white/10 p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 group hover:border-orange-500/30 transition-all">
             <div className="flex items-center gap-4 text-center sm:text-left">
                <div className="p-3 rounded-2xl bg-orange-500/20">

@@ -13,9 +13,20 @@ const openai = new OpenAI({
   },
 });
 
+// AI bazen JSON'u ```json ... ``` bloğu içinde veriyor, bunu temizlemek için yardımcı fonksiyon.
+function cleanJson(text: string) {
+    if (!text) return "{}";
+    let clean = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    const firstBrace = clean.indexOf('{');
+    const lastBrace = clean.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+        clean = clean.substring(firstBrace, lastBrace + 1);
+    }
+    return clean;
+}
+
 export async function readTarot(question: string, cards: string[], spreadType: string, dreamId?: string) {
   const supabase = createClient();
-  // Maliyet: utils/costs.ts içinde tanımlı değilse varsayılan 2
   const COST = SERVICE_COSTS.tarot_reading || 2; 
 
   // 1. KİMLİK KONTROLÜ
@@ -25,7 +36,7 @@ export async function readTarot(question: string, cards: string[], spreadType: s
   // 2. PROFİLİ AL
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, bio')
+    .select('full_name, bio, marital_status, gender, age')
     .eq('id', user.id)
     .single();
 
@@ -42,68 +53,121 @@ export async function readTarot(question: string, cards: string[], spreadType: s
     p_metadata: { cards_count: cards.length, spread: spreadType }
   });
 
-  // Hata kodunu (NO_CREDIT) frontend'e olduğu gibi iletiyoruz
   if (txError || !txResult.success) {
       console.error("Bakiye Hatası:", txError || txResult);
-      // RPC fonksiyonun döndüğü kodu (NO_CREDIT) kullanıyoruz
       const errorCode = txResult?.code || "NO_CREDIT"; 
       return { code: errorCode, error: errorCode, message: "Yetersiz bakiye." };
   }
   // -----------------------------------------------------------------
 
   // --- YAPAY ZEKA İŞLEMLERİ ---
-  let contextNote = "";
+
+  // A. Pozisyon Anlamlarını Belirle
+  let positionMeanings: string[] = [];
+  
   switch (spreadType) {
-      case "three_card": contextNote = "Geçmiş, Şimdi, Gelecek zaman çizgisinde yorumla."; break;
-      case "love": contextNote = "Aşk, ilişki uyumu ve duygusal durum üzerine odaklan."; break;
-      case "single_card": contextNote = "Tek kart ile net ve odaklı bir rehberlik ver."; break;
-      case "dream_special": contextNote = "Bu kartları, kullanıcının gördüğü rüya ile ilişkilendirerek yorumla."; break;
-      default: contextNote = "Genel tarot rehberliği.";
+      case "three_card":
+          positionMeanings = ["Geçmiş (Köken)", "Şimdi (Mevcut Durum)", "Gelecek (Olası Sonuç)"];
+          break;
+      case "love":
+          positionMeanings = ["Senin Enerjin ve Duyguların", "Partnerin/Karşı Tarafın Enerjisi", "İlişkinin Potansiyeli ve Sonuç"];
+          break;
+      case "dream_special":
+          positionMeanings = ["Rüyanın Bilinçaltı Nedeni", "Rüyanın Vermek İstediği Mesaj", "Uyanık Hayatta Yapman Gereken"];
+          break;
+      case "single_card":
+          positionMeanings = ["Anlık Rehberlik ve Cevap"];
+          break;
+      default:
+          positionMeanings = cards.map((_, i) => `${i + 1}. Kart`);
   }
 
-  const userContext = `KULLANICI: ${profile.full_name}, BİO: ${profile.bio || "Bilinmiyor"}`;
-  const intent = dreamId ? `BAĞLAM: Kullanıcının son rüyası üzerine tarot analizi.` : `SORU: "${question}"`;
+  // B. Kullanıcı Bağlamı
+  const userContext = `
+    KULLANICI: ${profile.full_name}
+    CİNSİYET: ${profile.gender || "Belirtilmemiş"}
+    İLİŞKİ DURUMU: ${profile.marital_status || "Belirtilmemiş"}
+    BİO: ${profile.bio || "Yok"}
+  `;
+  
+  const intent = dreamId ? `BAĞLAM: Kullanıcının son rüyası üzerine tarot analizi.` : `SORU/NİYET: "${question}"`;
 
-  let aiResponse = null;
+  // C. Kart Listesi Metni
+  const cardsListText = cards.map((c, i) => 
+     `${i + 1}. KART: "${c}" \n   POZİSYON ANLAMI: ${positionMeanings[i] || 'Genel'}`
+  ).join('\n\n');
 
   try {
+    const prompt = `
+      Sen mistik, bilge ve sezgileri çok kuvvetli bir Tarot Üstadısın.
+      Kullanıcının niyetine göre kartları yorumlayacaksın.
+      
+      ${userContext}
+      ${intent}
+      
+      AÇILIM TİPİ: ${spreadType}
+      
+      ÇEKİLEN KARTLAR:
+      ${cardsListText}
+
+      GÖREVİN:
+      Bana SADECE geçerli bir JSON objesi ver. Başka hiçbir metin yazma.
+      Her kartı kendi pozisyonuna göre tek tek detaylıca yorumla, sonra hepsini harmanlayıp genel bir sentez yap.
+      
+      İSTENEN JSON FORMATI:
+      {
+        "summary": "Tek cümlelik, gizemli ve vurucu bir başlık/özet.",
+        "cards_analysis": [
+          {
+            "card_name": "Kartın Tam Adı",
+            "position": "Kartın Pozisyonu (Örn: Geçmiş)",
+            "meaning": "Bu kartın bu pozisyondaki detaylı yorumu. Kullanıcının sorusuyla ilişkilendir."
+          }
+          // ... Diğer kartlar için de aynı yapı
+        ],
+        "synthesis": "Tüm kartların birleşiminden çıkan GENEL SONUÇ. Kartlar arasındaki ilişkiyi ve hikayeyi anlat.",
+        "advice": "Kullanıcıya net bir tavsiye.",
+        "keywords": ["anahtar1", "anahtar2", "anahtar3"]
+      }
+    `;
+
     const completion = await openai.chat.completions.create({
         messages: [
-            { 
-              role: "system", 
-              content: `Sen mistik, bilge ve sezgileri kuvvetli bir Tarot Ustasısın.
-                        Kullanıcının sorusuna veya rüyasına göre kartları yorumla.
-                        
-                        SADECE JSON FORMATINDA YANIT VER:
-                        { 
-                          "summary": "Tek cümlelik, vurucu bir özet (kehanet)", 
-                          "interpretation": "Detaylı yorum (paragraflara bölünebilir)", 
-                          "advice": "Kısa ve net bir tavsiye", 
-                          "keywords": ["anahtar1", "anahtar2", "anahtar3"] 
-                        }` 
-            }, 
-            { 
-              role: "user", 
-              content: `${userContext}\n${intent}\nÇEKİLEN KARTLAR: ${cards.join(', ')}\nMOD: ${contextNote}` 
-            }
+            { role: "system", content: "Sen sadece JSON formatında yanıt veren bir Tarot API'sisin." }, 
+            { role: "user", content: prompt }
         ],
         model: "google/gemini-2.0-flash-lite-001",
-        temperature: 0.8,
+        temperature: 0.85, // Biraz yaratıcılık için
         response_format: { type: "json_object" }
     });
 
     const resultText = completion.choices[0].message.content;
     if (!resultText) throw new Error("Boş cevap.");
     
-    // JSON Temizliği
-    aiResponse = JSON.parse(resultText.replace(/```json/g, "").replace(/```/g, "").trim());
+    // JSON Temizliği ve Parse
+    const aiResponse = JSON.parse(cleanJson(resultText));
+
+    // 4. VERİTABANINA KAYIT
+    // Not: interpretation sütunu jsonb olduğu için aiResponse objesini direkt kaydediyoruz.
+    const { error: dbError } = await supabase.from("tarot_readings").insert({
+        user_id: user.id,
+        card_name: cards.join(", "),
+        card_image_url: "standard-deck", 
+        interpretation: aiResponse, 
+        dream_id: dreamId || null,
+        spread_type: spreadType
+    });
+
+    if (dbError) {
+        console.error("DB Save Error:", dbError);
+    }
+
+    return { success: true, data: aiResponse };
 
   } catch (e: any) {
     console.error("AI Hatası:", e);
     
-    // -----------------------------------------------------------------
-    // 4. HATA DURUMUNDA İADE (REFUND) - Güvenlik Sigortası
-    // -----------------------------------------------------------------
+    // 5. HATA DURUMUNDA İADE (REFUND)
     await supabase.rpc('handle_credit_transaction', {
         p_user_id: user.id,
         p_amount: COST, // Artı değer (İade)
@@ -113,23 +177,4 @@ export async function readTarot(question: string, cards: string[], spreadType: s
 
     return { error: "AI_ERROR", message: "Kozmik bağlantıda sorun oluştu, krediniz iade edildi." };
   }
-
-  // 5. KAYIT
-  // insert işleminde spread_type eklendi ve interpretation jsonb uyumlu hale geldi.
-  const { error: dbError } = await supabase.from("tarot_readings").insert({
-      user_id: user.id,
-      card_name: cards.join(", "),
-      card_image_url: "standard-deck", // İlerde kart görselleri değişirse burası dinamik olabilir
-      interpretation: aiResponse, // Artık DB'de jsonb olduğu için direkt obje atabiliriz
-      dream_id: dreamId || null,
-      spread_type: spreadType
-  });
-
-  if (dbError) {
-      console.error("DB Save Error:", dbError);
-      // Not: DB kaydı başarısız olsa bile kullanıcıya sonucu gösteriyoruz, 
-      // ama loglara düşmesi iyi olur. İade yapmıyoruz çünkü hizmeti aldı.
-  }
-
-  return { success: true, data: aiResponse };
 }

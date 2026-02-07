@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { getAstrologyAnalysis } from "@/app/actions/astrology"; // Server Action
-import Sidebar from "@/app/dashboard/Sidebar"; 
+import Sidebar from "@/components/Sidebar";
 import { 
   ArrowLeft, ScrollText, Loader2, Sparkles, Lock, 
   Sun, Moon, ArrowUpCircle, MapPin, Calendar, Clock, Coins
@@ -29,51 +29,63 @@ export default function NatalChartPage() {
 
   // Sayfa açılınca çalışacak kısım
   const initPage = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
 
-    // 1. Profil bilgilerini çek
-    const { data: userProfile } = await supabase
+      // 1. Profil bilgilerini çek
+      const { data: userProfile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
-    setProfile(userProfile);
+      setProfile(userProfile);
 
-    // 2. KAYITLI VERİYİ ÇEK (Cache Varsa Ücretsiz Göster)
-    const { data: existing } = await supabase
-      .from('astrology_readings')
-      .select('analysis, sun_sign, moon_sign, ascendant_sign') 
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      // 2. KAYITLI VERİYİ ÇEK (Cache Varsa Ücretsiz Göster)
+      const { data: existing } = await supabase
+        .from('astrology_readings')
+        .select('analysis, sun_sign, moon_sign, ascendant_sign') 
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-    if (existing) {
-      setData({
-          ...existing.analysis, 
-          sun_sign: existing.sun_sign, 
-          moon_sign: existing.moon_sign, 
-          ascendant_sign: existing.ascendant_sign 
-      });
-      
-      setIsLockedMode(false); 
+      if (existing) {
+        // Veriyi standardize et (Hem kolondan hem JSON'dan gelebilir)
+        setData({
+            ...existing.analysis, // JSON içindeki detaylar
+            sun_sign: existing.sun_sign, 
+            moon_sign: existing.moon_sign, 
+            ascendant_sign: existing.ascendant_sign 
+        });
+        
+        setIsLockedMode(false); 
+      }
+    } catch (error) {
+      console.error("Başlangıç hatası:", error);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   // 3. Yeni Analiz Yap (Kredi Kontrollü)
   const handleAnalyze = async () => {
     setAnalyzing(true);
     
-    // Server Action Çağrısı (Kredi kontrolü burada yapılır)
+    // Server Action Çağrısı (Kredi kontrolü serverda yapılır)
+    // Parametre olarak null gönderiyoruz çünkü veriyi profilden çekecek
     const res = await getAstrologyAnalysis(null); 
     
     if (res.success) {
       setData(res.data);
       setIsLockedMode(false);
       toast.success("Analiz tamamlandı! (5 Kredi düştü)");
+      
+      // Başarılı olunca yukarı kaydır
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       // --- KREDİ VE HATA YÖNETİMİ ---
       if (res.code === "NO_CREDIT") {
@@ -88,6 +100,7 @@ export default function NatalChartPage() {
                  character_analysis: "Bu detaylı analiz için 5 krediye ihtiyacınız var.",
                  career_love: "Bu detaylı analiz için 5 krediye ihtiyacınız var."
              });
+             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         toast.error("Yetersiz Bakiye", {
@@ -108,8 +121,8 @@ export default function NatalChartPage() {
 
   return (
     // APP FIX: pb-28 (Mobil alt menü payı)
-    <div className="min-h-screen bg-[#020617] text-white flex pb-28 md:pb-0 font-sans">
-  <Sidebar />
+    <div className="min-h-screen bg-[#020617] text-white flex pb-28 md:pb-0 font-sans overflow-x-hidden">
+      <Sidebar />
       
       {/* Arkaplan */}
       <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none z-0"></div>
@@ -130,20 +143,20 @@ export default function NatalChartPage() {
                 
                 {/* --- PROFİL BİLGİLERİ KARTI --- */}
                 {profile && (
-                    <div className="flex flex-wrap items-center gap-2 md:gap-4 bg-white/5 border border-white/10 px-3 py-2 md:px-4 md:py-2 rounded-xl md:rounded-full text-[10px] md:text-xs text-gray-300 backdrop-blur-sm w-fit">
-                        <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-2 md:gap-4 bg-white/5 border border-white/10 px-3 py-2 md:px-4 md:py-2 rounded-xl md:rounded-full text-[10px] md:text-xs text-gray-300 backdrop-blur-sm w-fit max-w-full">
+                        <div className="flex items-center gap-1 shrink-0">
                             <Calendar className="w-3 h-3 text-purple-400" />
-                            {new Date(profile.birth_date).toLocaleDateString('tr-TR')}
+                            {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString('tr-TR') : '-'}
                         </div>
                         <div className="w-px h-3 bg-white/20 hidden md:block"></div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                             <Clock className="w-3 h-3 text-purple-400" />
-                            {profile.birth_time?.slice(0, 5)}
+                            {profile.birth_time?.slice(0, 5) || '-'}
                         </div>
                         <div className="w-px h-3 bg-white/20 hidden md:block"></div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 truncate max-w-[120px] md:max-w-none">
                             <MapPin className="w-3 h-3 text-purple-400" />
-                            {profile.birth_city}
+                            {profile.birth_city || '-'}
                         </div>
                     </div>
                 )}
@@ -175,7 +188,6 @@ export default function NatalChartPage() {
                             <div>
                                 <div className="text-[10px] md:text-xs text-gray-400 uppercase font-bold">Yükselen</div>
                                 <div className="text-xl md:text-2xl font-serif font-bold text-white">
-                                    {/* Kilitli modda bile burç adı görünür, detay gizlenir */}
                                     {data.ascendant_sign}
                                 </div>
                             </div>
@@ -201,14 +213,16 @@ export default function NatalChartPage() {
                                 <Sparkles className="w-4 h-4 md:w-5 md:h-5" /> Karakter & Ruh
                             </h3>
                             {isLockedMode ? (
-                                <div className="flex flex-col items-center justify-center py-8 md:py-10 text-center">
-                                    <p className="blur-sm select-none text-gray-600 mb-3 text-xs md:text-base">Lorem ipsum dolor sit amet character analysis hidden.</p>
+                                <div className="flex flex-col items-center justify-center py-8 md:py-10 text-center select-none">
+                                    <p className="blur-sm text-gray-600 mb-3 text-xs md:text-base">
+                                        Lorem ipsum dolor sit amet character analysis hidden deeply mysterious content.
+                                    </p>
                                     <Lock className="w-6 h-6 md:w-8 md:h-8 text-purple-500 mb-2"/> 
                                     <p className="text-gray-400 text-xs md:text-sm">Bu analiz için 5 kredi gereklidir.</p>
-                                    <button onClick={() => router.push('/dashboard/pricing')} className="mt-3 px-4 py-2 bg-purple-600 rounded-full text-xs font-bold hover:bg-purple-500">Kredi Yükle</button>
+                                    <button onClick={() => router.push('/dashboard/pricing')} className="mt-3 px-4 py-2 bg-purple-600 rounded-full text-xs font-bold hover:bg-purple-500 transition-colors">Kredi Yükle</button>
                                 </div>
                             ) : (
-                                <p className="text-gray-300 leading-relaxed text-xs md:text-sm whitespace-pre-line">
+                                <p className="text-gray-300 leading-relaxed text-xs md:text-sm whitespace-pre-line text-justify">
                                     {data.character_analysis}
                                 </p>
                             )}
@@ -220,14 +234,16 @@ export default function NatalChartPage() {
                                 <ScrollText className="w-4 h-4 md:w-5 md:h-5" /> Kariyer & Aşk
                             </h3>
                              {isLockedMode ? (
-                                <div className="flex flex-col items-center justify-center py-8 md:py-10 text-center">
-                                    <p className="blur-sm select-none text-gray-600 mb-3 text-xs md:text-base">Lorem ipsum dolor sit amet career analysis hidden.</p>
+                                <div className="flex flex-col items-center justify-center py-8 md:py-10 text-center select-none">
+                                    <p className="blur-sm text-gray-600 mb-3 text-xs md:text-base">
+                                        Lorem ipsum dolor sit amet career analysis hidden waiting for you to unlock.
+                                    </p>
                                     <Lock className="w-6 h-6 md:w-8 md:h-8 text-pink-500 mb-2"/> 
                                     <p className="text-gray-400 text-xs md:text-sm">Bu analiz için 5 kredi gereklidir.</p>
-                                    <button onClick={() => router.push('/dashboard/pricing')} className="mt-3 px-4 py-2 bg-pink-600 rounded-full text-xs font-bold hover:bg-pink-500">Kredi Yükle</button>
+                                    <button onClick={() => router.push('/dashboard/pricing')} className="mt-3 px-4 py-2 bg-pink-600 rounded-full text-xs font-bold hover:bg-pink-500 transition-colors">Kredi Yükle</button>
                                 </div>
                             ) : (
-                                <p className="text-gray-300 leading-relaxed text-xs md:text-sm whitespace-pre-line">
+                                <p className="text-gray-300 leading-relaxed text-xs md:text-sm whitespace-pre-line text-justify">
                                     {data.career_love}
                                 </p>
                             )}
@@ -253,7 +269,7 @@ export default function NatalChartPage() {
                     {profile && (
                         <div className="mb-6 md:mb-8 p-3 md:p-4 bg-purple-900/20 rounded-xl border border-purple-500/30 text-xs md:text-sm text-purple-200">
                             <strong>Analiz edilecek bilgiler:</strong><br/>
-                            {profile.birth_city}, {new Date(profile.birth_date).toLocaleDateString('tr-TR')} - {profile.birth_time}
+                            {profile.birth_city || 'Şehir Yok'}, {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString('tr-TR') : 'Tarih Yok'} - {profile.birth_time || 'Saat Yok'}
                         </div>
                     )}
 
