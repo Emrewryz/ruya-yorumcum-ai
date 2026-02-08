@@ -8,6 +8,7 @@ import {
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import Script from 'next/script';
+import AdUnit from "@/components/AdUnit"; // <--- 1. IMPORT
 
 // --- TİP TANIMLAMALARI ---
 interface UltimateDreamData {
@@ -48,7 +49,7 @@ const formatTerm = (term: string) => {
   if (!term) return "";
   let clean = term.replace(/^rüyada\s+/i, '').replace(/\s+görmek$/i, '');
   return clean.charAt(0).toUpperCase() + clean.slice(1);
-};
+}
 
 // --- VERİ ÇEKME FONKSİYONLARI ---
 const getDreamData = cache(async (slug: string) => {
@@ -163,7 +164,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
     author: { '@type': 'Organization', name: 'RüyaYorumcum' },
   };
 
-  // Kategori Listesi Bileşeni (Hem Sidebar hem Mobil Footer için tekrar kullanılabilir)
+  // Kategori Listesi Bileşeni
   const CategoryListComponent = () => (
     <div className="bg-[#0f172a] rounded-2xl border border-white/5 p-5 shadow-xl">
         <h3 className="text-[#fbbf24] font-bold text-xs uppercase tracking-[0.2em] mb-5 flex items-center gap-2 border-b border-white/5 pb-3">
@@ -211,32 +212,36 @@ export default async function Page({ params }: { params: { slug: string } }) {
                     <ArrowLeft className="w-4 h-4" /> Sözlüğe Dön
                 </Link>
                 <CategoryListComponent />
+
+                {/* --- 1. REKLAM ALANI: SIDEBAR --- */}
+                {/* Masaüstünde daima kullanıcının yanında durur */}
+                <div className="mt-4 border border-white/5 rounded-2xl p-2 bg-[#0a0a0a]">
+                    <p className="text-[10px] text-center text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
+                    <AdUnit slot="SIDEBAR_REKLAM_KODU" format="rectangle" />
+                </div>
             </div>
         </aside>
 
         {/* --- ORTA İÇERİK --- */}
         <article className="col-span-1 lg:col-span-9">
            
-           {/* MOBİL GERİ BUTONU (Sadece Mobilde Görünür) */}
+           {/* MOBİL GERİ BUTONU */}
            <div className="lg:hidden mb-6">
                 <Link href="/sozluk" className="inline-flex items-center gap-2 text-gray-400 hover:text-[#fbbf24] text-sm font-medium">
                     <ArrowLeft className="w-4 h-4" /> Sözlüğe Dön
                 </Link>
            </div>
 
-           {/* HERO SECTION */}
+           {/* HERO SECTION (BAŞLIK) */}
            <header className="relative p-6 md:p-12 rounded-[1.5rem] md:rounded-[2rem] bg-[#0a0a0a] border border-white/5 overflow-hidden mb-8 md:mb-12 shadow-2xl">
               <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#fbbf24]/10 rounded-full blur-[100px] pointer-events-none"></div>
               <div className="relative z-10">
                   <span className="inline-block px-3 py-1 rounded-full bg-[#fbbf24]/10 text-[#fbbf24] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-4 md:mb-6">
-                     {item.category || 'RÜYA SÖZLÜĞÜ'}
+                      {item.category || 'RÜYA SÖZLÜĞÜ'}
                   </span>
-                  
-                  {/* MOBİL: Text-3xl / TABLET: Text-4xl / PC: Text-6xl */}
                   <h1 className="text-3xl sm:text-4xl md:text-6xl font-serif font-bold text-white mb-6 md:mb-8 leading-tight">
                       Rüyada <span className="text-[#fbbf24]">{cleanTitle}</span> Görmek
                   </h1>
-                  
                   <div className="border-l-2 border-[#fbbf24]/50 pl-4 md:pl-8">
                       <p className="text-base md:text-xl text-gray-300 font-light leading-relaxed">
                           {isUltimate ? ultimateData!.summary : item.description}
@@ -245,7 +250,14 @@ export default async function Page({ params }: { params: { slug: string } }) {
               </div>
            </header>
 
-           {/* İÇERİK (İslami, Psikolojik, Senaryolar) */}
+           {/* --- 2. REKLAM ALANI: İÇERİK ÜSTÜ (EN DEĞERLİ) --- */}
+           {/* Kullanıcı analize başlamadan önce bunu görür. Yüksek Tıklama Oranı */}
+           <div className="mb-12 w-full">
+              <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
+              <AdUnit slot="ICERIK_UST_REKLAM_KODU" />
+           </div>
+
+           {/* İÇERİK DETAYLARI */}
            {isUltimate && ultimateData ? (
               <div className="space-y-12 md:space-y-16">
                   
@@ -257,10 +269,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
                          </h2>
                          <div className="space-y-6 md:space-y-8 border-l-2 border-emerald-500/30 pl-4 md:pl-6">
                            {ultimateData.islamic.map((src, i) => (
-                              <div key={i}>
+                             <div key={i}>
                                  <p className="text-gray-300 italic mb-2 leading-relaxed text-base md:text-lg">"{src.text}"</p>
                                  <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider block">— {src.source}</span>
-                              </div>
+                             </div>
                            ))}
                          </div>
                      </section>
@@ -281,8 +293,14 @@ export default async function Page({ params }: { params: { slug: string } }) {
                      </section>
                   </div>
 
+                  {/* --- 3. REKLAM ALANI: ANALİZ ARASI (NEFES ALMA) --- */}
+                  {/* Uzun okumayı böler ve yeni bir etkileşim alanı yaratır */}
+                  <div className="py-8 w-full border-t border-b border-white/5">
+                      <AdUnit slot="ICERIK_ORTA_REKLAM_KODU" />
+                  </div>
+
                   {/* SENARYOLAR */}
-                  <section className="pt-8 border-t border-white/10">
+                  <section className="pt-8">
                      <h2 className="text-xl md:text-3xl font-serif font-bold text-white mb-8 md:mb-10 flex items-center gap-3">
                         <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-[#fbbf24]" />
                         Farklı Durumlara Göre Tabirler
@@ -320,10 +338,16 @@ export default async function Page({ params }: { params: { slug: string } }) {
               <LegacyRenderer blocks={contentData as LegacyBlock[]} />
            )}
 
-           {/* --- MOBİL İÇİN KATEGORİ LİSTESİ (Sadece Mobilde Görünür) --- */}
-           {/* Sidebar kaybolduğu için bu listeyi mobil kullanıcılar için buraya ekliyoruz */}
+           {/* --- MOBİL İÇİN KATEGORİ LİSTESİ --- */}
            <div className="lg:hidden mt-12 mb-12">
               <CategoryListComponent />
+           </div>
+
+           {/* --- 4. REKLAM ALANI: İÇERİK SONU (MULTIPLEX İÇİN İDEAL) --- */}
+           {/* Kullanıcı okumayı bitirdi, başka bir şeye tıklamaya hazır */}
+           <div className="mt-12 mb-8 w-full">
+              <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- İlginizi Çekebilir -</p>
+              <AdUnit slot="ICERIK_ALT_REKLAM_KODU" />
            </div>
 
            {/* --- ALT BÖLÜM: BENZER RÜYALAR --- */}

@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     type: 'website',
   },
   
-  // Google Search Console doğrulama kodunuzu buraya yazmayı unutmayın
+  // NOT: Google Search Console doğrulama kodunu buraya girmeyi unutma
   verification: {
     google: 'google-site-verification-kodunuzu-buraya-yazin', 
     yandex: 'yandex-verification-kodunuz',
@@ -104,13 +104,23 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
-      
-        
         {/* Schema Markup */}
         <Script
           id="json-ld-website"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        
+        {/* --- GOOGLE ADSENSE (ANA SCRIPT) --- 
+          Bu script tüm site genelinde çalışır.
+          1. Otomatik reklamları (Vinyet vb.) yönetir.
+          2. Manuel eklediğimiz (AdUnit) reklamların çalışmasını sağlar.
+        */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
         />
       </head>
       

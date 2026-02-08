@@ -10,6 +10,7 @@ import {
   CheckCircle2, Compass, Activity, Lock
 } from "lucide-react";
 import Script from "next/script";
+import AdUnit from "@/components/AdUnit"; // <--- 1. Bunu ekle
 
 // --- SEO SCHEMA ---
 const homeSchema = {
@@ -389,9 +390,19 @@ export default function Home() {
             </div>
          </div>
       </section>
+      
 
       {/* ================= SEO ARTICLE (DETAYLI ANLATIM) ================= */}
+      {/* ================= SEO ARTICLE (DETAYLI ANLATIM) ================= */}
       <article className="container mx-auto px-4 md:px-6 py-12 md:py-20 border-t border-white/5 text-gray-400 text-xs md:text-sm leading-relaxed max-w-6xl">
+         
+         {/* --- REKLAM ALANI BAŞLANGIÇ --- */}
+         <div className="mb-8 w-full">
+            <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
+            {/* AdSense panelinden aldığın SLOT numarasını aşağıya yaz */}
+            <AdUnit slot="1234567890" /> 
+         </div>
+         {/* --- REKLAM ALANI BİTİŞ --- */}
          <div className="grid md:grid-cols-2 gap-8 md:gap-12">
             <div className="space-y-4 md:space-y-6">
                <h3 className="text-white font-bold text-base md:text-lg flex items-center gap-2">

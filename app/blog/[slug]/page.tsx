@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, Quote, Sparkles, ArrowRight, Clock, Share2, Facebo
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Script from "next/script";
+import AdUnit from "@/components/AdUnit"; // <--- REKLAM IMPORT
 
 // --- TİP TANIMLAMALARI ---
 type ContentBlock = 
@@ -212,15 +213,39 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
       {/* --- MAKALE İÇERİĞİ --- */}
       <article className="max-w-3xl mx-auto px-4 md:px-6 relative z-10">
         
-        {/* İçerik Blokları */}
+        {/* --- 1. REKLAM ALANI: İÇERİK BAŞLANGICI --- */}
+        <div className="mb-12">
+            <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
+            <AdUnit slot="BLOG_UST_REKLAM_KODU" />
+        </div>
+
+        {/* İçerik Blokları ve Akıllı Reklam Döngüsü */}
         <div className="space-y-6 md:space-y-8">
             {contentBlocks.map((block, index) => (
-                <BlockRenderer key={index} block={block} />
+                <div key={index}>
+                    <BlockRenderer block={block} />
+
+                    {/* --- 2. REKLAM ALANI: AKILLI DÖNGÜ --- */}
+                    {/* Her 4 blokta bir araya reklam sıkıştır (Başlıklar hariç) */}
+                    {(index + 1) % 4 === 0 && (
+                        <div className="py-8 w-full border-t border-b border-white/5 my-8">
+                             <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
+                             {/* 'Yazı İçi' (In-Article) reklam birimi kullan */}
+                             <AdUnit slot="BLOG_ICI_REKLAM_KODU" />
+                        </div>
+                    )}
+                </div>
             ))}
         </div>
 
+        {/* --- 3. REKLAM ALANI: MAKALE SONU --- */}
+        <div className="mt-12 w-full">
+            <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- İlginizi Çekebilir -</p>
+            <AdUnit slot="BLOG_ALT_REKLAM_KODU" />
+        </div>
+
         {/* Paylaşım Alanı */}
-        <div className="mt-12 md:mt-16 pt-8 md:pt-10 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-center md:text-left">
+        <div className="mt-8 md:mt-12 pt-8 md:pt-10 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-center md:text-left">
             <span className="font-serif text-base md:text-lg text-gray-400 italic">Bu bilgiyi sevdiklerinizle paylaşın:</span>
             <div className="flex items-center gap-3">
                 <button className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#1DA1F2] hover:text-white transition-colors">
@@ -279,8 +304,6 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                 {relatedPosts.map((rPost) => (
-                    // HATA DÜZELTİLDİ: 'block' ve 'flex' çakışması önlendi.
-                    // 'group block h-full' kullanıldı.
                     <Link key={rPost.slug} href={`/blog/${rPost.slug}`} className="group block h-full">
                         <div className="bg-[#0f172a] rounded-xl md:rounded-2xl overflow-hidden border border-white/5 hover:border-[#fbbf24]/30 transition-all duration-500 hover:-translate-y-2 h-full flex flex-col shadow-lg hover:shadow-[#fbbf24]/5">
                             
