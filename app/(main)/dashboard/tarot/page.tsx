@@ -91,7 +91,7 @@ function TarotPageContent() {
   const [readingResult, setReadingResult] = useState<any>(null);
   const [latestDream, setLatestDream] = useState<any>(null);
 
-  // --- 1. MİSAFİR FALINI YAKALAMA ---
+  // --- 1. MİSAFİR FALINI YAKALAMA (GÜVENLİ) ---
   useEffect(() => {
     const processGuestReading = async () => {
       const pendingData = localStorage.getItem('pending_tarot_reading');
@@ -99,17 +99,29 @@ function TarotPageContent() {
       if (pendingData) {
         try {
           const parsedData = JSON.parse(pendingData);
+          
+          // Basit bir veri kontrolü
+          if (!parsedData.cards || !Array.isArray(parsedData.cards)) {
+             throw new Error("Geçersiz fal verisi");
+          }
+
           setPhase('reading');
           
           const targetSpread = SPREAD_CONFIG.find(s => s.id === 'three_card') || SPREAD_CONFIG[1];
           setSelectedSpread(targetSpread);
-          setIntention(parsedData.question);
+          setIntention(parsedData.question || "Genel Bakış");
 
-          // İsimden kart objesini bul (Resim için)
+          // İsimden kart objesini bul (Resim için) - GÜVENLİ EŞLEŞTİRME
           const guestCardNames = parsedData.cards.map((c: any) => c.name);
-          const selectedCardsData = parsedData.cards.map((guestCard: any) => 
-            TAROT_DECK.find(master => master.searchKey === guestCard.id || master.name.includes(guestCard.name)) || TAROT_DECK[0]
-          );
+          const selectedCardsData = parsedData.cards.map((guestCard: any) => {
+             // 1. ID ile tam eşleşme ara
+             // 2. İsim ile kısmi eşleşme ara
+             // 3. Bulamazsan Joker (0. kart) döndür
+             return TAROT_DECK.find(master => 
+                master.searchKey === guestCard.id || 
+                master.name.toLowerCase() === guestCard.name.toLowerCase()
+             ) || TAROT_DECK[0]; 
+          });
 
           // --- API ÇAĞRISI ---
           const result = await readTarot(parsedData.question, guestCardNames, 'three_card', undefined);
@@ -124,8 +136,10 @@ function TarotPageContent() {
           }
 
         } catch (error) {
-          console.error("Misafir falı hatası", error);
+          console.error("Misafir falı işleme hatası:", error);
+          // Hata olsa bile kullanıcıyı ana ekrana at, çökme.
           setPhase('type_select');
+          localStorage.removeItem('pending_tarot_reading'); // Bozuk veriyi temizle
         }
       }
     };
@@ -133,24 +147,22 @@ function TarotPageContent() {
     processGuestReading();
   }, []);
 
+  // ... (Geri kalan kodlar aynı kalabilir, sadece return kısmındaki 'map' kullanımına dikkat et) ...
+
   // --- RÜYA KONTROLÜ ---
- // --- RÜYA KONTROLÜ (DÜZELTİLMİŞ VERSİYON) ---
   useEffect(() => {
     const checkLatestDream = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // DÜZELTME: Sütun isimleri veritabanı şemasına göre güncellendi
-        // Eski: .select('id, title, description, ai_response') -> HATALIYDI
-        // Yeni: .select('id, dream_title, dream_text, ai_response') -> DOĞRU
         const { data, error } = await supabase
             .from('dreams')
             .select('id, dream_title, dream_text, ai_response') 
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .maybeSingle(); // .single() yerine .maybeSingle() daha güvenlidir (hata fırlatmaz)
+            .maybeSingle();
 
         if (error) {
             console.error("Rüya çekme hatası:", error);
@@ -158,11 +170,10 @@ function TarotPageContent() {
         }
 
         if (data) {
-             // UI'ın beklediği formata (title, description) dönüştürüyoruz
              setLatestDream({ 
                  id: data.id,
-                 title: data.dream_title || "Adsız Rüya", // DB'den gelen dream_title
-                 description: data.dream_text || data.ai_response?.summary // DB'den gelen dream_text
+                 title: data.dream_title || "Adsız Rüya", 
+                 description: data.dream_text || data.ai_response?.summary 
              });
         }
       } catch (e) {
@@ -189,7 +200,6 @@ function TarotPageContent() {
   };
 
   const shuffleDeck = () => {
-    // 78 Kartlık desteyi karıştır
     const array = Array.from({ length: TAROT_DECK.length }, (_, i) => i);
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -240,9 +250,7 @@ function TarotPageContent() {
   const getReading = async (indices: number[]) => {
     setPhase('reading');
     
-    // Seçilen kartların datalarını al (Resimler için)
     const selectedCardsData = indices.map(idx => TAROT_DECK[deckOrder[idx] % TAROT_DECK.length]);
-    // AI'a sadece isimlerini gönderiyoruz
     const cardNames = selectedCardsData.map(c => c.name);
     
     let finalQuestion = intention;
@@ -254,7 +262,6 @@ function TarotPageContent() {
         const result = await readTarot(finalQuestion, cardNames, selectedSpread.id, latestDream?.id || undefined);
         
         if (result.success) {
-            // AI sonucuna, seçtiğimiz kartların resimlerini de ekliyoruz ki ekranda gösterebilelim
             setReadingResult({ ...result.data, selectedCardsData });
             setPhase('result');
             toast.success("Kartlar yorumlandı! (2 Kredi düştü)");
@@ -466,7 +473,7 @@ function TarotPageContent() {
             </div>
         )}
 
-        {/* 6. SONUÇ EKRANI (YENİLENMİŞ ARAYÜZ) */}
+        {/* 6. SONUÇ EKRANI (GÜVENLİ RENDER) */}
         {phase === 'result' && readingResult && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-5xl mt-4 md:mt-6 pb-24 md:pb-20">
                 
@@ -475,15 +482,15 @@ function TarotPageContent() {
                     <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent`}></div>
                     <Sparkles className={`w-8 h-8 mx-auto mb-4 ${selectedSpread.theme.accent}`} />
                     <p className="text-white italic text-lg md:text-2xl font-serif leading-relaxed px-4">
-                       "{readingResult.summary}"
+                        "{readingResult.summary}"
                     </p>
                 </div>
 
                 {/* DETAYLI KART ANALİZLERİ (LİSTE) */}
                 <div className="grid grid-cols-1 gap-6 mb-12">
                    {readingResult.cards_analysis?.map((analysis: any, idx: number) => {
-                      // Kart datası ile AI yorumunu eşleştir
-                      const cardData = readingResult.selectedCardsData[idx];
+                      // GÜVENLİ ERİŞİM
+                      const cardData = readingResult.selectedCardsData ? readingResult.selectedCardsData[idx] : null;
                       
                       return (
                         <motion.div 
