@@ -72,10 +72,10 @@ export default function Sidebar() {
     { 
         id: 'astro', 
         label: 'Astroloji', 
-        fullLabel: 'Natal Harita',
+        fullLabel: 'Astroloji',
         icon: Moon, 
         // DİKKAT: Astroloji klasöründe direkt page.tsx yoksa alt klasöre yönlendiriyoruz
-        path: '/dashboard/astroloji/dogum-haritasi', 
+        path: '/dashboard/astroloji', 
         match: (p: string) => p.startsWith('/dashboard/astroloji'),
         desc: 'Natal ve transit', 
         color: 'text-blue-400',

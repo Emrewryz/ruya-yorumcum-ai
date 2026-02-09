@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 type AdUnitProps = {
   slot: string; // AdSense panelinden alacağın "Data-ad-slot" numarası
-  format?: "auto" | "fluid" | "rectangle";
+  format?: "auto" | "fluid" | "rectangle" | "autorelaxed";
   className?: string;
 };
 

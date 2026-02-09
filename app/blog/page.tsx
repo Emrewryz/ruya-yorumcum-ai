@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { Calendar, ChevronRight, BookOpen, Sparkles, User, Tag } from "lucide-react";
 import type { Metadata } from "next";
-import { Fragment } from "react"; // Fragment eklendi
+import { Fragment } from "react";
 import AdUnit from "@/components/AdUnit"; // <--- REKLAM IMPORT
 
 export const metadata: Metadata = {
@@ -86,11 +86,10 @@ export default async function BlogListingPage() {
             </div>
         )}
 
-        {/* --- REKLAM ALANI 1: ÖNE ÇIKAN YAZI ALTI --- */}
+        {/* --- REKLAM ALANI 1: ÖNE ÇIKAN YAZI ALTI (DISPLAY) --- */}
         <div className="mb-16 w-full">
              <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
-             {/* Buraya Yatay (Horizontal) veya Esnek reklam kodu gelecek */}
-             <AdUnit slot="BLOG_LISTE_UST_REKLAM_KODU" />
+             <AdUnit slot="8565155493" format="auto" />
         </div>
 
         {/* Diğer Yazılar Grid */}
@@ -148,13 +147,11 @@ export default async function BlogListingPage() {
                 </Link>
 
                 {/* --- REKLAM ALANI 2: FEED İÇİ (AKILLI DÖNGÜ) --- */}
-                {/* Her 6 kartta bir araya Tam Genişlikte reklam ekle */}
-                {/* Grid yapısını bozmamak için 'col-span-full' kullanıyoruz */}
+                {/* Her 6 kartta bir araya Tam Genişlikte DISPLAY reklam ekle */}
                 {(index + 1) % 6 === 0 && (
                     <div className="col-span-1 md:col-span-2 lg:col-span-3 py-8 w-full border-t border-b border-white/5 my-4 bg-[#0a0a0a]">
                         <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
-                        {/* Feed İçi (In-Feed) Reklam birimi kodu buraya */}
-                        <AdUnit slot="BLOG_FEED_ICI_REKLAM_KODU" />
+                        <AdUnit slot="8565155493" format="auto" />
                     </div>
                 )}
 
@@ -162,10 +159,10 @@ export default async function BlogListingPage() {
           ))}
         </div>
 
-        {/* --- REKLAM ALANI 3: LİSTE SONU --- */}
+        {/* --- REKLAM ALANI 3: LİSTE SONU (MULTIPLEX) --- */}
         <div className="mt-16 w-full">
              <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- İlginizi Çekebilir -</p>
-             <AdUnit slot="BLOG_LISTE_ALT_REKLAM_KODU" />
+             <AdUnit slot="6481917633" format="autorelaxed" />
         </div>
 
         {/* --- CTA KUTUSU --- */}

@@ -8,6 +8,7 @@ import { AnimatePresence } from "framer-motion";
 import { analyzeDream } from "@/app/actions/analyze-dream";
 import { getMoonPhase } from "@/utils/moon"; 
 import { toast } from "sonner"; 
+import RewardAdModal from "@/components/RewardAdModal"; // <--- 1. IMPORT
 
 import DreamInputSection from "./DreamInputSection";
 import AnalysisResults from "./AnalysisResults";
@@ -101,7 +102,7 @@ export default function DashboardPage() {
     <div className="max-w-6xl mx-auto px-4 md:px-12 py-6 md:py-8 flex flex-col min-h-screen">
       
       {/* HEADER */}
-      <header className="flex justify-between items-start md:items-center mb-6 md:mb-10">
+      <header className="flex justify-between items-start md:items-center mb-6 md:mb-8">
         <div>
           <h1 className="font-serif text-2xl md:text-4xl text-white tracking-tight leading-tight">
             {greeting}, <br className="md:hidden" />
@@ -133,11 +134,17 @@ export default function DashboardPage() {
              </div>
              <div className="hidden md:flex flex-col items-start text-left">
                  <span className="text-xs font-bold text-[#fbbf24] uppercase group-hover:text-[#fcd34d] transition-colors">{currentMoon?.phase || "Ay Fazı"}</span>
-                 <span className="text-[10px] text-gray-400">Enerji: %{currentMoon?.percentage || "..."}</span>
+                 <span className="text-10 text-gray-400">Enerji: %{currentMoon?.percentage || "..."}</span>
              </div>
            </button>
         </div>
       </header>
+
+      {/* --- 2. YERLEŞİM: REKLAM İZLE KAZAN ALANI --- */}
+      {/* Mobilde tam genişlik, Masaüstünde 1/2 genişlikte, input'un hemen üstünde durur */}
+      <div className="mb-8 w-full md:max-w-md">
+         <RewardAdModal />
+      </div>
 
       {/* RÜYA GİRİŞ */}
       <DreamInputSection 

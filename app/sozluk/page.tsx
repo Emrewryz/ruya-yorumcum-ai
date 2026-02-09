@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react"; // Fragment eklendi
+import { useState, useEffect, Fragment } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { 
   Search, Sparkles, BookOpen, ArrowRight, Loader2 
 } from "lucide-react";
-import AdUnit from "@/components/AdUnit"; // <--- REKLAM IMPORT
+import AdUnit from "@/components/AdUnit"; // <--- 1. IMPORT
 
 // Veri Tipi
 interface DictionaryItem {
@@ -98,10 +98,9 @@ export default function DictionaryPage() {
                 </div>
             </div>
 
-            {/* --- REKLAM 1: ARAMA SONUÇLARI BAŞLAMADAN ÖNCE --- */}
-            {/* Burası "Feed İçi" reklam için ideal yerdir. */}
+            {/* --- REKLAM 1: ARAMA ALTI (Görüntülü Reklam) --- */}
             <div className="mb-12">
-               <AdUnit slot="FEED_UST_REKLAM_KODU" />
+               <AdUnit slot="8565155493" format="auto" />
             </div>
 
         </motion.div>
@@ -150,27 +149,31 @@ export default function DictionaryPage() {
                           </motion.article>
                       </Link>
 
-                      {/* --- AKILLI REKLAM DÖNGÜSÜ --- */}
-                      {/* Her 6 karttan sonra araya bir reklam kartı sıkıştır */}
-                      {/* (i + 1) % 6 === 0 : Yani 6., 12., 18. karttan sonra */}
-                     {(i + 1) % 8 === 0 && (
-         <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4 py-8 flex justify-center items-center bg-[#0a0a0a]/50 border-y border-white/5 my-4">
-            <div className="w-full max-w-[970px]"> {/* Reklamın taşmasını engeller */}
-                <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
-                {/* Feed İçi (In-Feed) veya Yatay (Display) reklam birimi */}
-                <AdUnit slot="FEED_ICI_REKLAM_KODU" />
-            </div>
-         </div>
-      )}
+                      {/* --- REKLAM 2: AKILLI DÖNGÜ (Her 8 Kartta Bir) --- */}
+                      {/* Buraya da Display (Görüntülü) reklam koyuyoruz ki tam otursun */}
+                      {(i + 1) % 8 === 0 && (
+                         <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4 py-8 flex justify-center items-center bg-[#0a0a0a]/50 border-y border-white/5 my-4">
+                            <div className="w-full max-w-[970px]">
+                                <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
+                                <AdUnit slot="8565155493" format="auto" />
+                            </div>
+                         </div>
+                      )}
                    </Fragment>
                 ))}
 
              </div>
          )}
 
+         {/* --- REKLAM 3: SAYFA SONU (MULTIPLEX) --- */}
+         <div className="mt-16 w-full">
+             <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- İlginizi Çekebilir -</p>
+             <AdUnit slot="6481917633" format="autorelaxed" />
+         </div>
+
          {/* Liste Sonu Bilgilendirme */}
          {!searchTerm && terms.length > 0 && (
-            <div className="text-center mt-12 pb-12">
+            <div className="text-center mt-8 pb-12">
                <p className="text-gray-500 text-sm">
                   Toplam {terms.length}+ rüya tabiri listeleniyor.
                </p>

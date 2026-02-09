@@ -8,7 +8,7 @@ import {
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import Script from 'next/script';
-import AdUnit from "@/components/AdUnit"; // <--- 1. IMPORT
+import AdUnit from "@/components/AdUnit"; 
 
 // --- TİP TANIMLAMALARI ---
 interface UltimateDreamData {
@@ -213,11 +213,11 @@ export default async function Page({ params }: { params: { slug: string } }) {
                 </Link>
                 <CategoryListComponent />
 
-                {/* --- 1. REKLAM ALANI: SIDEBAR --- */}
-                {/* Masaüstünde daima kullanıcının yanında durur */}
+                {/* --- 1. REKLAM ALANI: SIDEBAR (DISPLAY - GÖRÜNTÜLÜ) --- */}
+                {/* Burası dar alan olduğu için 'Görüntülü Reklam' (8565155493) kullanıyoruz */}
                 <div className="mt-4 border border-white/5 rounded-2xl p-2 bg-[#0a0a0a]">
                     <p className="text-[10px] text-center text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
-                    <AdUnit slot="SIDEBAR_REKLAM_KODU" format="rectangle" />
+                    <AdUnit slot="8565155493" format="rectangle" />
                 </div>
             </div>
         </aside>
@@ -250,11 +250,11 @@ export default async function Page({ params }: { params: { slug: string } }) {
               </div>
            </header>
 
-           {/* --- 2. REKLAM ALANI: İÇERİK ÜSTÜ (EN DEĞERLİ) --- */}
-           {/* Kullanıcı analize başlamadan önce bunu görür. Yüksek Tıklama Oranı */}
+           {/* --- 2. REKLAM ALANI: İÇERİK ÜSTÜ (YAZI İÇİ) --- */}
+           {/* Metin başladığı için burada 'Yazı İçi' (4542150009) en iyisidir */}
            <div className="mb-12 w-full">
               <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
-              <AdUnit slot="ICERIK_UST_REKLAM_KODU" />
+              <AdUnit slot="4542150009" format="fluid" />
            </div>
 
            {/* İÇERİK DETAYLARI */}
@@ -293,10 +293,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
                      </section>
                   </div>
 
-                  {/* --- 3. REKLAM ALANI: ANALİZ ARASI (NEFES ALMA) --- */}
-                  {/* Uzun okumayı böler ve yeni bir etkileşim alanı yaratır */}
+                  {/* --- 3. REKLAM ALANI: ANALİZ ARASI (YAZI İÇİ) --- */}
+                  {/* Uzun okumayı böler, yine 'Yazı İçi' (4542150009) kullanıyoruz */}
                   <div className="py-8 w-full border-t border-b border-white/5">
-                      <AdUnit slot="ICERIK_ORTA_REKLAM_KODU" />
+                      <AdUnit slot="4542150009" format="fluid" />
                   </div>
 
                   {/* SENARYOLAR */}
@@ -343,11 +343,11 @@ export default async function Page({ params }: { params: { slug: string } }) {
               <CategoryListComponent />
            </div>
 
-           {/* --- 4. REKLAM ALANI: İÇERİK SONU (MULTIPLEX İÇİN İDEAL) --- */}
-           {/* Kullanıcı okumayı bitirdi, başka bir şeye tıklamaya hazır */}
+           {/* --- 4. REKLAM ALANI: İÇERİK SONU (MULTIPLEX) --- */}
+           {/* Kullanıcı okumayı bitirdi, 'Multiplex' (6481917633) ile öneriler sunuyoruz */}
            <div className="mt-12 mb-8 w-full">
               <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- İlginizi Çekebilir -</p>
-              <AdUnit slot="ICERIK_ALT_REKLAM_KODU" />
+              <AdUnit slot="6481917633" />
            </div>
 
            {/* --- ALT BÖLÜM: BENZER RÜYALAR --- */}

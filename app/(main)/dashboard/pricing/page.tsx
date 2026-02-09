@@ -92,7 +92,7 @@ export default function PricingPage() {
       id: 'master',
       name: 'KAHİN',
       credits: 100,
-      price: '1269 TL', 
+      price: '269 TL', 
       oldPrice: '399TL',
       description: 'Spiritüel yolculuğun için devasa kaynak.',
       features: [

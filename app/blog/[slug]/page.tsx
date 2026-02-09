@@ -213,10 +213,10 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
       {/* --- MAKALE İÇERİĞİ --- */}
       <article className="max-w-3xl mx-auto px-4 md:px-6 relative z-10">
         
-        {/* --- 1. REKLAM ALANI: İÇERİK BAŞLANGICI --- */}
+        {/* --- 1. REKLAM ALANI: İÇERİK BAŞLANGICI (Yazı İçi) --- */}
         <div className="mb-12">
             <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
-            <AdUnit slot="BLOG_UST_REKLAM_KODU" />
+            <AdUnit slot="4542150009" format="fluid" />
         </div>
 
         {/* İçerik Blokları ve Akıllı Reklam Döngüsü */}
@@ -225,23 +225,24 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                 <div key={index}>
                     <BlockRenderer block={block} />
 
-                    {/* --- 2. REKLAM ALANI: AKILLI DÖNGÜ --- */}
+                    {/* --- 2. REKLAM ALANI: AKILLI DÖNGÜ (Yazı İçi) --- */}
                     {/* Her 4 blokta bir araya reklam sıkıştır (Başlıklar hariç) */}
                     {(index + 1) % 4 === 0 && (
                         <div className="py-8 w-full border-t border-b border-white/5 my-8">
                              <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
                              {/* 'Yazı İçi' (In-Article) reklam birimi kullan */}
-                             <AdUnit slot="BLOG_ICI_REKLAM_KODU" />
+                             <AdUnit slot="4542150009" format="fluid" />
                         </div>
                     )}
                 </div>
             ))}
         </div>
 
-        {/* --- 3. REKLAM ALANI: MAKALE SONU --- */}
+        {/* --- 3. REKLAM ALANI: MAKALE SONU (MULTIPLEX) --- */}
+        {/* Kullanıcı okumayı bitirdi, öneriler sunuyoruz */}
         <div className="mt-12 w-full">
             <p className="text-center text-[10px] text-gray-600 mb-2 uppercase tracking-widest">- İlginizi Çekebilir -</p>
-            <AdUnit slot="BLOG_ALT_REKLAM_KODU" />
+            <AdUnit slot="6481917633" format="autorelaxed" />
         </div>
 
         {/* Paylaşım Alanı */}
