@@ -4,15 +4,21 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  // -----------------------------------------------------------------
-  // 1. SHOPIER WEBHOOK İSTİSNASI (EN KRİTİK NOKTA)
-  // -----------------------------------------------------------------
-  // Shopier'den gelen ödeme bildirimlerini güvenlik kontrolüne sokmadan
-  // doğrudan içeri alıyoruz. Aksi takdirde 307 Redirect hatası alırsın.
+  // --- KURAL 0: STATİK DOSYA VE BOT KORUMASI (EN ÜSTTE OLMALI) ---
+  // Eğer istek ads.txt, robots.txt veya sitemap.xml ise,
+  // Hiçbir işlem yapmadan, auth kontrolüne sokmadan direkt geçir.
+  if (
+    path === '/ads.txt' || 
+    path === '/robots.txt' || 
+    path === '/sitemap.xml'
+  ) {
+    return NextResponse.next();
+  }
+
+  // Shopier Webhook İstisnası
   if (path.startsWith('/api/shopier-webhook')) {
     return NextResponse.next();
   }
-  // -----------------------------------------------------------------
 
   let response = NextResponse.next({
     request: {
@@ -47,18 +53,14 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // --- KURAL 2: DASHBOARD KORUMASI ---
-  // Eğer kullanıcı GİRİŞ YAPMAMIŞSA ve /dashboard ile başlayan bir yere girmeye çalışıyorsa
-  // Onu Ana Sayfaya (Login ekranına) gönder.
+  // Dashboard Koruması
   if (!user && path.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/"; 
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
-  // --- KURAL 3: AUTH SAYFASI KORUMASI ---
-  // Eğer kullanıcı ZATEN GİRİŞ YAPMIŞSA ve /auth (giriş/kayıt) sayfasına girmeye çalışıyorsa
-  // Onu Dashboard'a yönlendir (Giriş yapmış adamın login sayfasında işi yok).
+  // Auth Sayfası Koruması
   if (user && path.startsWith("/auth")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
@@ -69,16 +71,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Matcher ayarın gayet iyi, aynen kalabilir.
   matcher: [
-    /*
-     * Aşağıdakiler HARİÇ tüm yolları eşleştir:
-     * - _next/static (statik dosyalar)
-     * - _next/image (resim optimizasyonu)
-     * - favicon.ico (favicon)
-     * - ads.txt (Google AdSense) -> EKLENDİ
-     * - robots.txt (SEO Botları) -> EKLENDİ
-     * - api (API route'ları etkilenmesin)
-     */
     "/((?!_next/static|_next/image|favicon.ico|ads.txt|robots.txt|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

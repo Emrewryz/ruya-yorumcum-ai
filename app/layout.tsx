@@ -35,6 +35,12 @@ export const metadata: Metadata = {
     template: "%s | Rüya Yorumcum AI", 
   },
   description: "Rüyalarınızın gizli mesajlarını yapay zeka ile çözün. İslami kaynaklar ve modern psikoloji ışığında size özel rüya yorumları.",
+
+  // --- EKLENEN KISIM: Google AdSense Meta Doğrulaması ---
+  // Bu, <meta name="google-adsense-account" content="..."> etiketini oluşturur.
+  other: {
+    "google-adsense-account": "ca-pub-1582674739139734",
+  },
   
   // Robots ayarı
   robots: {
@@ -65,7 +71,8 @@ export const metadata: Metadata = {
     type: 'website',
   },
   
-  // NOT: Google Search Console doğrulama kodunu buraya girmeyi unutma
+  // NOT: Google Search Console (Webmaster Tools) doğrulama kodun varsa burayı güncellemeyi unutma.
+  // Şu an placeholder (yer tutucu) olarak duruyor.
   verification: {
     google: 'google-site-verification-kodunuzu-buraya-yazin', 
     yandex: 'yandex-verification-kodunuz',
