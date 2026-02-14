@@ -1,24 +1,18 @@
 User-agent: *
 Allow: /
-# Gereksiz sistem dosyalarını engelle
+
+# Kritik dosyaların erişilebilir olduğundan emin ol
+Allow: /ads.txt
+Allow: /sitemap.xml
+
+# Yönetim paneli, API ve kimlik doğrulama sayfalarını engelle
 Disallow: /dashboard/
 Disallow: /api/
 Disallow: /auth/
-Disallow: /_next/
-Disallow: /static/
 
-# Hata veren ikon ve yapılandırma dosyalarını engelle
-Disallow: /favicon.ico
-Disallow: /manifest.json
-Disallow: /llms.txt
+# Next.js'in sadece özel/private klasörlerini engelle
+# (Diğer _next klasörleri stil ve js dosyaları için gereklidir, engellenmemeli)
+Disallow: /_next/private/
 
-# O listeyi dolduran resim uzantılarını engelle
-Disallow: /*opengraph-image*
-Disallow: /*twitter-image*
-
-# Kod ve veri dosyalarını engelle
-Disallow: /*.json$
-Disallow: /*.js$
-Disallow: /*.css$
-
+# Sitemap haritasını belirt
 Sitemap: https://www.ruyayorumcum.com.tr/sitemap.xml

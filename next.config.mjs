@@ -1,13 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 1. Build Hatalarını Yoksayma (Hızlı Deploy İçin)
   eslint: {
-    // Uyarıları hata olarak görüp build'i durdurmasın
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Tip hatalarını görmezden gelsin (Hızlı deploy için)
     ignoreBuildErrors: true,
   },
+
+  // 2. Resim Optimizasyonu
   images: {
     remotePatterns: [
       {
@@ -20,9 +21,25 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'upload.wikimedia.org', // Wikimedia (Tarot kartları) için
+        hostname: 'upload.wikimedia.org',
       },
     ],
+  },
+
+  // 3. ADS.TXT GARANTİSİ (Headers Ayarı)
+  // Bu ayar, tarayıcılara ve Google Botlarına bu dosyanın kesinlikle bir metin dosyası olduğunu söyler.
+  async headers() {
+    return [
+      {
+        source: '/ads.txt',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/plain; charset=utf-8',
+          },
+        ],
+      },
+    ];
   },
 };
 
