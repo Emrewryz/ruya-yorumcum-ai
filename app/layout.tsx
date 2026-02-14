@@ -72,7 +72,6 @@ export const metadata: Metadata = {
   },
   
   // NOT: Google Search Console (Webmaster Tools) doğrulama kodun varsa burayı güncellemeyi unutma.
-  // Şu an placeholder (yer tutucu) olarak duruyor.
   verification: {
     google: 'google-site-verification-kodunuzu-buraya-yazin', 
     yandex: 'yandex-verification-kodunuz',
@@ -118,17 +117,15 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         
-        {/* --- GOOGLE ADSENSE (ANA SCRIPT) --- 
-          Bu script tüm site genelinde çalışır.
-          1. Otomatik reklamları (Vinyet vb.) yönetir.
-          2. Manuel eklediğimiz (AdUnit) reklamların çalışmasını sağlar.
+        {/* --- GOOGLE ADSENSE (ANA SCRIPT - DÜZELTİLMİŞ HALİ) --- 
+            Burada Next.js'in "Script" bileşeni YERİNE standart HTML "script" etiketi kullanıyoruz.
+            Böylece kodun sayfa sonuna taşınmasını engelliyor ve HEAD içinde kalmasını sağlıyoruz.
         */}
-        <Script
-          async
+        <script 
+          async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        ></script>
       </head>
       
       <body className={`${cinzel.variable} ${manrope.variable} font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh]`}>
