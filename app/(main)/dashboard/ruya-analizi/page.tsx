@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Sparkles, ArrowLeft, Moon, PlayCircle } from "lucide-react"; 
-import { AnimatePresence } from "framer-motion";
+import { Sparkles, ArrowLeft, Moon, PlayCircle, Loader2 } from "lucide-react"; 
+import { AnimatePresence, motion } from "framer-motion";
 import { analyzeDream } from "@/app/actions/analyze-dream";
 import { toast } from "sonner"; 
 
@@ -13,7 +13,8 @@ import DreamInputSection from "./DreamInputSection";
 import AnalysisResults from "./AnalysisResults";
 import RewardAdModal from "@/components/RewardAdModal";
 
-export default function RuyaAnaliziPage() {
+// 1. ASIL İÇERİK BİLEŞENİ (useSearchParams burada kullanılır)
+function RuyaAnaliziContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -31,18 +32,16 @@ export default function RuyaAnaliziPage() {
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { router.push('/auth'); return; }
       
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       if (prof) setProfile(prof);
 
-      // Yarım kalan rüya var mı diye bak (Sadece sayfa ilk açıldığında)
+      // Yarım kalan rüya kontrolü
       const isPending = searchParams.get('pending');
       if (isPending === 'true') {
-         const savedDream = localStorage.getItem("pending_dream");
-         if (savedDream) {
-             setDreamText(savedDream);
-         }
+          const savedDream = localStorage.getItem("pending_dream");
+          if (savedDream) setDreamText(savedDream);
       }
 
       const savedId = localStorage.getItem('saved_dream_id');
@@ -58,47 +57,47 @@ export default function RuyaAnaliziPage() {
       }
     };
     init();
-  }, [supabase, searchParams]);
+  }, [supabase, searchParams, router]);
 
   // --- ANALİZ FONKSİYONU ---
   const handleAnalyze = async () => {
-    if (!dreamText.trim()) return;
+    if (!dreamText.trim()) {
+        toast.error("Lütfen rüyanızı kısaca anlatın.");
+        return;
+    }
     setStatus('LOADING');
     
-    const result = await analyzeDream(dreamText);
-    
-    if (result.success) {
-      setAnalysisResult(result.data.ai_response);
-      setCurrentDreamId(result.data.id);
-      setStatus('COMPLETED');
-      localStorage.setItem('saved_dream_id', result.data.id);
-      localStorage.removeItem("pending_dream"); // Pending varsa sil
-      setGeneratedImage(null); 
-      
-      // Analiz başarılı olunca profil kredisini lokal olarak 1 azalt (reklamı tetikleyebilmek için)
-      if (profile) {
-         setProfile({ ...profile, credits: profile.credits - 1 });
-      }
+    try {
+        const result = await analyzeDream(dreamText);
+        
+        if (result.success) {
+          setAnalysisResult(result.data.ai_response);
+          setCurrentDreamId(result.data.id);
+          setStatus('COMPLETED');
+          localStorage.setItem('saved_dream_id', result.data.id);
+          localStorage.removeItem("pending_dream");
+          setGeneratedImage(null); 
+          
+          if (profile) setProfile({ ...profile, credits: profile.credits - 1 });
 
-      toast.success("Rüyanız başarıyla yorumlandı! (1 Kredi düştü)");
-      
-      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    } else {
-      const errorCode = (result as any).code;
-
-      if (errorCode === "NO_CREDIT") {
-         toast.error("Yetersiz Bakiye", {
-            description: "Bu analiz için 1 krediye ihtiyacınız var.",
-            action: {
-                label: "Yükle",
-                onClick: () => router.push("/dashboard/pricing")
-            },
-            duration: 5000, 
-         });
-      } else {
-         toast.error(result.error || "Bir hata oluştu.");
-      }
-      setStatus('IDLE');
+          toast.success("Rüyanız başarıyla yorumlandı! (1 Kredi düştü)");
+          setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
+        } else {
+          const errorCode = (result as any).code;
+          if (errorCode === "NO_CREDIT") {
+              toast.error("Yetersiz Bakiye", {
+                description: "Bu analiz için 1 krediye ihtiyacınız var.",
+                action: { label: "Yükle", onClick: () => router.push("/dashboard/pricing") },
+                duration: 5000, 
+              });
+          } else {
+              toast.error(result.error || "Bir hata oluştu.");
+          }
+          setStatus('IDLE');
+        }
+    } catch (err) {
+        toast.error("Bağlantı hatası.");
+        setStatus('IDLE');
     }
   };
 
@@ -109,91 +108,102 @@ export default function RuyaAnaliziPage() {
     localStorage.removeItem('saved_dream_id');
   };
 
-  // Kredi kontrolü: Profil yüklendiyse ve kredi 1'den küçükse reklamı göster
   const showAds = profile !== null && profile.credits < 1;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-10 flex flex-col min-h-screen relative z-10 font-sans">
+    // Dış kapsayıcı layout.tsx'e tam uyum sağlar (relative, pb-20)
+    <div className="relative w-full flex flex-col items-center min-h-[calc(100vh-6rem)] z-10 pb-20 font-sans selection:bg-amber-500/30">
       
-      {/* ================= ARKA PLAN AURASI ================= */}
-      <div className="fixed top-0 left-0 w-full h-[800px] overflow-hidden pointer-events-none -z-10">
-          <div className="absolute top-[-5%] left-[10%] w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[150px]"></div>
-          <div className="absolute top-[20%] right-[-5%] w-[500px] h-[500px] bg-violet-600/10 rounded-full blur-[150px]"></div>
-      </div>
+      {/* LOKAL ARKAPLAN EFEKTLERİ (Performans dostu transform-gpu) */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent pointer-events-none -z-10 transform-gpu"></div>
 
-      {/* ================= ÜST MENÜ & GERİ DÖN ================= */}
-      <nav className="flex items-center justify-between mb-10">
-         <button 
-            onClick={() => router.push('/dashboard')}
-            className="group flex items-center gap-2 text-slate-400 hover:text-amber-400 transition-colors bg-white/5 hover:bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/5 shadow-sm"
-         >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
-            <span className="text-sm font-medium">Ana Menü</span>
-         </button>
-
-         <div className="flex items-center gap-3">
-             <div className="bg-[#131722]/80 backdrop-blur-md border border-white/5 px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm">
-                 <Moon className="w-4 h-4 text-amber-500" />
-                 <span className="text-slate-200 text-xs font-bold uppercase tracking-widest">Rüya Laboratuvarı</span>
-             </div>
-         </div>
+      {/* HEADER & NAV */}
+      <nav className="w-full max-w-[1200px] px-4 md:px-0 py-6 flex items-center justify-between mt-2 md:mt-4">
+        <button 
+           onClick={() => router.push('/dashboard')} 
+           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-bold text-slate-300 hover:text-white uppercase tracking-widest backdrop-blur-md transform-gpu"
+        >
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden md:inline">Ana Menü</span>
+        </button>
+        
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-[#131722]/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm transform-gpu">
+           <Moon className="w-4 h-4 text-amber-500" />
+           <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-white">Rüya Laboratuvarı</span>
+        </div>
       </nav>
 
-      {/* ================= HEADER ================= */}
-      <header className="mb-10">
-         <h1 className="font-serif text-4xl md:text-5xl text-white tracking-tight leading-tight mb-4">
-           Rüyalarınızın Gizli Dilini <br className="hidden md:block" />
-           <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">
-             Keşfedin
-           </span>
-         </h1>
-         <p className="text-slate-400 text-sm md:text-base font-light max-w-2xl leading-relaxed">
-           Sembolleri, duyguları ve detayları eksiksiz bir şekilde kelimelere dökün. Unutmayın, en önemsiz görünen detay bile büyük bir şifreyi barındırabilir.
-         </p>
-      </header>
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-0 pt-6 relative z-10 flex flex-col items-center">
+        
+        {/* HEADER TEXT */}
+        <header className="text-center mb-12 md:mb-16">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <h1 className="text-4xl md:text-6xl font-serif text-white mb-4">
+                Rüyaların Gizli <span className="text-amber-500">Dilini Çöz</span>
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto leading-relaxed font-light">
+                Sembolleri ve duyguları kelimelere dökün. Kadim rüya ilmi ve modern psikoloji senteziyle bilinçaltınızın kapılarını aralayalım.
+            </p>
+          </motion.div>
+        </header>
 
-      {/* ================= İNCE REKLAM BANNER'I (SADECE KREDİ BİTİNCE ÇIKAR) ================= */}
-      {showAds && (
-        <div className="mb-10 w-full relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-2xl blur-xl opacity-50"></div>
-            <div className="relative bg-[#131722]/80 backdrop-blur-xl border border-indigo-500/20 rounded-2xl p-5 md:p-6 flex flex-col md:flex-row items-center justify-between gap-5 shadow-xl">
-               <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/10 flex items-center justify-center border border-indigo-500/30 shrink-0 shadow-inner">
-                       <PlayCircle className="w-6 h-6 text-indigo-400" />
-                   </div>
-                   <div>
-                       <h4 className="text-slate-100 font-bold text-base mb-0.5">Krediniz mi bitti?</h4>
-                       <p className="text-slate-400 text-xs font-light">Kısa bir video izleyerek anında yolculuğuna devam et.</p>
-                   </div>
-               </div>
-               <div className="w-full md:w-auto relative z-10">
-                  <RewardAdModal />
-               </div>
-            </div>
-        </div>
-      )}
+        {/* REKLAM BANNER (SADECE KREDİ BİTİNCE) */}
+        {showAds && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-10 w-full relative group transform-gpu">
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-indigo-500/10 rounded-[2.5rem] blur-xl opacity-50"></div>
+              <div className="relative bg-[#131722]/80 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl overflow-hidden">
+                  <div className="flex items-center gap-5 relative z-10 w-full md:w-auto">
+                      <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 shadow-inner transition-transform group-hover:scale-110">
+                          <PlayCircle className="w-7 h-7 text-amber-400" />
+                      </div>
+                      <div>
+                          <h3 className="text-slate-100 font-bold text-lg mb-1 font-serif">Krediniz mi bitti?</h3>
+                          <p className="text-slate-400 text-xs font-light">Kısa bir video izleyerek anında yorum hakkı kazan.</p>
+                      </div>
+                  </div>
+                  <div className="w-full md:w-auto relative z-10">
+                     <RewardAdModal />
+                  </div>
+              </div>
+          </motion.div>
+        )}
 
-      {/* ================= RÜYA GİRİŞ (INPUT) ================= */}
-      <DreamInputSection 
-        dreamText={dreamText} setDreamText={setDreamText} 
-        status={status} onAnalyze={handleAnalyze} onReset={handleReset}
-        isRecording={isRecording} setIsRecording={setIsRecording}
-      />
-
-      {/* ================= SONUÇLAR ================= */}
-      <div ref={resultRef}>
-        <AnimatePresence>
-          {status === 'COMPLETED' && analysisResult && (
-            <AnalysisResults 
-              result={analysisResult} 
-              currentDreamId={currentDreamId} 
-              generatedImage={generatedImage}
-              onDownloadImage={() => {}} 
+        {/* RÜYA GİRİŞ (INPUT) */}
+        <div className="w-full">
+            <DreamInputSection 
+              dreamText={dreamText} setDreamText={setDreamText} 
+              status={status} onAnalyze={handleAnalyze} onReset={handleReset}
+              isRecording={isRecording} setIsRecording={setIsRecording}
             />
-          )}
-        </AnimatePresence>
-      </div>
+        </div>
 
+        {/* SONUÇLAR */}
+        <div ref={resultRef} className="w-full mt-12">
+          <AnimatePresence mode="wait">
+            {status === 'COMPLETED' && analysisResult && (
+              <AnalysisResults 
+                result={analysisResult} 
+                currentDreamId={currentDreamId} 
+                generatedImage={generatedImage}
+                onDownloadImage={() => {}} 
+              />
+            )}
+          </AnimatePresence>
+        </div>
+
+      </main>
     </div>
+  );
+}
+
+// 2. ANA EXPORT (Suspense ile sarmalanmış)
+export default function RuyaAnaliziPage() {
+  return (
+    <Suspense fallback={
+       <div className="w-full flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+       </div>
+    }>
+       <RuyaAnaliziContent />
+    </Suspense>
   );
 }
