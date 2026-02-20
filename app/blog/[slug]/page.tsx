@@ -86,7 +86,7 @@ const BlockRenderer = ({ block }: { block: ContentBlock }) => {
             <li key={i} className="flex items-start gap-3 text-slate-300 text-sm md:text-base leading-relaxed group">
               <div className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-500/50 shrink-0"></div>
               <span dangerouslySetInnerHTML={{ __html: li }} />
-            </li>
+            :</li>
           ))}
         </ul>
       );
@@ -113,6 +113,13 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
   const wordCount = JSON.stringify(contentBlocks).split(' ').length;
   const readTime = Math.ceil(wordCount / 200) || 1; 
 
+  // --- REKLAM SINIRLANDIRMA VE YERLEŞTİRME MATEMATİĞİ ---
+  const MAX_IN_CONTENT_ADS = 3; // Yazı içerisinde (baş ve son hariç) en fazla çıkacak reklam sayısı
+  
+  // İçerik blok sayısını baz alarak reklamların kaç blokta bir çıkacağını hesaplıyoruz.
+  // Math.max(6, ...) kullanarak, yazı ne kadar kısa olursa olsun reklamların en az 6 blok arayla çıkmasını sağlıyoruz.
+  const AD_INTERVAL = Math.max(6, Math.floor(contentBlocks.length / (MAX_IN_CONTENT_ADS + 1))); 
+
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-200 font-sans pb-24 selection:bg-amber-500/30 overflow-x-hidden relative scroll-smooth">
       <Script id="json-ld-article" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -124,9 +131,11 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         author: { '@type': 'Organization', name: 'RüyaYorumcum AI' }
       }) }} />
 
+      {/* Arkaplan Efektleri */}
       <div className="fixed inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay z-0" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-amber-500/5 rounded-full blur-[150px] pointer-events-none z-0"></div>
 
+      {/* Header Geri Dön */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 pt-32 relative z-20">
          <Link href="/blog" className="inline-flex items-center gap-2 text-slate-400 hover:text-amber-400 transition-colors text-xs font-bold uppercase tracking-widest mb-8">
             <ArrowLeft className="w-4 h-4" /> Geri Dön
@@ -156,27 +165,43 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                 </div>
             </header>
 
+            {/* 1. REKLAM: Yazı Başı (Sabit) */}
             <div className="w-full mb-12">
-               <p className="text-center text-[10px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+               <p className="text-center text-[10px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
                <AdUnit slot="4542150009" format="fluid" />
             </div>
 
+            {/* İçerik Blokları ve Dinamik Yazı İçi Reklamlar */}
             <div className="space-y-2">
-                {contentBlocks.map((block, index) => (
-                    <div key={index}>
-                        <BlockRenderer block={block} />
-                        {/* Her 4 blokta bir reklam (AdSense güvenliği için sıklığı azalttım) */}
-                        {(index + 1) % 4 === 0 && (
-                            <div className="py-10 w-full border-y border-white/5 my-10">
-                                <p className="text-center text-[10px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
-                                <AdUnit slot="4542150009" format="fluid" />
-                            </div>
-                        )}
-                    </div>
-                ))}
+                {contentBlocks.map((block, index) => {
+                    const blockNumber = index + 1;
+                    
+                    // Reklam Şartları:
+                    // 1. O anki blok numarası AD_INTERVAL'ın katı mı? (Örn: 6, 12, 18. bloklar)
+                    const isAdInterval = blockNumber % AD_INTERVAL === 0;
+                    // 2. Maksimum reklam limitini aştık mı?
+                    const isUnderLimit = (blockNumber / AD_INTERVAL) <= MAX_IN_CONTENT_ADS;
+                    // 3. Yazının son 2 bloğuna reklam koyma (okumaya devam et kısmına girmesin)
+                    const isNotLastBlock = index < contentBlocks.length - 2;
+
+                    const shouldShowAd = isAdInterval && isUnderLimit && isNotLastBlock;
+
+                    return (
+                        <div key={index}>
+                            <BlockRenderer block={block} />
+                            
+                            {shouldShowAd && (
+                                <div className="py-10 w-full border-y border-white/5 my-10 bg-white/[0.01]">
+                                    <p className="text-center text-[10px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+                                    <AdUnit slot="4542150009" format="fluid" />
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
             
-            {/* Yazı Sonu İçerik Bölümü: Reklamlar arasına giren gerçek içerik */}
+            {/* Yazı Sonu İçerik Bölümü */}
             {relatedPosts && relatedPosts.length > 0 && (
               <section className="mt-16 pt-12 border-t border-white/5">
                   <div className="flex items-center justify-between mb-8">
@@ -203,7 +228,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                       ))}
                   </div>
 
-                  {/* MULTIPLEX REKLAM: Benzer yazılardan SONRA geliyor (Güvenli) */}
+                  {/* SON REKLAM: Multiplex (Önerilen İçerikler) */}
                   <div className="w-full pt-8 border-t border-white/5">
                     <p className="text-center text-[10px] text-slate-600 mb-4 uppercase tracking-widest font-bold">İlginizi Çekebilecek Diğer Konular</p>
                     <AdUnit slot="6481917633" format="autorelaxed" />
@@ -212,12 +237,12 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
             )}
         </article>
 
-        {/* ================= SAĞ SÜTUN ================= */}
+        {/* ================= SAĞ SÜTUN (Sidebar) ================= */}
         <aside className="col-span-1 lg:col-span-4 order-2">
             <div className="sticky top-24 space-y-6">
                <BlogSidebarCTA />
                
-               {/* Yan Panel Reklamı: Makale uzunsa makale bitimine yakın görünür */}
+               {/* Sidebar Reklamı */}
                <div className="bg-[#131722] border border-white/5 rounded-[2rem] p-5 text-center shadow-xl">
                   <p className="text-[10px] text-slate-600 mb-3 uppercase tracking-widest font-bold">Sponsorlu</p>
                   <AdUnit slot="8565155493" format="rectangle" />

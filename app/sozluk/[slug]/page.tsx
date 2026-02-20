@@ -4,7 +4,7 @@ import {
   ArrowLeft, BookOpen, Brain, 
   ChevronRight, Sparkles, GitGraph, 
   Quote, BrainCircuit, List, ArrowRight,
-  HelpCircle // YENİ: FAQ ikonu eklendi
+  HelpCircle 
 } from "lucide-react";
 import type { Metadata } from 'next';
 import { cache } from 'react';
@@ -23,7 +23,6 @@ interface UltimateDreamData {
     isPositive: boolean;
     slug?: string;
   }[];
-  // YENİ: Sıkça Sorulan Sorular alanı eklendi
   faq?: { question: string; answer: string }[]; 
 }
 
@@ -146,7 +145,6 @@ export default async function Page({ params }: { params: { slug: string } }) {
     validSlugs = await getValidSlugs(potentialSlugs);
   }
 
-  // YENİ: JSON-LD Dinamik Schema Array Yapısı
   const schemas: any[] = [
     {
       '@context': 'https://schema.org',
@@ -157,7 +155,6 @@ export default async function Page({ params }: { params: { slug: string } }) {
     }
   ];
 
-  // Eğer içerikte FAQ varsa FAQPage şemasını da ekle
   if (isUltimate && ultimateData?.faq && ultimateData.faq.length > 0) {
     schemas.push({
       '@context': 'https://schema.org',
@@ -175,13 +172,12 @@ export default async function Page({ params }: { params: { slug: string } }) {
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-200 font-sans pb-20 selection:bg-amber-500/30 relative scroll-smooth">
-      {/* Schema basımı array olarak güncellendi */}
       <Script id="json-ld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }} />
       
       {/* Noise Texture */}
       <div className="fixed inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay z-0" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
 
-      {/* Geri Butonu (En Üstte, Genel) */}
+      {/* Geri Butonu */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 pt-32 relative z-20">
          <Link href="/sozluk" className="inline-flex items-center gap-2 text-slate-400 hover:text-amber-400 transition-colors text-xs font-bold uppercase tracking-widest pl-2">
             <ArrowLeft className="w-4 h-4" /> Sözlüğe Dön
@@ -196,16 +192,13 @@ export default async function Page({ params }: { params: { slug: string } }) {
             {/* 1. HERO KUTUSU */}
             <div className="bg-[#131722] border border-white/5 rounded-[1.5rem] p-6 md:p-10 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none"></div>
-
                 <div className="relative z-10">
                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase tracking-widest mb-6 border border-amber-500/20">
                       {item.category || 'RÜYA TABİRİ'}
                    </div>
-                   
                    <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-[1.1] tracking-tight">
                       Rüyada <span className="text-amber-500">{cleanTitle}</span> Görmek
                    </h1>
-                   
                    <div className="border-l-2 border-amber-500/50 pl-4 md:pl-5">
                       <p className="text-base md:text-lg text-slate-300 font-light leading-relaxed">
                          {isUltimate ? ultimateData!.summary : item.description}
@@ -214,9 +207,9 @@ export default async function Page({ params }: { params: { slug: string } }) {
                 </div>
             </div>
 
-            {/* Reklam (Yazı İçi) */}
+            {/* REKLAM 1: Yazı Başı (Dikkat Çekici Bölge) */}
             <div className="w-full">
-               <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest">Sponsorlu</p>
+               <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
                <AdUnit slot="4542150009" format="fluid" />
             </div>
 
@@ -227,14 +220,12 @@ export default async function Page({ params }: { params: { slug: string } }) {
                   {/* --- İslami Tabir --- */}
                   <section className="bg-[#131722] border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
                       <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-                      
                       <div className="flex items-center gap-4 mb-6">
                          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                             <BookOpen className="w-5 h-5 text-emerald-400"/>
                          </div>
                          <h2 className="text-xl font-serif font-bold text-white">İslami Tabir</h2>
                       </div>
-                      
                       <div className="space-y-5 pl-1">
                         {ultimateData.islamic.map((src, i) => (
                           <div key={i} className="flex gap-4 items-start">
@@ -252,23 +243,15 @@ export default async function Page({ params }: { params: { slug: string } }) {
                       </div>
                   </section>
 
-                  {/* --- REKLAM (İslami ve Psikolojik Arası) --- */}
-                  <div className="w-full py-2">
-                     <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest">Sponsorlu</p>
-                     <AdUnit slot="4542150009" format="fluid" />
-                  </div>
-
                   {/* --- Psikolojik Analiz --- */}
                   <section className="bg-[#131722] border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
                       <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                      
                       <div className="flex items-center gap-4 mb-6">
                          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                             <Brain className="w-5 h-5 text-indigo-400"/>
                          </div>
                          <h2 className="text-xl font-serif font-bold text-white">Psikolojik Analiz</h2>
                       </div>
-
                       <div className="pl-1">
                           <p className="text-slate-300 font-light leading-relaxed mb-5 text-sm md:text-base">
                               {ultimateData.psychological}
@@ -283,6 +266,12 @@ export default async function Page({ params }: { params: { slug: string } }) {
                           </div>
                       </div>
                   </section>
+
+                  {/* REKLAM 2: Senaryolardan Önce (İçerik İçi Dinlendirme) */}
+                  <div className="w-full bg-white/[0.01] py-8 my-8 border-y border-white/5">
+                     <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+                     <AdUnit slot="4542150009" format="fluid" />
+                  </div>
 
                   {/* --- Senaryolar --- */}
                   <section>
@@ -350,14 +339,12 @@ export default async function Page({ params }: { params: { slug: string } }) {
                   {ultimateData.faq && ultimateData.faq.length > 0 && (
                      <section className="bg-[#131722] border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl mt-8">
                         <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-                        
                         <div className="flex items-center gap-4 mb-6">
                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                               <HelpCircle className="w-5 h-5 text-amber-400"/>
                            </div>
                            <h2 className="text-xl font-serif font-bold text-white">Sıkça Sorulan Sorular</h2>
                         </div>
-
                         <div className="space-y-4 pl-1">
                            {ultimateData.faq.map((faqItem, i) => (
                               <details 
@@ -384,9 +371,9 @@ export default async function Page({ params }: { params: { slug: string } }) {
                </div>
             )}
 
-            {/* --- REKLAM (MULTIPLEX - Alt Kısım) --- */}
-            <div className="pt-6 border-t border-white/5">
-               <p className="text-center text-[9px] text-slate-600 mb-3 uppercase tracking-widest font-medium">İlginizi Çekebilir</p>
+            {/* REKLAM 3: Makale Sonu Multiplex (İlgili Yazılar vb.) */}
+            <div className="pt-10 border-t border-white/5 mt-10">
+               <p className="text-center text-[9px] text-slate-600 mb-4 uppercase tracking-widest font-bold">İlginizi Çekebilecek Diğer Konular</p>
                <AdUnit slot="6481917633" format="autorelaxed" />
             </div>
 
@@ -394,7 +381,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
 
         {/* ================= SAĞ SIDEBAR (lg:col-span-4) - YARDIMCI ARAÇLAR ================= */}
         <aside className="col-span-1 lg:col-span-4 order-2">
-           <div className="sticky top-24 space-y-6">
+            <div className="sticky top-24 space-y-6">
               
               {/* 1. YENİ KUTU: Premium CTA */}
               <div className="bg-gradient-to-br from-amber-500/10 to-[#131722] border border-amber-500/20 rounded-2xl p-5 md:p-6 relative overflow-hidden group shadow-lg">
@@ -419,7 +406,6 @@ export default async function Page({ params }: { params: { slug: string } }) {
                           <List className="w-3 h-3" /> 
                           Bu Rüyanın Diğer Halleri
                       </h3>
-                      
                       <ul className="space-y-1">
                           {ultimateData.scenarios.map((scene, i) => {
                              const hasLink = scene.slug ? validSlugs.includes(scene.slug) : false;
@@ -443,6 +429,12 @@ export default async function Page({ params }: { params: { slug: string } }) {
                   </div>
               )}
 
+              {/* REKLAM 4: Sidebar Reklamı */}
+              <div className="bg-[#131722] border border-white/5 rounded-2xl p-4 text-center shadow-lg">
+                  <p className="text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+                  <AdUnit slot="8565155493" format="rectangle" />
+              </div>
+
               {/* 3. BENZER RÜYALAR */}
               {relatedDreams.length > 0 && (
                   <div className="bg-[#131722] border border-white/5 rounded-2xl p-5 shadow-lg">
@@ -450,7 +442,6 @@ export default async function Page({ params }: { params: { slug: string } }) {
                           <GitGraph className="w-3 h-3" /> 
                           Benzer Rüyalar
                       </h3>
-                      
                       <ul className="space-y-1.5">
                           {relatedDreams.slice(0, 5).map((related) => (
                               <li key={related.slug}>
@@ -472,12 +463,6 @@ export default async function Page({ params }: { params: { slug: string } }) {
                       </ul>
                   </div>
               )}
-
-              {/* 4. REKLAM ALANI (Sağ Sütun) */}
-              <div className="bg-[#131722] border border-white/5 rounded-2xl p-3 text-center shadow-lg">
-                  <p className="text-[9px] text-slate-600 mb-2 uppercase tracking-widest">Sponsorlu</p>
-                  <AdUnit slot="8565155493" format="rectangle" />
-              </div>
 
            </div>
         </aside>

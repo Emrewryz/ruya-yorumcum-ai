@@ -9,7 +9,7 @@ import {
   Search, Sparkles, BookOpen, ArrowRight, Loader2, Flame, BrainCircuit, Moon
 } from "lucide-react";
 import AdUnit from "@/components/AdUnit";
-import { getMoonPhase, MoonPhase } from "@/utils/moon"; // <-- Ay Evresi Algoritması Eklendi
+import { getMoonPhase, MoonPhase } from "@/utils/moon"; 
 
 interface DictionaryItem {
   term: string;
@@ -24,12 +24,10 @@ export default function DictionaryPage() {
   const [terms, setTerms] = useState<DictionaryItem[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Ay evresini tutmak için yeni state
   const [currentMoon, setCurrentMoon] = useState<MoonPhase | null>(null);
 
   // Verileri Çek
   useEffect(() => {
-    // Sayfa yüklendiğinde bugünün ay evresini al
     setCurrentMoon(getMoonPhase());
 
     const fetchData = async () => {
@@ -63,6 +61,10 @@ export default function DictionaryPage() {
 
     return () => clearTimeout(timer);
   }, [searchTerm, supabase]);
+
+  // --- REKLAM SINIRLANDIRMA AYARLARI ---
+  const AD_INTERVAL = 8; // Her 8 kutuda bir reklam çıkacak
+  const MAX_INFEED_ADS = 3; // Liste içinde maksimum 3 reklam çıkabilecek
 
   return (
     <main className="min-h-screen bg-[#0B0F19] text-slate-300 font-sans relative overflow-x-hidden selection:bg-amber-500/20 pb-20 md:pb-32">
@@ -112,11 +114,7 @@ export default function DictionaryPage() {
             
             {/* ================= SOL SÜTUN: RÜYA KARTLARI ================= */}
             <div className="lg:col-span-8 space-y-6">
-                <div className="mb-8 p-4 bg-[#131722] border border-white/5 rounded-2xl">
-                   <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest">- Sponsorlu -</p>
-                   <AdUnit slot="8565155493" format="auto" />
-                </div>
-
+               
                 {loading && terms.length === 0 ? (
                     <div className="text-center py-20 bg-[#131722] rounded-3xl border border-white/5">
                       <Loader2 className="w-8 h-8 animate-spin text-amber-500 mx-auto mb-4" />
@@ -131,35 +129,43 @@ export default function DictionaryPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {terms.map((item, i) => (
-                          <Fragment key={i}>
-                            <Link href={`/sozluk/${item.slug}`} className="group block">
-                                <article className="h-full bg-[#131722] rounded-2xl p-6 border border-white/5 hover:border-amber-500/30 transition-all duration-300 hover:bg-[#1a1f2e] relative overflow-hidden">
-                                  <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-[40px] group-hover:bg-amber-500/10 transition-all"></div>
-                                  <div className="relative z-10">
-                                      <h3 className="font-serif text-lg font-bold text-white mb-2 group-hover:text-amber-400 transition-colors">
-                                        {item.term}
-                                      </h3>
-                                      <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-4">
-                                        {item.description}
-                                      </p>
-                                      <div className="flex items-center text-amber-500/70 text-[10px] font-bold uppercase tracking-wider gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
-                                        Detaylı Oku <ArrowRight className="w-3 h-3" />
-                                      </div>
-                                  </div>
-                                </article>
-                            </Link>
+                      {terms.map((item, i) => {
+                          
+                          // DİNAMİK REKLAM HESAPLAMASI
+                          const isAdPosition = (i + 1) % AD_INTERVAL === 0;
+                          const showAd = isAdPosition && ((i + 1) / AD_INTERVAL) <= MAX_INFEED_ADS;
 
-                            {(i + 1) % 6 === 0 && (
-                                <div className="sm:col-span-2 py-4 flex justify-center items-center bg-[#0B0F19] border-y border-white/5 my-2">
-                                  <div className="w-full">
-                                      <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest">Sponsorlu</p>
-                                      <AdUnit slot="8565155493" format="auto" />
+                          return (
+                            <Fragment key={i}>
+                              <Link href={`/sozluk/${item.slug}`} className="group block">
+                                  <article className="h-full bg-[#131722] rounded-2xl p-6 border border-white/5 hover:border-amber-500/30 transition-all duration-300 hover:bg-[#1a1f2e] relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-[40px] group-hover:bg-amber-500/10 transition-all"></div>
+                                    <div className="relative z-10">
+                                        <h3 className="font-serif text-lg font-bold text-white mb-2 group-hover:text-amber-400 transition-colors">
+                                          {item.term}
+                                        </h3>
+                                        <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-4">
+                                          {item.description}
+                                        </p>
+                                        <div className="flex items-center text-amber-500/70 text-[10px] font-bold uppercase tracking-wider gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+                                          Detaylı Oku <ArrowRight className="w-3 h-3" />
+                                        </div>
+                                    </div>
+                                  </article>
+                              </Link>
+
+                              {/* EĞER ŞARTLAR SAĞLANIYORSA REKLAMI GÖSTER */}
+                              {showAd && (
+                                  <div className="sm:col-span-2 py-4 flex justify-center items-center bg-[#0B0F19] border-y border-white/5 my-2">
+                                    <div className="w-full">
+                                        <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest">Sponsorlu</p>
+                                        <AdUnit slot="8565155493" format="auto" />
+                                    </div>
                                   </div>
-                                </div>
-                            )}
-                          </Fragment>
-                      ))}
+                              )}
+                            </Fragment>
+                          );
+                      })}
                     </div>
                 )}
             </div>
