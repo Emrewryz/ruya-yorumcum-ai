@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation"; // <-- useParams EKLENDİ
 import { createClient } from "@/utils/supabase/client";
 import { 
   ArrowLeft, Sparkles, Download, Share2, 
@@ -12,8 +12,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { generateDreamImage } from "@/app/actions/generate-image";
 import { toast } from "sonner";
 
-export default function ImageStudioPage({ params }: { params: { id: string } }) {
+// props kısmındaki { params } kaldırıldı, yerine içeride useParams() kullanılacak
+export default function ImageStudioPage() {
   const router = useRouter();
+  const params = useParams(); // <-- URL'deki [id] değerini güvenle almak için
+  const dreamId = params?.id as string; // String'e çeviriyoruz
+
   const supabase = createClient();
   
   // --- State Yönetimi ---
@@ -22,7 +26,7 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
   const [dream, setDream] = useState<any>(null);
   const [isCopied, setIsCopied] = useState(false);
   
-  // YENİ: Mod Seçimi ve Manuel Prompt
+  // Mod Seçimi ve Manuel Prompt
   const [mode, setMode] = useState<'auto' | 'custom'>('auto');
   const [customPrompt, setCustomPrompt] = useState("");
 
@@ -38,21 +42,28 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
   // --- 1. Başlangıç Verilerini Çek ---
   useEffect(() => {
     const fetchData = async () => {
+      // Eğer ID yoksa direkt iptal et (Dashboard'dan genel tıklanmış olabilir)
+      if (!dreamId) {
+         toast.error("Geçerli bir rüya kimliği bulunamadı.");
+         router.push('/dashboard');
+         return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login');
+        router.push('/auth');
         return;
       }
 
       const { data: dreamData, error } = await supabase
         .from('dreams')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', dreamId) // <-- Güvenli ID kullanımı
         .eq('user_id', user.id) 
         .single();
 
       if (error || !dreamData) {
-        toast.error("Rüya bulunamadı.");
+        toast.error("Rüya bulunamadı veya erişim yetkiniz yok.");
         router.push('/dashboard');
         return;
       }
@@ -62,7 +73,7 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
     };
 
     fetchData();
-  }, [params.id, router, supabase]);
+  }, [dreamId, router, supabase]); // Dependency array düzeltildi
 
   // --- Yükleme Mesajı Döngüsü ---
   useEffect(() => {
@@ -78,14 +89,11 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
   const handleGenerate = async () => {
     if (!dream) return;
     
-    // Prompt Belirleme Mantığı
     let finalPrompt = "";
     
     if (mode === 'auto') {
-        // Otomatik Mod: Rüya metnini veya özetini kullan
         finalPrompt = dream.ai_response?.summary || dream.dream_text.substring(0, 400);
     } else {
-        // Manuel Mod: Kullanıcının yazdığını kullan
         if (!customPrompt.trim()) {
             toast.warning("Lütfen hayalinizdeki sahneyi tarif edin.");
             return;
@@ -99,14 +107,12 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
     if (navigator.vibrate) navigator.vibrate(20);
 
     try {
-      // Backend Action Çağrısı (Kredi ve Üretim orada yönetilir)
       const result = await generateDreamImage(finalPrompt, dream.id);
 
       if (result.success && result.imageUrl) {
         setDream((prev: any) => ({ ...prev, image_url: result.imageUrl }));
         toast.success("Eseriniz hazır! (3 Kredi düştü)");
       } else {
-        // Hata Yönetimi
         const errCode = (result as any).code;
         if (errCode === 'NO_CREDIT') {
              toast.error("Yetersiz Bakiye", {
@@ -170,73 +176,74 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#fbbf24] animate-spin" />
+      <div className="min-h-screen bg-[#0a0c10] flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-[#fbbf24] animate-spin mb-4" />
+        <p className="text-slate-500 text-xs tracking-widest uppercase animate-pulse">Tuval Hazırlanıyor...</p>
       </div>
     );
   }
 
+  // --- UI KISMI (Değiştirilmedi, sadece arkaplan zemin rengi "Midnight Pro" koduna (#0a0c10) eşitlendi) ---
   return (
-    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col pb-24 md:pb-32">
+    <div className="min-h-screen relative w-full flex flex-col items-center z-10 pb-20 bg-[#0a0c10] font-sans selection:bg-[#fbbf24]/30">
       
       {/* Arkaplan Efektleri */}
-      <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
-      <div className="fixed top-[-10%] left-[-10%] w-[250px] h-[250px] md:w-[500px] md:h-[500px] bg-purple-900/30 rounded-full blur-[80px] md:blur-[120px] pointer-events-none animate-pulse-slow"></div>
-      <div className="fixed bottom-[-10%] right-[-10%] w-[250px] h-[250px] md:w-[500px] md:h-[500px] bg-blue-900/30 rounded-full blur-[80px] md:blur-[120px] pointer-events-none animate-pulse-slow delay-1000"></div>
+      <div className="bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] fixed inset-0 pointer-events-none mix-blend-overlay"></div>
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-amber-900/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
       {/* --- NAVBAR --- */}
-      <nav className="sticky top-0 w-full bg-[#020617]/80 backdrop-blur-md border-b border-white/5 p-4 md:p-6 flex justify-between items-center z-30">
+      <nav className="w-full px-4 md:px-6 py-6 flex justify-between items-center z-30 max-w-[1200px] mx-auto mt-2">
         <button 
           onClick={() => router.back()} 
-          className="flex items-center gap-2 p-2 -ml-2 rounded-full hover:bg-white/5 active:scale-90 transition-all text-gray-400 hover:text-white"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-bold text-slate-300 hover:text-white uppercase tracking-widest backdrop-blur-md"
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-xs md:text-sm font-bold hidden md:inline">Geri Dön</span>
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden md:inline">Geri Dön</span>
         </button>
-        <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white/5 rounded-full border border-white/10">
-          <Wand2 className="w-3 h-3 md:w-4 md:h-4 text-[#fbbf24]" />
-          <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase">Görsel Stüdyosu</span>
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-[#131722]/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
+          <Wand2 className="w-4 h-4 text-[#fbbf24]" />
+          <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-white">Görsel Stüdyosu</span>
         </div>
-        <div className="w-8"></div>
       </nav>
 
       {/* --- ANA İÇERİK --- */}
-      <div className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full p-4 lg:p-8 gap-8 relative z-10">
+      <div className="flex-1 flex flex-col lg:flex-row max-w-[1200px] mx-auto w-full p-4 lg:p-8 gap-8 relative z-10">
         
-        {/* SOL PANEL: KONTROLLER (Sıra 2 on mobile, 1 on desktop) */}
+        {/* SOL PANEL: KONTROLLER */}
         <motion.div 
           initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
           className="w-full lg:w-1/3 flex flex-col gap-6 order-2 lg:order-1"
         >
           {/* Rüya Özeti Kartı */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><Quote className="w-12 h-12" /></div>
-             <h2 className="text-xl font-serif text-[#fbbf24] mb-2 line-clamp-1">{dream.dream_title || "Rüyanız"}</h2>
-             <p className="text-gray-400 text-sm line-clamp-3 italic">"{dream.dream_text}"</p>
+          <div className="bg-[#131722]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-8 relative overflow-hidden group shadow-xl">
+             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Quote className="w-16 h-16 text-white" /></div>
+             <h2 className="text-2xl font-serif text-[#fbbf24] mb-3 line-clamp-1">{dream.dream_title || "Rüyanız"}</h2>
+             <p className="text-slate-300 text-sm leading-relaxed font-light line-clamp-4 italic">"{dream.dream_text}"</p>
           </div>
 
           {/* KONTROL PANOSU */}
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-6 flex-1 flex flex-col backdrop-blur-xl">
-             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Stüdyo Ayarları</h3>
+          <div className="bg-[#131722]/80 border border-white/5 rounded-3xl p-8 flex-1 flex flex-col backdrop-blur-xl shadow-xl">
+             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Stüdyo Ayarları</h3>
              
              {/* SEKME (TAB) YAPISI */}
-             <div className="flex p-1 bg-white/5 rounded-xl mb-6 border border-white/5">
+             <div className="flex p-1.5 bg-[#0a0c10] rounded-xl mb-6 border border-white/5 shadow-inner">
                 <button 
                   onClick={() => setMode('auto')}
-                  className={`flex-1 py-2.5 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all ${mode === 'auto' ? 'bg-[#fbbf24] text-black shadow-lg scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                  className={`flex-1 py-3 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all ${mode === 'auto' ? 'bg-[#fbbf24] text-[#0a0c10] shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-slate-400 hover:text-white'}`}
                 >
-                   <Sparkles className="w-3 h-3" /> Rüyadan Üret
+                   <Sparkles className="w-4 h-4" /> Rüyadan Üret
                 </button>
                 <button 
                   onClick={() => setMode('custom')}
-                  className={`flex-1 py-2.5 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all ${mode === 'custom' ? 'bg-[#fbbf24] text-black shadow-lg scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                  className={`flex-1 py-3 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all ${mode === 'custom' ? 'bg-[#fbbf24] text-[#0a0c10] shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-slate-400 hover:text-white'}`}
                 >
-                   <PenTool className="w-3 h-3" /> Kendin Anlat
+                   <PenTool className="w-4 h-4" /> Kendin Anlat
                 </button>
              </div>
 
              {/* DİNAMİK İÇERİK ALANI */}
-             <div className="flex-1 mb-6 min-h-[140px]">
+             <div className="flex-1 mb-8 min-h-[140px]">
                 <AnimatePresence mode="wait">
                   {mode === 'auto' ? (
                     <motion.div 
@@ -244,11 +251,11 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
                       initial={{ opacity: 0, y: 10 }} 
                       animate={{ opacity: 1, y: 0 }} 
                       exit={{ opacity: 0, y: -10 }}
-                      className="text-center p-6 bg-white/5 rounded-xl border border-dashed border-white/10 h-full flex flex-col items-center justify-center gap-3"
+                      className="text-center p-8 bg-[#0a0c10] rounded-2xl border border-dashed border-white/10 h-full flex flex-col items-center justify-center gap-4"
                     >
-                       <Wand2 className="w-8 h-8 text-purple-400 opacity-50" />
-                       <p className="text-sm text-gray-300 leading-relaxed">
-                         Yapay zeka, rüyanızdaki sembolleri ve duyguları analiz ederek sahneyi <span className="text-[#fbbf24]">otomatik</span> kurgulayacak.
+                       <Wand2 className="w-10 h-10 text-[#fbbf24] opacity-30" />
+                       <p className="text-sm text-slate-300 leading-relaxed font-light">
+                         Yapay zeka, rüyanızdaki sembolleri ve duyguları analiz ederek sahneyi <span className="text-[#fbbf24] font-medium">otomatik</span> kurgulayacak.
                        </p>
                     </motion.div>
                   ) : (
@@ -263,26 +270,26 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
                          value={customPrompt}
                          onChange={(e) => setCustomPrompt(e.target.value)}
                          placeholder="Örn: Kristalden yapılmış bir şehirde uçan balıklar, mor gökyüzü, sinematik ışık..."
-                         className="w-full h-32 bg-black/50 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#fbbf24]/50 focus:ring-1 focus:ring-[#fbbf24]/20 transition-all resize-none mb-2"
+                         className="w-full h-36 bg-[#0a0c10] border border-white/10 rounded-2xl p-5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#fbbf24]/50 focus:ring-1 focus:ring-[#fbbf24]/20 transition-all resize-none mb-3 shadow-inner"
                        />
-                       <p className="text-[10px] text-gray-500 text-right italic">Ne kadar detay, o kadar sanat.</p>
+                       <p className="text-[10px] text-slate-500 text-right uppercase tracking-widest font-bold">Ne kadar detay, o kadar sanat.</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
              </div>
 
              {/* OLUŞTUR BUTONU */}
-             <div className="mt-auto pt-4 border-t border-white/5">
-                <div className="flex items-center justify-between text-xs text-gray-400 mb-3 px-1">
-                   <span>İşlem Maliyeti</span>
-                   <div className="flex items-center gap-1 text-[#fbbf24] font-bold bg-[#fbbf24]/10 px-2 py-1 rounded">
-                      <Coins className="w-3 h-3" /> 3 Kredi
+             <div className="mt-auto pt-6 border-t border-white/5">
+                <div className="flex items-center justify-between text-xs text-slate-400 mb-4 px-1">
+                   <span className="uppercase tracking-widest font-bold">İşlem Maliyeti</span>
+                   <div className="flex items-center gap-1.5 text-[#fbbf24] font-bold bg-[#fbbf24]/10 px-3 py-1.5 rounded-md border border-[#fbbf24]/20">
+                      <Coins className="w-3.5 h-3.5" /> 3 Kredi
                    </div>
                 </div>
                 <button 
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-[#fbbf24] to-[#d97706] text-black font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+                  className="w-full py-4.5 rounded-2xl bg-[#fbbf24] hover:bg-[#d97706] text-[#0a0c10] font-bold uppercase tracking-widest transition-all shadow-[0_10px_30px_rgba(251,191,36,0.2)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                    {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paintbrush className="w-5 h-5" />}
                    {generating ? "Sanat İşleniyor..." : "Eseri Oluştur"}
@@ -291,69 +298,64 @@ export default function ImageStudioPage({ params }: { params: { id: string } }) 
           </div>
         </motion.div>
 
-        {/* SAĞ PANEL: TUVAL (CANVAS) (Sıra 1 on mobile, 2 on desktop) */}
+        {/* SAĞ PANEL: TUVAL (CANVAS) */}
         <motion.div 
           initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-          className="w-full lg:w-2/3 order-1 lg:order-2"
+          className="w-full lg:w-2/3 order-1 lg:order-2 flex"
         >
-           <div className="relative w-full aspect-square md:aspect-video bg-black/40 border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center group">
-              
-              {/* SENARYO 1: RESİM VAR (Tamamlandı) */}
-              {dream.image_url && !generating ? (
+           <div className="relative w-full aspect-square md:aspect-video bg-[#0a0c10] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center group flex-1">
+             
+             {/* SENARYO 1: RESİM VAR (Tamamlandı) */}
+             {dream.image_url && !generating ? (
                  <>
-                   <img src={dream.image_url} alt="AI Art" className="w-full h-full object-cover animate-fade-in" />
+                   <img src={dream.image_url} alt="AI Art" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                    
                    {/* Alt Kontrol Barı (Hover ile gelir) */}
-                   <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex items-center justify-between translate-y-full group-hover:translate-y-0 transition-transform duration-300 backdrop-blur-[2px]">
+                   <div className="absolute bottom-0 inset-x-0 p-8 bg-gradient-to-t from-[#0a0c10] via-[#0a0c10]/80 to-transparent flex items-center justify-between translate-y-full group-hover:translate-y-0 transition-transform duration-500">
                       <div>
-                         <p className="text-white font-bold text-sm drop-shadow-md">HD Çözünürlük</p>
-                         <p className="text-gray-300 text-xs">Flux Model</p>
+                         <p className="text-white font-serif text-xl drop-shadow-lg mb-1">Rüya Tablosu</p>
+                         <p className="text-slate-400 text-xs font-mono uppercase tracking-widest">Yüksek Çözünürlük</p>
                       </div>
-                      <div className="flex gap-3">
-                         <button onClick={handleDownload} className="p-3 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 text-white border border-white/10 transition-all active:scale-90" title="İndir">
+                      <div className="flex gap-4">
+                         <button onClick={handleDownload} className="p-4 bg-white/10 backdrop-blur-md rounded-2xl hover:bg-white/20 text-white border border-white/10 transition-all shadow-xl" title="İndir">
                             <Download className="w-5 h-5" />
                          </button>
-                         <button onClick={handleShare} className="p-3 bg-[#fbbf24] rounded-full text-black hover:bg-[#d97706] shadow-lg transition-all active:scale-90" title="Paylaş">
+                         <button onClick={handleShare} className="p-4 bg-[#fbbf24] rounded-2xl text-[#0a0c10] hover:bg-[#d97706] shadow-[0_5px_20px_rgba(251,191,36,0.3)] transition-all" title="Paylaş">
                             {isCopied ? <Check className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}
                          </button>
                       </div>
                    </div>
                  </>
-              ) : generating ? (
+             ) : generating ? (
                  // SENARYO 2: YÜKLENİYOR
                  <div className="text-center p-8 z-10">
-                    <div className="relative w-24 h-24 mx-auto mb-8">
-                       <div className="absolute inset-0 border-4 border-[#fbbf24]/30 rounded-full"></div>
-                       <div className="absolute inset-0 border-4 border-[#fbbf24] border-t-transparent rounded-full animate-spin"></div>
-                       <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-[#fbbf24] animate-pulse" />
+                    <div className="relative w-28 h-28 mx-auto mb-10">
+                       <div className="absolute inset-0 border-[4px] border-[#fbbf24]/20 rounded-full"></div>
+                       <div className="absolute inset-0 border-[4px] border-[#fbbf24] border-t-transparent rounded-full animate-spin" style={{ animationDuration: '1.5s' }}></div>
+                       <Sparkles className="absolute inset-0 m-auto w-10 h-10 text-[#fbbf24] animate-pulse" />
                     </div>
                     <motion.p 
                        key={msgIndex}
                        initial={{ opacity: 0, y: 10 }}
                        animate={{ opacity: 1, y: 0 }}
                        exit={{ opacity: 0, y: -10 }}
-                       className="text-[#fbbf24] font-mono text-xs md:text-sm uppercase tracking-widest"
+                       className="text-[#fbbf24] font-serif text-lg md:text-xl tracking-wide"
                     >
                        {loadingMessages[msgIndex]}
                     </motion.p>
                  </div>
-              ) : (
+             ) : (
                  // SENARYO 3: BOŞ TUVAL
-                 <div className="text-center opacity-30 px-6">
-                    <Paintbrush className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 text-gray-500" />
-                    <p className="text-lg md:text-2xl font-serif text-gray-400">Tuval Henüz Boş</p>
-                    <p className="text-xs md:text-sm text-gray-500 mt-2">Sol panelden ayarlarınızı yapıp "Oluştur"a basın.</p>
+                 <div className="text-center opacity-40 px-6">
+                    <div className="w-24 h-24 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                       <Paintbrush className="w-10 h-10 text-slate-400" />
+                    </div>
+                    <p className="text-2xl md:text-3xl font-serif text-white mb-2">Tuval Henüz Boş</p>
+                    <p className="text-sm text-slate-400 font-light">Sol panelden ayarlarınızı yapıp sanat eserini oluşturun.</p>
                  </div>
-              )}
+             )}
            </div>
            
-           {/* Güvenlik Bilgisi */}
-           {dream.image_url && (
-             <div className="mt-4 flex items-center justify-center gap-2 opacity-50">
-               <Lock className="w-3 h-3 text-gray-500" />
-               <p className="text-[10px] text-gray-500">Bu görsel size özel üretildi ve şifreli olarak saklanıyor.</p>
-             </div>
-           )}
         </motion.div>
 
       </div>

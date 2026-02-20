@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Calendar, Moon, Sparkles, CloudFog, Star, ArrowDown, ChevronDown } from "lucide-react";
+import { ArrowLeft, Calendar, Moon, Sparkles, CloudFog, Star, ChevronDown } from "lucide-react";
 import { getMoonPhase, getNextDaysPhases, MoonPhase } from "@/utils/moon";
 import { motion } from "framer-motion";
 
@@ -29,100 +29,101 @@ export default function MoonCalendarPage() {
   if (!currentMoon) return null;
 
   return (
-    // APP FIX: min-h-[100dvh] ve pb-24 (Mobil menü payı)
-    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col items-center pb-24 md:pb-32">
+    // İÇ İÇE GEÇMEYİ ENGELLEYEN YENİ LAYOUT (Sidebar'sız, relative ve layout.tsx'e tam oturan yapı)
+    <div className="relative w-full flex flex-col items-center min-h-[calc(100vh-6rem)] z-10 pb-20 font-sans selection:bg-amber-500/30">
       
-      {/* Atmosfer */}
-      <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-[#fbbf24]/10 blur-[100px] md:blur-[150px] rounded-full pointer-events-none"></div>
+      {/* LOKAL ARKAPLAN EFEKTLERİ (Performans dostu, fixed değil absolute) */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent pointer-events-none -z-10 transform-gpu"></div>
 
-      {/* HEADER (Sticky) */}
-      <nav className="sticky top-0 z-30 w-full bg-[#020617]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 mb-6 md:mb-8 flex items-center justify-between">
+      {/* HEADER VE GERİ DÖN BUTONU */}
+      <div className="w-full max-w-[1200px] px-4 md:px-0 py-6 flex items-center justify-between mt-2 md:mt-4 z-30">
         <button 
-          onClick={() => router.back()} 
-          className="p-2 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all border border-white/5"
+           onClick={() => router.back()} 
+           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-bold text-slate-300 hover:text-white uppercase tracking-widest backdrop-blur-md transform-gpu"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-300" />
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden md:inline">Geri Dön</span>
         </button>
-        <h1 className="font-serif text-sm md:text-xl tracking-[0.2em] text-[#fbbf24] flex items-center gap-2">
-            <Moon className="w-4 h-4" /> GÖKSEL REHBER
-        </h1>
-        <div className="w-9"></div> {/* Dengeleyici */}
-      </nav>
 
-      {/* Ana Görsel (Büyük Ay) */}
-      <main className="w-full max-w-4xl px-4 md:px-6 relative z-10 text-center">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#131722]/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm transform-gpu">
+           <Moon className="w-4 h-4 text-amber-500" />
+           <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-white">Göksel Rehber</span>
+        </div>
+      </div>
+
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-0 relative z-10 text-center flex flex-col">
          
+         {/* ANA GÖRSEL (BÜYÜK AY) */}
          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest backdrop-blur-md">
-               <Calendar className="w-3 h-3" /> {today}
+            <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0a0c10] border border-white/5 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest shadow-inner">
+               <Calendar className="w-3.5 h-3.5 text-amber-500/70" /> {today}
             </div>
 
-            <div className="relative w-40 h-40 md:w-80 md:h-80 mx-auto my-6 md:my-10 flex items-center justify-center">
-               <div className="absolute inset-0 bg-[#fbbf24] blur-[50px] md:blur-[80px] opacity-20 animate-pulse-slow"></div>
-               {/* MOBİL: text-[100px], DESKTOP: text-[200px] */}
-               <div className="text-[100px] md:text-[200px] leading-none select-none filter drop-shadow-[0_0_30px_rgba(255,255,255,0.3)] transform hover:scale-105 transition-transform duration-700">
-               {currentMoon.icon}
+            <div className="relative w-48 h-48 md:w-80 md:h-80 mx-auto my-8 md:my-10 flex items-center justify-center group">
+               {/* Arkadaki sabit parlama (Kasmayı önlemek için pulse kaldırıldı) */}
+               <div className="absolute inset-0 bg-amber-500/20 blur-[60px] md:blur-[100px] rounded-full transform-gpu pointer-events-none transition-opacity duration-700 group-hover:opacity-40"></div>
+               
+               {/* Dev Ay İkonu */}
+               <div className="text-[120px] md:text-[220px] leading-none select-none filter drop-shadow-[0_0_40px_rgba(251,191,36,0.2)] transform group-hover:scale-105 transition-transform duration-1000">
+                  {currentMoon.icon}
                </div>
-               {/* Dekoratif Yörüngeler */}
-               <div className="absolute inset-0 border border-white/5 rounded-full scale-125 md:scale-150 animate-spin-slow-reverse pointer-events-none"></div>
-               <div className="absolute inset-0 border border-white/5 rounded-full scale-110 md:scale-125 border-dashed animate-spin-slow pointer-events-none"></div>
+               
+               {/* Dekoratif İnce Yörüngeler */}
+               <div className="absolute inset-0 border border-white/5 rounded-full scale-125 md:scale-[1.35] pointer-events-none"></div>
+               <div className="absolute inset-0 border border-white/5 rounded-full scale-110 md:scale-[1.15] border-dashed opacity-50 pointer-events-none"></div>
             </div>
 
-            <h2 className="text-2xl md:text-6xl font-serif font-bold text-white mb-3 md:mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-400 px-4">
+            <h2 className="text-4xl md:text-6xl font-serif font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400 px-4">
                {currentMoon.phase}
             </h2>
             
-            <p className="text-sm md:text-xl text-[#fbbf24] font-medium mb-8 md:mb-12 max-w-2xl mx-auto italic leading-relaxed px-4">
+            <p className="text-sm md:text-lg text-amber-400/80 font-light mb-10 md:mb-16 max-w-2xl mx-auto italic leading-relaxed px-4">
                "{currentMoon.description}"
             </p>
          </motion.div>
 
-         {/* Detay Kartları (MOBİLDE TEK KOLON) */}
+         {/* DETAY KARTLARI (Bento Style) */}
          <motion.div 
-            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-left mb-12 md:mb-16"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 text-left mb-16"
          >
             {/* Rüyalara Etkisi */}
-            <div className="p-5 md:p-8 rounded-2xl md:rounded-3xl bg-[#0f172a] border border-[#8b5cf6]/30 relative overflow-hidden group">
-               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <CloudFog className="w-16 h-16 md:w-24 md:h-24 text-[#8b5cf6]" />
-               </div>
-               <div className="flex items-center gap-3 mb-3 md:mb-4">
-                  <div className="p-2 rounded-lg bg-[#8b5cf6]/20 text-[#8b5cf6]">
-                     <Moon className="w-5 h-5 md:w-6 md:h-6" />
+            <div className="p-6 md:p-8 rounded-[2rem] bg-[#131722]/80 backdrop-blur-xl border border-white/5 relative overflow-hidden group hover:border-purple-500/30 transition-all shadow-xl">
+               <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/5 rounded-full blur-[60px] pointer-events-none group-hover:bg-purple-500/10 transition-colors transform-gpu"></div>
+               
+               <div className="flex items-center gap-3 mb-5 relative z-10">
+                  <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shadow-inner">
+                     <CloudFog className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-base md:text-lg text-white">Rüyalara Etkisi</h3>
+                  <h3 className="font-serif text-lg md:text-xl text-white">Rüyalara Etkisi</h3>
                </div>
-               <p className="text-gray-400 text-xs md:text-base leading-relaxed">
+               <p className="text-slate-400 text-sm leading-relaxed font-light relative z-10">
                   {currentMoon.dreamEffect}
                </p>
             </div>
 
             {/* Enerji Durumu */}
-            <div className="p-5 md:p-8 rounded-2xl md:rounded-3xl bg-[#0f172a] border border-[#fbbf24]/30 relative overflow-hidden group">
-               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <Star className="w-16 h-16 md:w-24 md:h-24 text-[#fbbf24]" />
-               </div>
-               <div className="flex items-center gap-3 mb-3 md:mb-4">
-                  <div className="p-2 rounded-lg bg-[#fbbf24]/20 text-[#fbbf24]">
-                     <Sparkles className="w-5 h-5 md:w-6 md:h-6" />
+            <div className="p-6 md:p-8 rounded-[2rem] bg-[#131722]/80 backdrop-blur-xl border border-white/5 relative overflow-hidden group hover:border-amber-500/30 transition-all shadow-xl flex flex-col justify-between">
+               <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/5 rounded-full blur-[60px] pointer-events-none group-hover:bg-amber-500/10 transition-colors transform-gpu"></div>
+               
+               <div className="flex items-center gap-3 mb-6 relative z-10">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 shadow-inner">
+                     <Sparkles className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-base md:text-lg text-white">Enerji Seviyesi</h3>
+                  <h3 className="font-serif text-lg md:text-xl text-white">Enerji Seviyesi</h3>
                </div>
                
-               <div className="space-y-3 md:space-y-4">
+               <div className="space-y-4 relative z-10 mt-auto">
                   <div>
-                     <div className="flex justify-between text-xs md:text-sm mb-1">
-                        <span className="text-gray-400">Aydınlanma</span>
-                        <span className="text-white font-bold">%{currentMoon.percentage}</span>
+                     <div className="flex justify-between text-xs md:text-sm mb-2 font-bold tracking-widest uppercase">
+                        <span className="text-slate-500">Aydınlanma</span>
+                        <span className="text-amber-400">%{currentMoon.percentage}</span>
                      </div>
-                     <div className="w-full h-1.5 md:h-2 bg-gray-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#fbbf24]" style={{ width: `${currentMoon.percentage}%` }}></div>
+                     <div className="w-full h-1.5 md:h-2 bg-[#0a0c10] rounded-full overflow-hidden border border-white/5">
+                        <div className="h-full bg-amber-500" style={{ width: `${currentMoon.percentage}%` }}></div>
                      </div>
                   </div>
-                  <p className="text-xs md:text-sm text-gray-500 italic">
-                     Ayın {currentMoon.age}. günü.
+                  <p className="text-[10px] md:text-xs text-slate-500 font-mono uppercase tracking-widest text-right">
+                     Ayın {currentMoon.age}. Günü
                   </p>
                </div>
             </div>
@@ -131,27 +132,27 @@ export default function MoonCalendarPage() {
          {/* GELECEK GÜNLER (FORECAST) */}
          <motion.div 
             initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="border-t border-white/10 pt-8 md:pt-12"
+            className="border-t border-white/5 pt-10 md:pt-14"
          >
-             <div className="flex items-center justify-center gap-2 mb-6 md:mb-8 text-gray-400">
-                <ChevronDown className="w-4 h-4 animate-bounce" />
-                <span className="text-xs md:text-sm font-bold uppercase tracking-widest">Gelecek Döngü</span>
+             <div className="flex flex-col items-center justify-center gap-3 mb-8 md:mb-10 text-slate-400">
+                <span className="text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-white">Gelecek Döngü</span>
+                <ChevronDown className="w-4 h-4 animate-bounce text-amber-500" />
              </div>
 
-             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 {nextDays.map((day, i) => (
-                    <div key={i} className="flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-xl md:rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                        <div className="text-2xl md:text-3xl filter drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                    <div key={i} className="flex items-center gap-4 p-4 md:p-5 rounded-2xl bg-[#0a0c10] border border-white/5 hover:border-white/10 transition-colors group">
+                        <div className="text-3xl md:text-4xl filter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] group-hover:scale-110 transition-transform">
                            {day.icon}
                         </div>
                         <div className="flex-1 text-left">
-                           <div className="text-[#fbbf24] font-bold text-[10px] md:text-sm">{day.date}</div>
-                           <div className="text-white font-serif text-sm md:text-lg">{day.phase}</div>
+                           <div className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-widest mb-0.5">{day.date}</div>
+                           <div className="text-white font-serif text-sm md:text-base">{day.phase}</div>
                         </div>
-                        <div className="text-right">
-                             <div className="text-[10px] md:text-xs text-gray-500 font-bold">%{day.percentage}</div>
-                             <div className="w-10 md:w-12 h-1 bg-gray-800 rounded-full mt-1 overflow-hidden">
-                                <div className="h-full bg-[#fbbf24]" style={{ width: `${day.percentage}%` }}></div>
+                        <div className="text-right w-16">
+                             <div className="text-[10px] md:text-xs text-amber-500/80 font-bold mb-1">%{day.percentage}</div>
+                             <div className="w-full h-1 bg-[#131722] rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-500" style={{ width: `${day.percentage}%` }}></div>
                              </div>
                         </div>
                     </div>

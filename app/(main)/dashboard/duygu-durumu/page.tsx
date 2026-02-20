@@ -3,23 +3,22 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Heart, Activity, PieChart, Zap, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Heart, Activity, PieChart, Zap, Sparkles, Loader2, BarChart3, Quote } from "lucide-react";
 import { motion } from "framer-motion";
 
-
-// GENİŞLETİLMİŞ RENK PALETİ
+// GENİŞLETİLMİŞ RENK PALETİ (Daha soft ve premium tonlar)
 const MOOD_COLORS: { [key: string]: string } = {
   "Mutlu": "#10b981",      // Zümrüt Yeşili
   "Huzurlu": "#3b82f6",    // Parlak Mavi
   "Endişeli": "#f59e0b",   // Amber
   "Korku": "#ef4444",      // Kırmızı
   "Karmasik": "#8b5cf6",   // Mor
-  "Nötr": "#6b7280",       // Gri
+  "Nötr": "#94a3b8",       // Gri (Açıklaştırıldı)
   "Heyecanlı": "#ec4899",  // Pembe
   "Melankolik": "#6366f1", // İndigo
   "Belirsiz": "#a855f7",   // Açık Mor
   "Meraklı": "#06b6d4",    // Turkuaz
-  "Hüzünlü": "#374151",    // Koyu Gri
+  "Hüzünlü": "#4b5563",    // Koyu Gri
   "Öfkeli": "#dc2626",     // Koyu Kırmızı
   "Romantik": "#f43f5e",   // Gül Rengi
   "Yorgun": "#78716c",     // Kahverengi-Gri
@@ -120,122 +119,145 @@ export default function MoodPage() {
   }, [router, supabase]);
 
   return (
-    // APP FIX: min-h-[100dvh] ve pb-24 (mobilde alt bar için boşluk)
-    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex flex-col pb-24 md:pb-32">
+    <div className="relative w-full flex flex-col items-center min-h-[calc(100vh-6rem)] z-10 pb-20 font-sans selection:bg-rose-500/30">
       
-      {/* Arkaplan */}
-      <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
-      <div className="fixed top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-600/10 rounded-full blur-[100px] md:blur-[150px] pointer-events-none"></div>
-
-      {/* HEADER (Sticky) */}
-      <nav className="sticky top-0 z-30 w-full bg-[#020617]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 mb-6 md:mb-8 flex items-center justify-between">
-        <button onClick={() => router.back()} className="p-2 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all border border-white/5">
-          <ArrowLeft className="w-5 h-5 text-gray-300" />
+      {/* LOKAL ARKAPLAN EFEKTLERİ (GPU Hızlandırması Eklendi) */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-rose-900/10 via-transparent to-transparent pointer-events-none -z-10 transform-gpu"></div>
+      
+      {/* HEADER */}
+      <div className="w-full max-w-[1200px] px-4 md:px-0 py-6 flex items-center justify-between mt-2 md:mt-4">
+        <button 
+           onClick={() => router.back()} 
+           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-bold text-slate-300 hover:text-white uppercase tracking-widest backdrop-blur-md transform-gpu"
+        >
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden md:inline">Geri Dön</span>
         </button>
-        <h1 className="font-serif text-sm md:text-xl tracking-[0.2em] text-white flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[#fbbf24]" /> RUHSAL SPEKTRUM
-        </h1>
-        <div className="w-9"></div>
-      </nav>
+        
+        <div className="flex items-center gap-3 bg-[#131722]/80 backdrop-blur-md border border-white/5 px-5 py-2.5 rounded-xl shadow-sm transform-gpu">
+            <Activity className="w-4 h-4 text-rose-400" />
+            <span className="text-[10px] md:text-xs text-white font-bold uppercase tracking-widest">Ruhsal Spektrum</span>
+        </div>
+      </div>
 
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-6 relative z-10">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 md:px-0 pt-4 md:pt-6 relative z-10 flex flex-col">
          
          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-               <Loader2 className="w-10 h-10 animate-spin mb-4 text-[#fbbf24]" />
-               <p className="text-sm animate-pulse">Ruhsal veriler işleniyor...</p>
+            <div className="flex flex-col items-center justify-center py-32 w-full">
+               <Loader2 className="w-10 h-10 animate-spin mb-4 text-rose-500" />
+               <p className="text-sm font-mono uppercase tracking-widest text-slate-400 animate-pulse">Ruhsal veriler işleniyor...</p>
             </div>
          ) : chartData.length === 0 ? (
-            <div className="text-center py-20 px-6 bg-white/5 rounded-3xl border border-white/10 mx-auto max-w-sm">
-               <Heart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-               <h3 className="text-lg font-bold text-gray-300">Henüz Veri Yok</h3>
-               <p className="text-gray-500 mt-2 text-sm">Rüya yorumlattıkça duygu haritan burada oluşacak.</p>
-               {/* YENİ SİSTEM BUTONU */}
-               <button onClick={() => router.push('/dashboard')} className="mt-6 px-6 py-2 bg-[#fbbf24] rounded-full text-black font-bold text-xs uppercase tracking-wide hover:scale-105 transition-transform active:scale-95">
-                  Rüya Analizi Başlat (1 Kredi)
+            <motion.div 
+               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+               className="text-center py-20 px-8 bg-[#131722]/80 backdrop-blur-xl rounded-[2.5rem] border border-white/5 mx-auto max-w-lg mt-10 shadow-2xl transform-gpu"
+            >
+               <div className="w-20 h-20 bg-[#0a0c10] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-white/5 rotate-3">
+                   <Heart className="w-8 h-8 text-rose-500/50" />
+               </div>
+               <h3 className="text-2xl font-serif text-white mb-2">Henüz Veri Yok</h3>
+               <p className="text-slate-400 text-sm leading-relaxed mb-8">Rüya yorumlattıkça bilinçaltınızın duygu haritası burada şekillenecektir.</p>
+               <button 
+                  onClick={() => router.push('/dashboard')} 
+                  className="px-8 py-4 bg-white text-[#0a0c10] rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all shadow-[0_10px_20px_rgba(255,255,255,0.1)] flex items-center gap-2 mx-auto will-change-transform"
+               >
+                  <Sparkles className="w-4 h-4" /> Rüya Analizi Başlat
                </button>
-            </div>
+            </motion.div>
          ) : (
-            <>
-               {/* 1. Özet Kartları (MOBİLDE TEK KOLON) */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div className="w-full">
+               
+               {/* SAYFA BAŞLIĞI */}
+               <div className="mb-10 md:mb-12">
+                   <h1 className="text-4xl md:text-5xl font-serif text-white mb-3">Duygu Haritanız</h1>
+                   <p className="text-slate-400 font-light text-sm md:text-base">Bilinçaltınızın renkli dünyasını ve baskın frekanslarını keşfedin.</p>
+               </div>
+
+               {/* 1. ÖZET KARTLARI (Bento Style) */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-6 md:mb-8">
                   {/* Ruhsal Denge */}
                   <motion.div 
-                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                     className="p-5 md:p-6 rounded-2xl md:rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-4 md:gap-6"
+                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                     className="p-6 md:p-8 rounded-[2rem] bg-[#131722] border border-white/5 relative overflow-hidden group hover:border-blue-500/30 transition-all shadow-lg flex items-center justify-between transform-gpu will-change-transform"
                   >
-                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent"></div>
-                     <div className="p-3 md:p-4 rounded-full bg-blue-500/20 text-blue-400 shrink-0">
-                        <Activity className="w-6 h-6 md:w-8 md:h-8" />
-                     </div>
+                     <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/5 rounded-full blur-[40px] pointer-events-none group-hover:bg-blue-500/10 transition-colors transform-gpu"></div>
                      <div>
-                        <div className="text-3xl md:text-4xl font-bold text-white">%{averageScore}</div>
-                        <div className="text-[10px] md:text-xs text-blue-200 uppercase tracking-widest">Ruhsal Denge</div>
+                        <div className="flex items-center gap-2 mb-2">
+                           <Activity className="w-4 h-4 text-blue-400" />
+                           <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Ruhsal Denge</span>
+                        </div>
+                        <div className="text-4xl md:text-5xl font-serif font-bold text-white">%{averageScore}</div>
+                     </div>
+                     <div className="p-4 bg-[#0a0c10] rounded-2xl border border-white/5 shadow-inner relative z-10">
+                         <BarChart3 className="w-6 h-6 text-blue-500/50" />
                      </div>
                   </motion.div>
 
                   {/* Baskın Frekans */}
                   <motion.div 
-                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                     className="p-5 md:p-6 rounded-2xl md:rounded-3xl bg-[#0f172a] border border-white/10 relative overflow-hidden group flex items-center gap-4 md:gap-6"
+                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                     className="p-6 md:p-8 rounded-[2rem] bg-[#131722] border border-white/5 relative overflow-hidden group hover:border-rose-500/30 transition-all shadow-lg flex items-center justify-between transform-gpu will-change-transform"
                   >
-                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent"></div>
-                     <div className="p-3 md:p-4 rounded-full bg-purple-500/20 text-purple-400 shrink-0">
-                        <Zap className="w-6 h-6 md:w-8 md:h-8" />
-                     </div>
+                     <div className="absolute top-0 right-0 w-40 h-40 bg-rose-500/5 rounded-full blur-[40px] pointer-events-none group-hover:bg-rose-500/10 transition-colors transform-gpu"></div>
                      <div>
-                        <div className="text-2xl md:text-3xl font-serif font-bold text-white line-clamp-1">{dominantMood}</div>
-                        <div className="text-[10px] md:text-xs text-purple-200 uppercase tracking-widest">Baskın Frekans</div>
+                        <div className="flex items-center gap-2 mb-2">
+                           <Zap className="w-4 h-4 text-rose-400" />
+                           <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Baskın Frekans</span>
+                        </div>
+                        <div className="text-3xl md:text-4xl font-serif font-bold text-white line-clamp-1">{dominantMood}</div>
+                     </div>
+                     <div className="p-4 bg-[#0a0c10] rounded-2xl border border-white/5 shadow-inner relative z-10">
+                         <Heart className="w-6 h-6 text-rose-500/50" />
                      </div>
                   </motion.div>
                </div>
 
-               {/* 2. Grafik ve Liste */}
+               {/* 2. GRAFİK VE LİSTE (Asimetrik Grid) */}
                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
                   
-                  {/* Grafik */}
+                  {/* Grafik Kutusu */}
                   <motion.div 
-                     initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
-                     className="md:col-span-1 p-6 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col items-center justify-center relative overflow-hidden"
+                     initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
+                     className="md:col-span-1 p-8 rounded-[2.5rem] bg-[#131722]/60 backdrop-blur-xl border border-white/5 flex flex-col items-center justify-center relative shadow-xl min-h-[300px] transform-gpu"
                   >
-                     <div className="relative w-40 h-40 md:w-48 md:h-48 group">
-                        <div className="absolute inset-0 rounded-full blur-2xl opacity-20 bg-white animate-pulse-slow"></div>
+                     <div className="relative w-48 h-48 md:w-56 md:h-56 group">
+                        {/* Performansı öldüren pulse animasyonu yerine sabit hafif ışıma */}
+                        <div className="absolute inset-0 rounded-full blur-[40px] opacity-10 bg-white transform-gpu pointer-events-none"></div>
                         
-                        {/* Pasta Grafiği */}
+                        {/* Pasta Grafiği (Donut formu - transition kaldırıldı, kasmayı önler) */}
                         <div 
-                           className="w-full h-full rounded-full transition-all duration-1000 rotate-[-90deg]"
+                           className="w-full h-full rounded-full rotate-[-90deg] shadow-[0_0_30px_rgba(0,0,0,0.5)] transform-gpu"
                            style={{ background: gradientString }}
                         ></div>
 
-                        {/* Orta Boşluk */}
-                        <div className="absolute inset-3 bg-[#0b0f19] rounded-full flex flex-col items-center justify-center border border-white/5 shadow-inner">
-                           <span className="text-gray-400 text-[10px] uppercase tracking-widest">Toplam</span>
-                           <span className="text-2xl md:text-3xl font-bold text-white">{chartData.reduce((acc, curr) => acc + curr.count, 0)}</span>
-                           <span className="text-gray-500 text-[10px]">Rüya</span>
+                        {/* Orta Boşluk (Donut Delik) */}
+                        <div className="absolute inset-4 bg-[#131722] rounded-full flex flex-col items-center justify-center border border-white/5 shadow-inner z-10">
+                           <span className="text-slate-500 text-[10px] uppercase tracking-widest font-bold mb-1">Toplam</span>
+                           <span className="text-4xl font-serif font-bold text-white leading-none">{chartData.reduce((acc, curr) => acc + curr.count, 0)}</span>
+                           <span className="text-slate-400 text-xs mt-1">Rüya</span>
                         </div>
                      </div>
                   </motion.div>
 
-                  {/* Liste */}
+                  {/* Detay Listesi */}
                   <motion.div 
                      initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}
-                     className="md:col-span-2 p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md"
+                     className="md:col-span-2 p-6 md:p-8 rounded-[2.5rem] bg-[#131722]/60 backdrop-blur-xl border border-white/5 shadow-xl transform-gpu"
                   >
-                     <div className="flex items-center gap-2 mb-4 md:mb-6 text-gray-400">
-                        <PieChart className="w-4 h-4" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Duygu Dağılımı</span>
+                     <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                        <PieChart className="w-5 h-5 text-slate-400" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-300">Duygu Dağılımı</span>
                      </div>
                      
-                     <div className="grid grid-cols-1 gap-2 md:gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-2">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[250px] md:max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-2 overscroll-contain">
                         {chartData.map((item, i) => (
-                           <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5 hover:bg-white/5 transition-colors">
+                           <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-[#0a0c10] border border-white/5 hover:border-white/10 transition-colors group will-change-transform">
                               <div className="flex items-center gap-3">
-                                 <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: item.color, color: item.color }}></div>
-                                 <span className="text-xs md:text-sm font-medium text-gray-200">{item.mood}</span>
+                                 <div className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor] transition-transform group-hover:scale-110" style={{ backgroundColor: item.color, color: item.color }}></div>
+                                 <span className="text-sm font-medium text-slate-200">{item.mood}</span>
                               </div>
                               <div className="flex items-center gap-3">
-                                 <span className="text-[10px] md:text-xs text-gray-500">{item.count} adet</span>
-                                 <span className="text-[10px] md:text-xs font-bold text-black px-2 py-0.5 rounded-md min-w-[35px] text-center" style={{ backgroundColor: item.color }}>%{item.percent}</span>
+                                 <span className="text-[10px] md:text-xs text-slate-500 font-mono">{item.count} Adet</span>
+                                 <span className="text-[10px] font-bold text-[#0a0c10] px-2.5 py-1 rounded-md min-w-[40px] text-center" style={{ backgroundColor: item.color }}>%{item.percent}</span>
                               </div>
                            </div>
                         ))}
@@ -243,32 +265,32 @@ export default function MoodPage() {
                   </motion.div>
                </div>
 
-               {/* 3. Kişisel Analiz */}
+               {/* 3. Yapay Zeka Sentezi (Editoryal Kutu) */}
                <motion.div 
                   initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}
-                  className="p-6 md:p-8 rounded-2xl md:rounded-3xl bg-gradient-to-r from-[#1e1b4b] to-[#0f172a] border border-[#8b5cf6]/30 relative overflow-hidden group shadow-lg"
+                  className="p-8 md:p-12 rounded-[2.5rem] bg-[#131722]/90 backdrop-blur-2xl border border-white/5 relative overflow-hidden shadow-2xl transform-gpu"
                >
-                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                     <Sparkles className="w-24 h-24 md:w-32 md:h-32 text-[#8b5cf6]" />
+                  {/* Arkadan vuran hafif renk */}
+                  <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                     <Quote className="w-32 h-32 text-white -rotate-12" />
                   </div>
                   
                   <div className="relative z-10">
-                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 rounded-lg bg-[#8b5cf6]/20 text-[#8b5cf6]">
-                           <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                     <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                           <Sparkles className="w-5 h-5 text-purple-400" />
                         </div>
-                        <h3 className="font-serif text-base md:text-lg font-bold text-white">Ruhsal Harita Analizi</h3>
+                        <h3 className="font-serif text-xl md:text-2xl text-white">Ruhsal Harita Analizi</h3>
                      </div>
                      
-                     <p className="text-gray-300 leading-relaxed text-sm md:text-lg font-light text-justify">
+                     <p className="text-slate-300 leading-[1.8] text-base md:text-lg font-light text-justify max-w-4xl">
                         {aiInsight}
                      </p>
                   </div>
                </motion.div>
 
-            </>
+            </div>
          )}
-
       </main>
     </div>
   );

@@ -13,7 +13,6 @@ import { toast } from "sonner";
 
 type Tier = 'free' | 'pro' | 'elite';
 
-// Tablo yapılarına uygun interface'ler
 interface DreamData {
   id: string;
   dream_text: string;
@@ -51,7 +50,6 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/auth'); return; }
 
-      // A. Profil & Paket
       const { data: profile } = await supabase
         .from('profiles')
         .select('subscription_tier')
@@ -65,7 +63,6 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
           setUserTier(tier as Tier);
       }
 
-      // B. Rüyaları Çek
       const { data: dreamsData } = await supabase
         .from('dreams')
         .select('*')
@@ -75,10 +72,10 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
       if (dreamsData) {
         setAllDreams(dreamsData);
         const current = dreamsData.find(d => d.id === params.id);
+        
         if (current) {
             setDream(current);
             
-            // C. Tarot Verisini Çek
             const { data: tarotData } = await supabase
                 .from('tarot_readings')
                 .select('*')
@@ -87,7 +84,6 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
             
             if (tarotData) setTarot(tarotData);
 
-            // D. Numeroloji Verisini Çek
             const { data: numData } = await supabase
                 .from('numerology_reports')
                 .select('*')
@@ -120,13 +116,13 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
   };
 
   const LockedFeature = ({ title }: { title: string }) => (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl p-4 md:p-6 text-center group cursor-pointer transition-all rounded-2xl md:rounded-[2rem]">
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#0a0c10]/90 backdrop-blur-md p-4 md:p-6 text-center group cursor-pointer transition-all rounded-[2rem]">
        <div className="p-3 md:p-4 rounded-full bg-white/5 border border-white/10 mb-3 md:mb-4 group-hover:bg-white/10 transition-all">
-          <Lock className="w-4 h-4 md:w-5 md:h-5 text-gray-400" />
+          <Lock className="w-5 h-5 text-amber-500/80" />
        </div>
        <h3 className="text-white font-serif text-base md:text-lg mb-2 tracking-wide">{title}</h3>
-       <button onClick={(e) => { e.stopPropagation(); router.push('/dashboard/pricing'); }} className="px-5 py-2 md:px-6 md:py-2 rounded-full border border-white/20 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all">
-         Yükselt
+       <button onClick={(e) => { e.stopPropagation(); router.push('/dashboard/pricing'); }} className="px-6 py-2.5 rounded-full border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-amber-500 hover:text-[#0a0c10] transition-all">
+         Kilidi Aç
        </button>
     </div>
   );
@@ -143,228 +139,280 @@ export default function DreamDetailPage({ params }: { params: { id: string } }) 
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
         toast.success("Görsel indirildi");
     } catch (e) { toast.error("İndirme başarısız"); }
   };
 
-  if (loading) return <div className="min-h-[100dvh] bg-[#020617] flex items-center justify-center text-[#fbbf24] animate-pulse">Veriler yükleniyor...</div>;
-  if (!dream) return <div className="min-h-[100dvh] bg-[#020617] flex items-center justify-center text-red-500">Rüya bulunamadı.</div>;
+  if (loading) return (
+     <div className="w-full flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+           <Sparkles className="w-8 h-8 text-amber-500 animate-pulse" />
+           <p className="text-slate-500 text-xs uppercase tracking-widest font-mono">Arşiv Taranıyor...</p>
+        </div>
+     </div>
+  );
+
+  if (!dream) return (
+     <div className="w-full flex items-center justify-center min-h-[60vh] text-red-500">Rüya bulunamadı.</div>
+  );
 
   const currentIndex = allDreams.findIndex(d => d.id === dream.id);
   const displayNumbers = numerology?.lucky_numbers || dream.ai_response?.lucky_numbers || [];
 
   return (
-    // APP FIX: pb-24 (mobilde alt bar için boşluk)
-    <div className="min-h-[100dvh] bg-[#020617] text-white font-sans relative overflow-x-hidden flex justify-center pb-24 md:pb-32">
+    // İÇ İÇE GEÇMEYİ ENGELLEYEN YENİ LAYOUT (Sidebar'sız, relative)
+    <div className="relative w-full flex flex-col items-center min-h-[calc(100vh-6rem)] z-10 pb-20 font-sans selection:bg-amber-500/30">
       
-      <div className="bg-noise fixed inset-0 opacity-20 pointer-events-none"></div>
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[300px] md:w-[800px] h-[300px] md:h-[800px] bg-purple-900/10 rounded-full blur-[100px] md:blur-[150px] pointer-events-none"></div>
+      {/* LOKAL ARKAPLAN EFEKTLERİ */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent pointer-events-none -z-10 transform-gpu"></div>
 
-      {/* MOBİL NAVİGASYON (Alt Barın Üzerinde) */}
-      <div className="fixed bottom-20 md:bottom-24 left-0 right-0 px-4 flex justify-between items-center z-40 pointer-events-none">
+      {/* MOBİL NAVİGASYON (Önceki/Sonraki Rüya) */}
+      <div className="fixed bottom-20 md:bottom-10 left-0 right-0 px-4 md:px-10 flex justify-between items-center z-40 pointer-events-none max-w-[1400px] mx-auto">
          {currentIndex > 0 ? (
-            <button onClick={() => navigateDream('prev')} className="pointer-events-auto p-2 md:p-3 rounded-full bg-[#0f172a]/90 backdrop-blur-xl border border-white/20 shadow-lg active:scale-90 transition-all text-white"><ChevronLeft className="w-5 h-5 md:w-6 md:h-6" /></button>
+            <button onClick={() => navigateDream('prev')} className="pointer-events-auto p-3 md:p-4 rounded-full bg-[#131722]/90 backdrop-blur-xl border border-white/10 shadow-2xl active:scale-90 transition-all text-slate-300 hover:text-white hover:border-amber-500/30">
+                <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
          ) : <div></div>}
          {currentIndex < allDreams.length - 1 ? (
-            <button onClick={() => navigateDream('next')} className="pointer-events-auto p-2 md:p-3 rounded-full bg-[#0f172a]/90 backdrop-blur-xl border border-white/20 shadow-lg active:scale-90 transition-all text-white"><ChevronRight className="w-5 h-5 md:w-6 md:h-6" /></button>
+            <button onClick={() => navigateDream('next')} className="pointer-events-auto p-3 md:p-4 rounded-full bg-[#131722]/90 backdrop-blur-xl border border-white/10 shadow-2xl active:scale-90 transition-all text-slate-300 hover:text-white hover:border-amber-500/30">
+                <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
          ) : <div></div>}
       </div>
 
-      <main className="w-full max-w-5xl relative z-10">
+      {/* HEADER (Arşive Dön) */}
+      <div className="w-full max-w-[1200px] px-4 md:px-0 py-6 flex items-center justify-between mt-2 md:mt-4 z-30">
+        <button 
+           onClick={() => router.push('/dashboard/gunluk')} 
+           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-bold text-slate-300 hover:text-white uppercase tracking-widest backdrop-blur-md"
+        >
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden md:inline">Arşive Dön</span>
+        </button>
+        
+        <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 bg-[#131722]/80 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/5 shadow-sm">
+           <Calendar className="w-3.5 h-3.5 text-amber-500" />
+           {new Date(dream.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </div>
+      </div>
+
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 md:px-0 pt-4 relative z-10 flex flex-col space-y-6 md:space-y-8">
          
-         {/* HEADER */}
-         <nav className="sticky top-0 z-30 w-full bg-[#020617]/90 backdrop-blur-md border-b border-white/5 px-4 py-3 md:py-6 flex justify-between items-center mb-6 md:mb-8">
-            <button onClick={() => router.push('/dashboard/gunluk')} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group p-2 -ml-2 active:scale-95">
-               <ArrowLeft className="w-5 h-5" />
-               <span className="text-xs md:text-sm font-bold hidden md:inline tracking-wide">Arşive Dön</span>
-            </button>
-            <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2 bg-white/5 px-3 py-1 md:px-4 md:py-1.5 rounded-full border border-white/5">
-               <Calendar className="w-3 h-3" />
-               {new Date(dream.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </div>
-         </nav>
-
-         <div className="px-4 md:px-8 space-y-6 md:space-y-8">
-
-            {/* 1. GÖRSEL STÜDYOSU (MOBİLDE DİKEY) */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full rounded-2xl md:rounded-[2rem] overflow-hidden bg-[#080808] border border-white/10 group shadow-2xl min-h-[400px]">
-                <div className="absolute top-0 right-0 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-violet-600/10 rounded-full blur-[60px] md:blur-[100px] pointer-events-none"></div>
-                
-                <div className="grid md:grid-cols-2 h-full relative z-10">
-                    {/* Metin Alanı - Mobilde Altta */}
-                    <div className="p-6 md:p-12 flex flex-col justify-center order-2 md:order-1">
-                        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-                            <div className="p-1.5 md:p-2 rounded-lg bg-violet-500/20 text-violet-300"><Palette className="w-4 h-4 md:w-5 md:h-5" /></div>
-                            <span className="text-violet-200/60 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em]">Rüya Görseli</span>
-                        </div>
-                        <h1 className="font-serif text-2xl md:text-4xl text-white mb-3 md:mb-4 leading-tight">
-                            {dream.dream_title || "İsimsiz Rüya"}
-                        </h1>
-                        <p className="text-gray-400 mb-6 md:mb-8 leading-relaxed text-xs md:text-sm border-l-2 border-violet-500/30 pl-3 md:pl-4 italic">
-                           "{dream.dream_text.substring(0, 150)}..."
-                        </p>
-                        {hasAccess('pro') && !dream.image_url && (
-                             <button onClick={() => router.push(`/dashboard/gorsel-olustur/${dream.id}`)} className="self-start px-5 py-2.5 md:px-6 md:py-3 rounded-xl bg-violet-600/20 text-violet-300 border border-violet-500/30 font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-violet-600/30 transition-all flex items-center gap-2 w-full md:w-auto justify-center">
-                                <ImageIcon className="w-3 h-3 md:w-4 md:h-4" /> Görsel Oluştur
-                             </button>
-                        )}
+         {/* 1. GÖRSEL STÜDYOSU / RÜYA METNİ */}
+         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full rounded-[2.5rem] overflow-hidden bg-[#080808] border border-white/5 group shadow-2xl min-h-[400px]">
+            <div className="grid md:grid-cols-2 h-full relative z-10">
+                {/* Metin Alanı */}
+                <div className="p-8 md:p-12 flex flex-col justify-center order-2 md:order-1 relative bg-[#131722]/40 backdrop-blur-md">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-violet-500/5 to-transparent pointer-events-none"></div>
+                    
+                    <div className="flex items-center gap-2 md:gap-3 mb-6 relative z-10">
+                        <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400"><Palette className="w-4 h-4" /></div>
+                        <span className="text-violet-300/80 text-[10px] md:text-xs font-bold uppercase tracking-widest">Rüya Detayı</span>
                     </div>
                     
-                    {/* Görsel Alanı - Mobilde Üstte */}
-                    <div className="relative h-[250px] md:h-full bg-[#050505] border-b md:border-b-0 md:border-l border-white/10 overflow-hidden order-1 md:order-2">
-                        {hasAccess('pro') ? (
-                            dream.image_url ? (
-                                <>
-                                    <img src={dream.image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                    <button onClick={handleDownloadImage} className="absolute top-3 right-3 md:top-4 md:right-4 p-2 bg-black/50 backdrop-blur-md rounded-full text-white hover:bg-black/70 transition-colors"><Download className="w-4 h-4" /></button>
-                                </>
-                            ) : (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30">
-                                    <ImageIcon className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mb-3 md:mb-4" />
-                                    <span className="text-gray-500 text-[10px] md:text-xs uppercase tracking-widest">Görsel Yok</span>
-                                </div>
-                            )
-                        ) : (
+                    <h1 className="font-serif text-3xl md:text-4xl text-white mb-4 leading-tight relative z-10">
+                        {dream.dream_title || "İsimsiz Rüya"}
+                    </h1>
+                    
+                    <p className="text-slate-400 mb-8 leading-relaxed text-sm md:text-base border-l border-violet-500/30 pl-4 italic relative z-10 font-light">
+                        "{dream.dream_text.length > 250 ? dream.dream_text.substring(0, 250) + "..." : dream.dream_text}"
+                    </p>
+                    
+                    {hasAccess('pro') && !dream.image_url && (
+                        <button onClick={() => router.push(`/dashboard/gorsel-olustur/${dream.id}`)} className="self-start px-6 py-3.5 rounded-xl bg-violet-600/20 text-violet-300 border border-violet-500/30 font-bold text-xs uppercase tracking-widest hover:bg-violet-600/30 transition-all flex items-center gap-2 w-full md:w-auto justify-center relative z-10">
+                            <ImageIcon className="w-4 h-4" /> Görsel Oluştur
+                        </button>
+                    )}
+                </div>
+                
+                {/* Görsel Alanı */}
+                <div className="relative h-[300px] md:h-full bg-[#050505] border-b md:border-b-0 md:border-l border-white/5 overflow-hidden order-1 md:order-2">
+                    {hasAccess('pro') ? (
+                        dream.image_url ? (
                             <>
-                                <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=2094" className="w-full h-full object-cover blur-md opacity-30" />
-                                <LockedFeature title="Görsel Kilidi" />
+                                <img src={dream.image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Rüya Görseli" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <button onClick={handleDownloadImage} className="absolute bottom-4 right-4 p-3 bg-white/10 backdrop-blur-md rounded-xl text-white hover:bg-white/20 transition-colors shadow-lg border border-white/10">
+                                   <Download className="w-4 h-4" />
+                                </button>
                             </>
-                        )}
-                    </div>
+                        ) : (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
+                        )
+                    ) : (
+                        <>
+                            <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=2094" className="w-full h-full object-cover blur-md opacity-30" alt="Kilitli Görsel" />
+                            <LockedFeature title="Görsel Stüdyosu Kilidi" />
+                        </>
+                    )}
+                    
+                    {/* Görsel yoksa ortada duracak ikon */}
+                    {(!dream.image_url && hasAccess('pro')) && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <ImageIcon className="w-12 h-12 text-slate-600 mb-3 opacity-50" />
+                            <span className="text-slate-500 text-[10px] uppercase tracking-widest font-bold opacity-50">Sanat Eseri Bekleniyor</span>
+                        </div>
+                    )}
                 </div>
-            </motion.div>
+            </div>
+         </motion.div>
 
-            {/* 2. ANALİZ ÖZETİ */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative p-6 md:p-10 rounded-2xl md:rounded-[2rem] bg-[#0c0a09] border border-white/10 overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-[#fbbf24]"></div>
-                <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-                    <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-[#fbbf24]" />
-                    <h3 className="font-serif text-[#fbbf24] text-xs md:text-sm tracking-[0.2em] uppercase font-bold">Rüyanın Özü</h3>
-                </div>
-                <p className="text-sm md:text-lg leading-relaxed text-gray-300 font-light text-justify">
-                    {dream.ai_response?.summary}
+         {/* 2. ANALİZ ÖZETİ */}
+         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative p-8 md:p-12 rounded-[2.5rem] bg-[#131722]/80 backdrop-blur-xl border border-white/5 overflow-hidden shadow-xl">
+            <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20"><Sparkles className="w-5 h-5 text-amber-400" /></div>
+                <h3 className="font-serif text-amber-500 text-sm md:text-base tracking-[0.2em] uppercase font-bold">Rüyanın Özü</h3>
+            </div>
+            <p className="text-base md:text-xl leading-[1.8] text-slate-300 font-light text-justify">
+                {dream.ai_response?.summary}
+            </p>
+         </motion.div>
+
+         {/* 3. PSİKOLOJİK & MANEVİ (Mat Siyah Tema) */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            {/* Psikolojik Yorum */}
+            <div className="relative p-8 rounded-[2rem] bg-[#131722]/60 backdrop-blur-md border border-white/5 hover:border-blue-500/30 transition-all overflow-hidden group min-h-[250px]">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/5 rounded-full blur-[60px] pointer-events-none group-hover:bg-blue-500/10 transition-colors"></div>
+                {!hasAccess('pro') && <LockedFeature title="Psikolojik Derinlik" />}
+                
+                <h3 className="font-serif text-xl md:text-2xl text-blue-400 mb-6 flex items-center gap-3 relative z-10">
+                   <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20"><Brain className="w-5 h-5" /></div> 
+                   Psikolojik Yorum
+                </h3>
+                <p className={`text-slate-300 leading-relaxed text-sm font-light relative z-10 ${!hasAccess('pro') ? 'blur-sm select-none opacity-50' : ''}`}>
+                    {dream.ai_response?.psychological}
                 </p>
-            </motion.div>
+            </div>
 
-            {/* 3. PSİKOLOJİK & MANEVİ (MOBİLDE TEK KOLON) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#0f172a] border border-blue-500/10 hover:border-blue-500/20 transition-all overflow-hidden">
-                    {!hasAccess('pro') && <LockedFeature title="Psikolojik Derinlik" />}
-                    <h3 className="font-serif text-lg md:text-xl text-blue-400 mb-4 md:mb-6 flex items-center gap-3"><Brain className="w-5 h-5" /> Psikolojik Yorum</h3>
-                    <p className={`text-gray-400 leading-relaxed text-xs md:text-sm font-light ${!hasAccess('pro') ? 'blur-sm select-none opacity-50' : ''}`}>
-                        {dream.ai_response?.psychological}
-                    </p>
+            {/* Manevi İşaretler */}
+            <div className="relative p-8 rounded-[2rem] bg-[#131722]/60 backdrop-blur-md border border-white/5 hover:border-emerald-500/30 transition-all overflow-hidden group min-h-[250px]">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-[60px] pointer-events-none group-hover:bg-emerald-500/10 transition-colors"></div>
+                {!hasAccess('pro') && <LockedFeature title="Manevi Tabir" />}
+                
+                <h3 className="font-serif text-xl md:text-2xl text-emerald-400 mb-6 flex items-center gap-3 relative z-10">
+                   <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20"><Moon className="w-5 h-5" /></div>
+                   Manevi İşaretler
+                </h3>
+                <p className={`text-slate-300 leading-relaxed text-sm font-light relative z-10 ${!hasAccess('pro') ? 'blur-sm select-none opacity-50' : ''}`}>
+                    {dream.ai_response?.spiritual}
+                </p>
+            </div>
+         </div>
+
+         {/* 4. WIDGET GRID (Bento Alt Modüller) */}
+         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            
+            {/* A. DUYGU DURUMU */}
+            <div 
+               onClick={() => router.push('/dashboard/duygu-durumu')} 
+               className="relative p-8 rounded-[2rem] bg-[#0a0c10] border border-white/5 hover:border-rose-500/30 transition-all cursor-pointer overflow-hidden flex flex-col justify-between min-h-[240px] group"
+            >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-[50px] pointer-events-none group-hover:bg-rose-500/10 transition-colors"></div>
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-5">
+                       <div className="p-2 bg-rose-500/10 rounded-lg border border-rose-500/20 text-rose-400"><Heart className="w-4 h-4" /></div>
+                       <span className="text-slate-500 text-[10px] uppercase tracking-widest font-bold">Ruh Hali</span>
+                    </div>
+                    <div className="text-3xl font-serif text-rose-400 mb-2">{dream.ai_response?.mood}</div>
                 </div>
-                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#022c22] border border-emerald-500/10 hover:border-emerald-500/20 transition-all overflow-hidden">
-                    {!hasAccess('pro') && <LockedFeature title="Manevi Tabir" />}
-                    <h3 className="font-serif text-lg md:text-xl text-emerald-400 mb-4 md:mb-6 flex items-center gap-3"><Moon className="w-5 h-5" /> Manevi İşaretler</h3>
-                    <p className={`text-gray-400 leading-relaxed text-xs md:text-sm font-light ${!hasAccess('pro') ? 'blur-sm select-none opacity-50' : ''}`}>
-                        {dream.ai_response?.spiritual}
-                    </p>
+                <div className="relative z-10 mt-auto">
+                    <div className="flex justify-between text-[10px] text-slate-500 mb-2 uppercase tracking-widest font-bold">
+                        <span>Yoğunluk</span>
+                        <span>%{dream.ai_response?.mood_score || 0}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-[#131722] rounded-full overflow-hidden">
+                        <div className="h-full bg-rose-500" style={{ width: `${dream.ai_response?.mood_score}%` }}></div>
+                    </div>
                 </div>
             </div>
 
-            {/* 4. WIDGET GRID (MOBİLDE TEK KOLON) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* B. ŞANSLI SAYILAR (Numeroloji) */}
+            <div 
+               className="relative p-8 rounded-[2rem] bg-[#0a0c10] border border-white/5 hover:border-sky-500/30 transition-all overflow-hidden flex flex-col min-h-[240px] group"
+            >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 rounded-full blur-[50px] pointer-events-none group-hover:bg-sky-500/10 transition-colors"></div>
+                <div className="flex items-center gap-3 mb-6 relative z-10">
+                   <div className="p-2 bg-sky-500/10 rounded-lg border border-sky-500/20 text-sky-400"><Star className="w-4 h-4" /></div>
+                   <span className="text-slate-500 text-[10px] uppercase tracking-widest font-bold">İşaretler</span>
+                </div>
+                <div className="flex flex-wrap gap-2 md:gap-3 relative z-10 mt-auto">
+                    {displayNumbers.length > 0 ? (
+                        displayNumbers.slice(0, 3).map((num: any, i: number) => (
+                            <div key={i} className="w-12 h-14 rounded-xl bg-[#131722] border border-sky-500/20 flex items-center justify-center font-mono text-xl font-bold text-sky-400 shadow-inner group-hover:bg-sky-500/5 transition-colors">
+                                {num}
+                            </div>
+                        ))
+                    ) : (
+                        <span className="text-slate-600 text-xs italic">Hesaplanmadı</span>
+                    )}
+                </div>
+            </div>
+
+            {/* C. TAROT */}
+            <div 
+               onClick={() => { if(hasAccess('pro')) router.push('/dashboard/tarot') }}
+               className="relative p-8 rounded-[2rem] bg-[#0a0c10] border border-white/5 hover:border-amber-500/30 transition-all cursor-pointer overflow-hidden min-h-[240px] flex flex-col group"
+            >
+                {!hasAccess('pro') && <LockedFeature title="Tarot" />}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-[50px] pointer-events-none group-hover:bg-amber-500/10 transition-colors"></div>
                 
-                {/* A. DUYGU DURUMU */}
-                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#080808] border border-white/10 overflow-hidden flex flex-col justify-between min-h-[220px] md:min-h-[250px]">
-                    <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-rose-600/10 rounded-full blur-[60px] pointer-events-none"></div>
-                    <div>
-                        <h4 className="text-gray-500 text-[10px] md:text-xs uppercase tracking-[0.2em] mb-3 md:mb-4 flex items-center gap-2"><Heart className="w-3 h-3" /> Ruh Hali</h4>
-                        <div className="text-2xl md:text-3xl font-serif text-rose-400 mb-2">{dream.ai_response?.mood}</div>
-                    </div>
-                    <div>
-                        <div className="flex justify-between text-[10px] text-gray-500 mb-1 uppercase tracking-wider">
-                           <span>Yoğunluk</span>
-                           <span>%{dream.ai_response?.mood_score || 0}</span>
-                        </div>
-                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-rose-500" style={{ width: `${dream.ai_response?.mood_score}%` }}></div>
-                        </div>
-                    </div>
+                <div className="flex items-center gap-3 mb-6 relative z-10">
+                   <div className="p-2 bg-amber-500/10 rounded-lg border border-amber-500/20 text-amber-400"><Layers className="w-4 h-4" /></div>
+                   <span className="text-slate-500 text-[10px] uppercase tracking-widest font-bold">Rüya Tarotu</span>
                 </div>
-
-                {/* B. ŞANSLI SAYILAR */}
-                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#080808] border border-white/10 overflow-hidden min-h-[220px] md:min-h-[250px]">
-                    <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-sky-600/10 rounded-full blur-[60px] pointer-events-none"></div>
-                    <h4 className="text-gray-500 text-[10px] md:text-xs uppercase tracking-[0.2em] mb-4 md:mb-6 flex items-center gap-2"><Star className="w-3 h-3" /> İşaretler</h4>
-                    <div className="flex flex-wrap gap-2 md:gap-3">
-                        {displayNumbers.length > 0 ? (
-                            displayNumbers.slice(0, 3).map((num: any, i: number) => (
-                                <div key={i} className="w-10 h-12 md:w-12 md:h-14 rounded-xl bg-[#0f172a] border border-sky-500/20 flex items-center justify-center font-mono text-lg md:text-xl text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.1)]">
-                                    {num}
-                                </div>
-                            ))
-                        ) : (
-                            <span className="text-gray-500 text-xs italic">Hesaplanmadı</span>
-                        )}
-                    </div>
-                </div>
-
-                {/* C. TAROT */}
-                <div className="relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-[#080808] border border-white/10 overflow-hidden min-h-[220px] md:min-h-[250px] flex flex-col items-center justify-center text-center">
-                    {!hasAccess('pro') && <LockedFeature title="Tarot" />}
-                    <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-amber-600/10 rounded-full blur-[60px] pointer-events-none"></div>
-                    
-                    <div className="relative z-10 w-full">
-                        <div className="flex items-center justify-center gap-2 mb-4 md:mb-6">
-                            <Layers className="w-3 h-3 text-amber-500" />
-                            <span className="text-gray-500 text-[10px] md:text-xs uppercase tracking-[0.2em]">Rüya Tarotu</span>
-                        </div>
-                        
-                        <div className="flex flex-col items-center gap-3">
-                            {tarot ? (
-                                <div className="w-14 h-20 md:w-16 md:h-24 rounded-lg overflow-hidden border border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-                                    {tarot.card_image_url ? (
-                                        <img src={tarot.card_image_url} alt="Tarot Card" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-amber-800 to-amber-950 flex items-center justify-center">
-                                            <span className="text-amber-500 font-serif text-xs">?</span>
-                                        </div>
-                                    )}
-                                </div>
+                
+                <div className="flex items-center gap-4 relative z-10 mt-auto bg-[#131722] p-3 rounded-2xl border border-white/5 shadow-inner">
+                    {tarot ? (
+                        <div className="w-12 h-16 rounded-lg overflow-hidden border border-amber-500/30 shrink-0">
+                            {tarot.card_image_url ? (
+                                <img src={tarot.card_image_url} alt="Tarot Card" className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-14 h-20 md:w-16 md:h-24 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center">
-                                    <span className="text-gray-600 text-xl md:text-2xl opacity-30">?</span>
+                                <div className="w-full h-full bg-gradient-to-br from-amber-800 to-amber-950 flex items-center justify-center">
+                                    <span className="text-amber-500 font-serif text-xs">?</span>
                                 </div>
                             )}
-                            
-                            <div>
-                                <h3 className="text-amber-400 font-serif text-base md:text-lg">
-                                    {tarot ? tarot.card_name : "Bakılmadı"}
-                                </h3>
-                                <p className="text-amber-200/40 text-[10px] uppercase tracking-wider line-clamp-1 max-w-[150px] mx-auto">
-                                    {tarot ? "Yorum Arşivde" : "Veri Yok"}
-                                </p>
-                            </div>
                         </div>
+                    ) : (
+                        <div className="w-12 h-16 bg-[#0a0c10] rounded-lg border border-white/5 flex items-center justify-center shrink-0">
+                            <span className="text-slate-600 text-lg opacity-50">?</span>
+                        </div>
+                    )}
+                    
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-amber-400 font-serif text-sm truncate mb-0.5">
+                            {tarot ? tarot.card_name : "Bakılmadı"}
+                        </h3>
+                        <p className="text-slate-500 text-[9px] uppercase tracking-widest font-bold">
+                            {tarot ? "Arşivde" : "Veri Yok"}
+                        </p>
                     </div>
                 </div>
-
             </div>
 
-            {/* 5. SOHBET BUTONU */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="relative rounded-2xl md:rounded-[2rem] bg-[#0c0a09] border border-white/10 p-6 md:p-8 overflow-hidden group hover:border-orange-500/30 transition-all">
-                {!hasAccess('elite') && <LockedFeature title="Kahin Sohbet" />}
-                <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-orange-600/5 to-transparent"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
-                    <div className="flex items-start gap-3 md:gap-4">
-                        <div className="p-2 md:p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg shadow-orange-500/20 hidden md:block">
-                            <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                        </div>
-                        <div className="text-center md:text-left">
-                            <h3 className="font-serif text-xl md:text-2xl text-white mb-1">Rüya Kahini</h3>
-                            <p className="text-gray-400 text-xs md:text-sm">Rüyanızdaki sembolleri yapay zeka ile tartışın.</p>
-                        </div>
-                    </div>
-                    <button onClick={() => router.push(`/dashboard/sohbet/${dream.id}`)} className="w-full md:w-auto px-6 py-3 rounded-full bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-orange-50 transition-colors flex items-center justify-center gap-2 shadow-lg">
-                        Sohbet Et <MessageCircle className="w-4 h-4" />
-                    </button>
-                </div>
-            </motion.div>
-
          </div>
+
+         {/* 5. SOHBET BUTONU (Tam Genişlik) */}
+         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="relative rounded-[2rem] bg-gradient-to-r from-[#131722] to-[#0a0c10] border border-white/5 p-8 flex flex-col md:flex-row items-center justify-between gap-6 group hover:border-orange-500/30 transition-all shadow-xl">
+            {!hasAccess('elite') && <LockedFeature title="Kahin Sohbet" />}
+            
+            <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-orange-500/5 to-transparent pointer-events-none"></div>
+            
+            <div className="flex items-center gap-5 relative z-10 w-full md:w-auto text-center md:text-left">
+                <div className="p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 hidden md:flex shrink-0 shadow-inner">
+                    <MessageCircle className="w-8 h-8" />
+                </div>
+                <div>
+                    <h3 className="font-serif text-2xl text-white mb-1">Rüya Kahini</h3>
+                    <p className="text-slate-400 text-sm font-light">Rüyanızdaki sembolleri yapay zeka ile tartışın ve derinleştirin.</p>
+                </div>
+            </div>
+            
+            <button onClick={() => router.push(`/dashboard/sohbet/${dream.id}`)} className="w-full md:w-auto px-8 py-4 rounded-xl bg-white text-[#0a0c10] font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-3 shadow-[0_10px_20px_rgba(255,255,255,0.1)] relative z-10 active:scale-95">
+                Sohbete Başla <MessageCircle className="w-4 h-4" />
+            </button>
+         </motion.div>
+
       </main>
     </div>
   );

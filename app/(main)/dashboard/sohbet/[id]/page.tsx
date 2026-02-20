@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, Send, Sparkles, User, Loader2, Bot } from "lucide-react";
 import { sendChatMessage } from "@/app/actions/chat-actions";
 import { motion } from "framer-motion";
-import { toast } from "sonner"; // Toast bildirimi eklendi
+import { toast } from "sonner";
 
 interface Message {
   id?: string;
@@ -56,7 +56,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     if (!input.trim() || loading) return;
 
     const userMsg = input;
-    setInput(""); // Inputu temizle
+    setInput(""); 
     setLoading(true);
 
     if (navigator.vibrate) navigator.vibrate(10);
@@ -66,23 +66,16 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     setMessages(prev => [...prev, tempMsg]);
 
     try {
-      // Server Action'ı çağır (Kredi kontrolü burada yapılır)
       const result = await sendChatMessage(params.id, userMsg);
 
       if (result.success && result.message) {
-        // Başarılı: AI cevabını ekle
         setMessages(prev => [...prev, { role: 'assistant', content: result.message }]);
       } else {
-        // --- HATA YÖNETİMİ ---
-        
-        // Eklenen son mesajı geri al (Çünkü işlem başarısız oldu)
+        // Hata Durumu Geri Alma
         setMessages(prev => prev.slice(0, -1)); 
-        setInput(userMsg); // Kullanıcının yazdığı metni geri getir
+        setInput(userMsg); 
 
-        // Kredi Hatası Kontrolü
-        // Backend 'error' string'i içinde "Yetersiz" kelimesi geçiyorsa veya code 'NO_CREDIT' ise
         const err = result as any;
-        
         if (err.error?.includes("Yetersiz") || err.code === "NO_CREDIT") {
             toast.error("Bakiyeniz Yetersiz", {
                 description: "Kahin ile konuşmak için 1 krediye ihtiyacınız var.",
@@ -97,8 +90,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
         }
       }
     } catch (error) {
-      console.error(error);
-      setMessages(prev => prev.slice(0, -1)); // Hata varsa mesajı geri al
+      setMessages(prev => prev.slice(0, -1)); 
       toast.error("Bir hata oluştu.");
     } finally {
       setLoading(false);
@@ -106,45 +98,61 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   };
 
   return (
-    // APP FIX: fixed inset-0 z-[60] ile bu sayfa alt menünün (MobileNav) ÜZERİNE biner.
-    // h-[100dvh] mobil tarayıcı çubuğu sorununu çözer.
-    <div className="fixed inset-0 z-[60] flex flex-col bg-[#020617] text-white overflow-hidden h-[100dvh]">
+    // FULL SCREEN TAKEOVER: Ana layout'u örten, mobil tarayıcı çubuğuna duyarlı (h-[100dvh]) tam ekran yapı
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#0a0c10] text-slate-200 overflow-hidden h-[100dvh] font-sans selection:bg-amber-500/30">
       
+      {/* LOKAL ARKAPLAN IŞIĞI */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-[400px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent pointer-events-none -z-10 transform-gpu"></div>
+      <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none mix-blend-overlay -z-10"></div>
+
       {/* --- HEADER (SABİT) --- */}
-      <header className="px-4 py-3 border-b border-white/10 bg-[#0f172a]/90 backdrop-blur-md flex items-center gap-3 z-20 shadow-lg shrink-0">
+      <header className="px-4 py-3 md:px-6 md:py-5 border-b border-white/5 bg-[#0a0c10]/80 backdrop-blur-xl flex items-center justify-between z-20 shrink-0">
         <button 
           onClick={() => router.back()} 
-          className="p-2 -ml-2 rounded-full hover:bg-white/10 active:scale-90 transition-all"
+          className="p-2 md:p-2.5 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-colors border border-white/5 text-slate-400 hover:text-white"
         >
-          <ArrowLeft className="w-6 h-6 text-gray-300" />
+          <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
         </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-             <h1 className="font-serif font-bold text-base text-[#fbbf24]">Kahin</h1>
-             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-          </div>
-          <p className="text-xs text-gray-400 truncate">{dreamTitle || "Rüya Analizi Sohbeti"}</p>
+        
+        <div className="flex flex-col items-center flex-1 px-4">
+           <div className="flex items-center gap-2">
+               <h1 className="font-serif font-bold text-base md:text-lg text-amber-500">Rüya Kahini</h1>
+               <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
+           </div>
+           <p className="text-[10px] md:text-xs text-slate-500 truncate max-w-[200px] md:max-w-md">{dreamTitle || "Rüya Analizi Sohbeti"}</p>
         </div>
-        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fbbf24] to-orange-500 flex items-center justify-center shadow-[0_0_15px_rgba(251,191,36,0.4)] shrink-0">
-           <Bot className="w-5 h-5 text-black" />
+        
+        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.2)] shrink-0 border border-amber-300/50">
+           <Bot className="w-5 h-5 md:w-6 md:h-6 text-[#0a0c10]" />
         </div>
       </header>
 
       {/* --- MESAJ ALANI --- */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 relative scroll-smooth overscroll-contain">
-        {/* Arka Plan Gürültüsü */}
-        <div className="fixed inset-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 z-0"></div>
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 relative scroll-smooth overscroll-contain flex flex-col w-full max-w-4xl mx-auto">
         
         {initialLoading ? (
-           <div className="flex flex-col items-center justify-center pt-32 gap-4">
-              <Loader2 className="w-8 h-8 animate-spin text-[#fbbf24]" />
-              <p className="text-xs text-gray-500 animate-pulse">Bağlantı kuruluyor...</p>
+           <div className="flex flex-col items-center justify-center m-auto gap-4 opacity-70">
+              <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+              <p className="text-xs font-mono uppercase tracking-widest text-slate-500">Kozmik Bağlantı Kuruluyor...</p>
            </div>
         ) : messages.length === 0 ? (
-           <div className="text-center text-gray-500 mt-20 px-6 opacity-60">
-              <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50 text-[#fbbf24]" />
-              <p className="text-sm">Bu rüya hakkında aklına takılanları sor.</p>
-              <p className="text-xs mt-2 opacity-50">"Kırmızı araba neyi simgeliyordu?"</p>
+           <div className="m-auto flex flex-col items-center justify-center text-center px-6 opacity-80 mt-20">
+              <div className="w-20 h-20 bg-[#131722] border border-white/5 rounded-3xl flex items-center justify-center shadow-inner mb-6 rotate-3">
+                 <Sparkles className="w-8 h-8 text-amber-400" />
+              </div>
+              <h2 className="text-xl md:text-2xl font-serif text-white mb-2">Kahine Danışın</h2>
+              <p className="text-slate-400 text-xs md:text-sm font-light mb-8 max-w-sm">
+                Rüyanızdaki detayları, uyandığınızda hissettiklerinizi veya sembolleri sorarak analizi derinleştirin.
+              </p>
+              
+              <div className="flex flex-col gap-3 w-full max-w-xs">
+                 <button onClick={() => setInput("Rüyamdaki bu renkler ne anlama geliyordu?")} className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs md:text-sm text-slate-300 transition-colors text-left">
+                    "Rüyamdaki bu renkler ne anlama geliyordu?"
+                 </button>
+                 <button onClick={() => setInput("Uyandığımda hissettiğim o korkunun sebebi ne olabilir?")} className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs md:text-sm text-slate-300 transition-colors text-left">
+                    "Uyandığımda hissettiğim o korkunun sebebi ne olabilir?"
+                 </button>
+              </div>
            </div>
         ) : (
            messages.map((msg, i) => (
@@ -152,28 +160,28 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                initial={{ opacity: 0, y: 10 }}
                animate={{ opacity: 1, y: 0 }}
                key={i} 
-               className={`flex gap-3 relative z-10 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+               className={`flex gap-3 md:gap-4 relative z-10 w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
              >
                 {/* Asistan İkonu */}
                 {msg.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full bg-[#fbbf24]/20 flex items-center justify-center shrink-0 border border-[#fbbf24]/30 mt-1">
-                    <Sparkles className="w-4 h-4 text-[#fbbf24]" />
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 border border-amber-500/20 mt-1 shadow-inner">
+                    <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
                   </div>
                 )}
                 
                 {/* Mesaj Balonu */}
-                <div className={`max-w-[85%] p-3 md:p-4 rounded-2xl text-sm md:text-base leading-relaxed shadow-sm ${
+                <div className={`max-w-[85%] md:max-w-[75%] p-4 md:p-5 rounded-3xl text-sm md:text-base leading-relaxed font-light ${
                   msg.role === 'user' 
-                    ? 'bg-[#8b5cf6] text-white rounded-tr-none shadow-[0_4px_15px_rgba(139,92,246,0.3)]' 
-                    : 'bg-[#1e293b] text-gray-200 border border-white/5 rounded-tl-none'
+                    ? 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-100 rounded-br-sm shadow-[0_5px_15px_rgba(99,102,241,0.05)]' 
+                    : 'bg-[#131722] border border-white/5 text-slate-300 rounded-bl-sm shadow-xl'
                 }`}>
                    {msg.content}
                 </div>
 
                 {/* Kullanıcı İkonu */}
                 {msg.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center shrink-0 border border-[#8b5cf6]/30 mt-1">
-                    <User className="w-4 h-4 text-[#8b5cf6]" />
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-500/20 mt-1 shadow-inner">
+                    <User className="w-4 h-4 md:w-5 md:h-5 text-indigo-400" />
                   </div>
                 )}
              </motion.div>
@@ -182,46 +190,49 @@ export default function ChatPage({ params }: { params: { id: string } }) {
         
         {/* Yazıyor Animasyonu */}
         {loading && (
-           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 justify-start relative z-10">
-              <div className="w-8 h-8 rounded-full bg-[#fbbf24]/20 flex items-center justify-center shrink-0">
-                 <Sparkles className="w-4 h-4 text-[#fbbf24]" />
+           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 md:gap-4 justify-start relative z-10 w-full">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 border border-amber-500/20 mt-1">
+                 <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
               </div>
-              <div className="bg-[#1e293b] px-4 py-3 rounded-2xl rounded-tl-none text-xs text-gray-400 flex items-center gap-2 border border-white/5">
-                 <Loader2 className="w-3 h-3 animate-spin" /> Kahin düşünüyor...
+              <div className="bg-[#131722] px-5 py-4 rounded-3xl rounded-bl-sm text-xs md:text-sm text-slate-400 flex items-center gap-3 border border-white/5 shadow-xl">
+                 <Loader2 className="w-4 h-4 animate-spin text-amber-500" /> Kahin düşünüyor...
               </div>
            </motion.div>
         )}
         
-        {/* Scroll Anchor */}
-        <div ref={scrollRef} className="h-2" />
+        {/* Scroll Çıpası */}
+        <div ref={scrollRef} className="h-4" />
       </div>
 
       {/* --- INPUT ALANI (SABİT ALT) --- */}
-      {/* pb-safe: iPhone X alt çizgisi için güvenli alan bırakır */}
-      <div className="p-3 md:p-4 bg-[#020617] border-t border-white/10 relative z-20 shrink-0 safe-area-pb">
+      {/* iOS ve Android'in alt çizgisine/navigasyonuna çarpmaması için güvenli alan boşluğu (pb) eklendi */}
+      <div className="bg-[#0a0c10]/90 backdrop-blur-2xl border-t border-white/5 p-3 md:p-5 relative z-20 shrink-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}>
          <form 
            onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-           className="flex items-center gap-2 max-w-4xl mx-auto"
+           className="flex items-end gap-2 max-w-4xl mx-auto bg-[#131722] p-2 rounded-[2rem] border border-white/10 focus-within:border-amber-500/40 transition-colors shadow-inner"
          >
-            {/* TEXT-BASE: iOS zoom engellemek için kritik */}
-            <input 
-              type="text" 
+            <textarea 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Mesajını yaz... (1 Kredi)" 
-              className="flex-1 bg-[#1e293b] text-white text-base placeholder-gray-500 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[#fbbf24]/50 border border-white/5 transition-all shadow-inner"
+              onKeyDown={(e) => {
+                 if (e.key === 'Enter' && !e.shiftKey) {
+                     e.preventDefault();
+                     handleSend();
+                 }
+              }}
+              placeholder="Kahine bir soru sor... (1 Kredi)" 
+              rows={1}
+              className="flex-1 bg-transparent text-slate-200 text-sm md:text-base placeholder-slate-600 px-4 py-3 md:py-4 focus:outline-none resize-none max-h-32 min-h-[44px] md:min-h-[52px] scrollbar-hide"
             />
             
             <button 
               type="submit" 
               disabled={loading || !input.trim()}
-              className="p-3 rounded-full bg-[#fbbf24] text-black hover:scale-105 active:scale-90 transition-all disabled:opacity-50 disabled:grayscale shadow-[0_0_15px_rgba(251,191,36,0.4)]"
+              className="p-3 md:p-4 rounded-2xl bg-amber-500 text-[#0a0c10] hover:bg-amber-400 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale disabled:hover:scale-100 shadow-[0_0_20px_rgba(251,191,36,0.3)] shrink-0 m-1"
             >
-               <Send className="w-5 h-5" />
+               <Send className="w-5 h-5 md:w-6 md:h-6" />
             </button>
          </form>
-         {/* iPhone Alt Çizgi Boşluğu */}
-         <div className="h-4 md:h-0 w-full"></div> 
       </div>
 
     </div>

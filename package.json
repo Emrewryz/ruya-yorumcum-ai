@@ -16,14 +16,14 @@
     "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "framer-motion": "^12.26.1",
+    "framer-motion": "^12.34.2",
     "lucide-react": "^0.562.0",
     "next": "14.2.16",
     "openai": "^6.16.0",
     "react": "^18",
     "react-dom": "^18",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.1"
   },
   "devDependencies": {
     "@types/node": "^20",

@@ -4,9 +4,10 @@ import Link from "next/link";
 import { 
   Activity, PieChart, HeartPulse, BrainCircuit, 
   ArrowRight, BarChart3, Fingerprint, Zap,
-  TrendingUp, Smile, Frown
+  TrendingUp, Smile, ArrowDown, ShieldAlert
 } from "lucide-react";
 import Script from "next/script";
+import AdUnit from "@/components/AdUnit"; // Reklam bileşeni
 
 // --- SEO SCHEMA ---
 const moodAnalysisSchema = {
@@ -14,97 +15,96 @@ const moodAnalysisSchema = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "name": "Rüya Duygu Analizi ve Takibi",
+      "name": "Yapay Zeka Rüya Duygu Analizi ve Takibi",
       "applicationCategory": "HealthApplication",
       "operatingSystem": "Web",
       "description": "Yapay zeka ile rüyalarınızdaki duygu durumunu analiz edin, stres seviyenizi ölçün ve ruhsal haritanızı çıkarın."
     },
     {
-      "@type": "Service",
-      "name": "Bilinçaltı Duygu Haritalama",
-      "provider": { "@type": "Organization", "name": "Rüya Yorumcum AI" },
-      "serviceType": "Psychological Analysis",
-      "description": "Rüyaların duygusal tonunu (Sentiment Analysis) ölçerek kişisel gelişim raporu sunar."
+      "@type": "Article",
+      "headline": "Rüya Duygu Analizi: Bilinçaltı Haritalama ve Psikolojik Yorum",
+      "description": "Rüyaların duygusal tonunu (Sentiment Analysis) ölçerek kişisel gelişim ve stres yönetimi hakkında kapsamlı rehber.",
+      "author": { "@type": "Organization", "name": "Rüya Yorumcum AI" }
     }
   ]
 };
 
 export default function DuyguAnaliziPage() {
   return (
-    <main className="min-h-screen bg-[#020617] text-white font-sans selection:bg-blue-500/30 pb-12 md:pb-20 overflow-x-hidden">
+    <main className="min-h-screen bg-[#0B0F19] text-slate-300 font-sans selection:bg-blue-500/30 pb-20 overflow-x-hidden relative scroll-smooth">
       <Script
         id="mood-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(moodAnalysisSchema) }}
       />
 
-      {/* --- 1. HERO SECTION --- */}
-      <section className="relative pt-28 md:pt-32 pb-12 md:pb-20 px-4 md:px-6 overflow-hidden">
-        {/* Arkaplan Efektleri - Mobilde küçültüldü */}
-        <div className="absolute top-0 right-0 w-[300px] h-[300px] md:w-[800px] md:h-[800px] bg-blue-600/10 rounded-full blur-[80px] md:blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-[250px] h-[250px] md:w-[600px] md:h-[600px] bg-indigo-900/10 rounded-full blur-[60px] md:blur-[100px] pointer-events-none translate-y-1/3 -translate-x-1/4"></div>
+      {/* --- ATMOSFER --- */}
+      <div className="fixed inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay z-0" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
+      
+      {/* Arka Plan Işıkları (Mat Mavi & İndigo) */}
+      <div className="absolute top-0 left-0 w-full h-[800px] overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px]"></div>
+          <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[150px]"></div>
+      </div>
 
-        <div className="container mx-auto max-w-7xl grid lg:grid-cols-2 gap-10 md:gap-16 items-center relative z-10">
+      {/* ================= 1. HERO SECTION ================= */}
+      <section className="relative pt-32 md:pt-48 pb-16 px-4 md:px-6 z-10 min-h-[85vh] flex items-center">
+        <div className="container mx-auto max-w-7xl grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           
-          {/* SOL: METİN VE VAAT */}
-          <div className="space-y-6 md:space-y-8 text-center lg:text-left order-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-blue-500/20 transition-colors justify-center lg:justify-start">
-              <Activity className="w-3 h-3" /> Sentiment Analysis AI
+          {/* SOL: COPYWRITING (Minimalist) */}
+          <div className="lg:col-span-7 space-y-6 text-center lg:text-left relative z-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/5 text-slate-400 text-[10px] md:text-xs font-mono uppercase tracking-widest shadow-xl">
+              <Activity className="w-3.5 h-3.5 text-blue-400" /> NLP Sentiment Engine
             </div>
             
-            {/* MOBİL: Text-4xl, TABLET: Text-7xl */}
-            <h1 className="font-serif text-4xl lg:text-7xl font-bold leading-[1.1]">
-              Ruhunuzun <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">
-                Haritasını Çıkarın
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.15] text-white tracking-tight">
+              Bilinçaltınızın <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-600">
+                Duygu Haritası.
               </span>
             </h1>
             
-            <p className="text-gray-400 text-base md:text-lg leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              Rüyalar sadece görüntü değil, yoğun duygulardır. Yapay zekamız, rüyalarınızdaki korku, neşe, endişe ve huzur oranlarını ölçerek size aylık bir <strong>"Ruhsal Denge Raporu"</strong> sunar. Kendinizi daha iyi tanıyın.
+            <p className="text-slate-400 text-sm md:text-base font-light leading-relaxed max-w-lg mx-auto lg:mx-0">
+              Rüyalar sadece görüntü değil, yoğun duygulardır. Yapay zekamız, metinlerinizdeki psikolojik yükü ölçerek size aylık ruhsal denge raporunuzu sunar.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Link href="/auth?redirect=mood" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-blue-600 text-white font-bold text-base md:text-lg hover:bg-blue-700 hover:scale-105 transition-all shadow-[0_0_40px_rgba(37,99,235,0.3)] flex items-center justify-center gap-2">
-                <HeartPulse className="w-5 h-5" /> Analizi Başlat
-              </Link>
-              <Link href="#nasil-calisir" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-base md:text-lg hover:bg-white/10 transition-colors flex items-center justify-center">
-                Nasıl Çalışır?
+            <div className="flex justify-center lg:justify-start pt-2">
+              <Link href="/auth?redirect=mood" className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm hover:bg-white/10 hover:border-blue-500/30 transition-colors flex items-center justify-center gap-2 shadow-lg backdrop-blur-sm group">
+                <HeartPulse className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" /> Analize Başla
               </Link>
             </div>
 
-            <div className="pt-4 md:pt-6 flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-6 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
-               <span className="flex items-center gap-2"><PieChart className="w-3 h-3 md:w-4 md:h-4 text-blue-500" /> Detaylı Grafik</span>
-               <span className="flex items-center gap-2"><BrainCircuit className="w-3 h-3 md:w-4 md:h-4 text-indigo-500" /> Duygu Tespiti</span>
-               <span className="flex items-center gap-2"><Zap className="w-3 h-3 md:w-4 md:h-4 text-purple-500" /> Stres Ölçümü</span>
+            <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-[9px] md:text-[10px] font-mono text-slate-500 uppercase tracking-widest border-t border-white/5 mt-6">
+               <span className="flex items-center gap-1.5"><BrainCircuit className="w-3 h-3 text-slate-600" /> Duygu Tespiti</span>
+               <span className="flex items-center gap-1.5"><TrendingUp className="w-3 h-3 text-slate-600" /> Gelişim Grafiği</span>
+               <span className="flex items-center gap-1.5"><ShieldAlert className="w-3 h-3 text-slate-600" /> Stres Ölçümü</span>
             </div>
           </div>
 
-          {/* SAĞ: UI MOCKUP (DASHBOARD SİMÜLASYONU) */}
-          <div className="order-2 perspective-1000 group relative px-2 md:px-0">
-             <div className="relative z-30 bg-[#0f172a] border border-blue-500/30 rounded-2xl md:rounded-3xl p-5 md:p-6 shadow-2xl transform transition-transform duration-700 hover:rotate-y-6 hover:scale-105">
+          {/* SAĞ: GERÇEKÇİ UI MOCKUP (DASHBOARD) */}
+          <div className="lg:col-span-5 relative w-full perspective-1000 mt-4 lg:mt-0 px-2 md:px-0">
+             
+             <div className="relative z-30 bg-[#131722]/90 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-[0_20px_60px_-15px_rgba(59,130,246,0.1)]">
                 
                 {/* Header */}
-                <div className="flex justify-between items-center mb-6 md:mb-8 pb-4 border-b border-white/5">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
                    <div>
-                      <h3 className="text-white font-bold text-base md:text-lg">Ekim Ayı Analizi</h3>
-                      <p className="text-[10px] md:text-xs text-gray-500">Son 30 Günlük Veri</p>
+                      <h3 className="text-white font-bold text-sm">Duygu Spektrumu</h3>
+                      <p className="text-[10px] font-mono text-slate-500">Son 30 Günlük Veri Seti</p>
                    </div>
-                   <div className="bg-blue-500/20 text-blue-400 p-2 rounded-lg">
-                      <BarChart3 className="w-4 h-4 md:w-5 md:h-5" />
+                   <div className="p-2 bg-blue-500/10 rounded-lg">
+                      <BarChart3 className="w-4 h-4 text-blue-400" />
                    </div>
                 </div>
 
-                {/* Grafik Alanı (MOBİLDE ALT ALTA - FLEX COL) */}
-                <div className="flex flex-col sm:flex-row items-center gap-6 md:gap-8">
-                   <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-full border-8 border-[#0f172a] shadow-[0_0_0_1px_rgba(255,255,255,0.1)] shrink-0"
-                        style={{
-                           background: "conic-gradient(#3b82f6 0% 40%, #a855f7 40% 70%, #ef4444 70% 100%)"
-                        }}
+                {/* Grafik Alanı */}
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                   <div className="relative w-28 h-28 rounded-full border-[6px] border-[#0B0F19] shadow-[0_0_0_1px_rgba(255,255,255,0.05)] shrink-0"
+                        style={{ background: "conic-gradient(#3b82f6 0% 45%, #6366f1 45% 75%, #ef4444 75% 100%)" }}
                    >
-                      <div className="absolute inset-0 m-2 bg-[#0f172a] rounded-full flex flex-col items-center justify-center">
-                         <span className="text-xl md:text-2xl font-bold text-white">%40</span>
-                         <span className="text-[9px] md:text-[10px] text-gray-500">Huzur</span>
+                      <div className="absolute inset-0 m-1.5 bg-[#131722] rounded-full flex flex-col items-center justify-center">
+                         <span className="text-xl font-bold text-white">45%</span>
+                         <span className="text-[8px] font-mono text-slate-400 uppercase tracking-widest">Huzur</span>
                       </div>
                    </div>
                    
@@ -112,85 +112,89 @@ export default function DuyguAnaliziPage() {
                    <div className="space-y-3 flex-1 w-full">
                       <div className="flex items-center justify-between">
                          <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-blue-500"></div>
-                            <span className="text-xs text-gray-300">Huzurlu</span>
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span className="text-[11px] font-mono text-slate-300">Huzurlu</span>
                          </div>
-                         <span className="text-xs font-bold text-white">%40</span>
+                         <span className="text-[11px] font-bold text-white">45%</span>
                       </div>
                       <div className="flex items-center justify-between">
                          <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-purple-500"></div>
-                            <span className="text-xs text-gray-300">Meraklı</span>
+                            <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                            <span className="text-[11px] font-mono text-slate-300">Meraklı</span>
                          </div>
-                         <span className="text-xs font-bold text-white">%30</span>
+                         <span className="text-[11px] font-bold text-white">30%</span>
                       </div>
                       <div className="flex items-center justify-between">
                          <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500"></div>
-                            <span className="text-xs text-gray-300">Endişeli</span>
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                            <span className="text-[11px] font-mono text-slate-300">Endişeli</span>
                          </div>
-                         <span className="text-xs font-bold text-white">%30</span>
+                         <span className="text-[11px] font-bold text-white">25%</span>
                       </div>
                    </div>
                 </div>
 
                 {/* AI Yorumu */}
-                <div className="mt-6 md:mt-8 p-3 md:p-4 bg-white/5 rounded-xl border border-white/5 text-xs md:text-sm text-gray-400 leading-relaxed">
-                   <span className="text-blue-400 font-bold block mb-1">AI Özeti:</span>
-                   "Bu ay rüyalarında huzur teması hakim. Ancak %30 oranındaki endişe, yaklaşan sınavların bilinçaltındaki yansıması olabilir."
+                <div className="mt-6 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                   <div className="flex items-center gap-1.5 mb-2">
+                      <Zap className="w-3 h-3 text-amber-400" />
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sistem Özeti</span>
+                   </div>
+                   <p className="text-[11px] font-mono text-slate-300 leading-relaxed">
+                      "Genel spektrum pozitif. Ancak endişe seviyesindeki %5'lik artış, yaklaşan olayların bilinçaltı baskısına işaret ediyor."
+                   </p>
                 </div>
-
              </div>
 
-             {/* Arka Dekorasyon */}
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-blue-500/10 blur-[60px] md:blur-[100px] -z-10"></div>
           </div>
-
         </div>
       </section>
 
-      {/* --- 2. TEKNİK SÜREÇ --- */}
-      <section id="nasil-calisir" className="py-16 md:py-24 bg-[#050a1f] border-t border-white/5 relative">
+      {/* --- REKLAM 1: HERO ALTI --- */}
+      <div className="max-w-6xl mx-auto w-full px-4 py-8 z-10 relative border-t border-white/5">
+          <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+          <AdUnit slot="8565155493" format="auto" />
+      </div>
+
+      {/* ================= 2. TEKNOLOJİ (NASIL ÇALIŞIR) ================= */}
+      <section id="nasil-calisir" className="py-20 bg-[#131722]/30 border-y border-white/5 relative z-10">
          <div className="container mx-auto px-4 md:px-6 max-w-6xl">
             
-            <div className="text-center mb-12 md:mb-20">
-               <h2 className="font-serif text-2xl md:text-5xl font-bold mb-4 md:mb-6">Duygularınızı Nasıl Ölçüyoruz?</h2>
-               <p className="text-gray-400 text-sm md:text-lg max-w-3xl mx-auto">
-                  Kullandığımız <strong>Doğal Dil İşleme (NLP)</strong> teknolojisi, yazdığınız rüya metnindeki her kelimenin duygusal yükünü hesaplar.
+            <div className="text-center mb-16">
+               <h2 className="font-serif text-3xl md:text-4xl font-bold text-white mb-4">Duygularınızı Nasıl Ölçüyoruz?</h2>
+               <p className="text-slate-400 text-sm md:text-base font-light max-w-2xl mx-auto">
+                  Kullandığımız Doğal Dil İşleme (NLP) teknolojisi, yazdığınız rüya metnindeki her kelimenin ve cümlenin psikolojik yükünü hesaplar.
                </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-               {/* KART 1 */}
-               <div className="bg-[#0f172a] p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 hover:border-blue-500/50 transition-all group">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 md:mb-6 text-blue-400 group-hover:scale-110 transition-transform">
-                     <Smile className="w-6 h-6 md:w-7 md:h-7" />
+            <div className="grid md:grid-cols-3 gap-8">
+               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-white/10 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-5 border border-white/10">
+                     <Smile className="w-5 h-5 text-blue-400" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Pozitif/Negatif Analiz</h3>
-                  <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
-                     Rüyanızın genel tonu neşeli mi yoksa karamsar mı? Sistem -100 ile +100 arasında bir skor belirleyerek rüyanın ruhsal etkisini puanlar.
+                  <h3 className="text-lg font-bold text-white mb-2">Sentiment Analizi</h3>
+                  <p className="text-slate-400 text-xs font-light leading-relaxed">
+                     Rüyanızın genel tonu neşeli mi yoksa karamsar mı? Sistem metni analiz ederek rüyanın ruhsal etkisini puanlar.
                   </p>
                </div>
 
-               {/* KART 2 */}
-               <div className="bg-[#0f172a] p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 hover:border-indigo-500/50 transition-all group">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 md:mb-6 text-indigo-400 group-hover:scale-110 transition-transform">
-                     <TrendingUp className="w-6 h-6 md:w-7 md:h-7" />
+               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-white/10 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-5 border border-white/10">
+                     <TrendingUp className="w-5 h-5 text-indigo-400" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Zaman Çizelgesi</h3>
-                  <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
-                     Tek bir rüya değil, süreç önemlidir. Son 30 gündeki rüyalarınızın grafiğini çıkararak "duygusal dalgalanmalarınızı" takip etmenizi sağlarız.
+                  <h3 className="text-lg font-bold text-white mb-2">Zaman Çizelgesi</h3>
+                  <p className="text-slate-400 text-xs font-light leading-relaxed">
+                     Tek bir rüya değil, süreç önemlidir. Son 30 gündeki rüyalarınızın grafiğini çıkararak "duygusal dalgalanmalarınızı" takip ederiz.
                   </p>
                </div>
 
-               {/* KART 3 */}
-               <div className="bg-[#0f172a] p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 hover:border-purple-500/50 transition-all group">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4 md:mb-6 text-purple-400 group-hover:scale-110 transition-transform">
-                     <BrainCircuit className="w-6 h-6 md:w-7 md:h-7" />
+               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-white/10 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-5 border border-white/10">
+                     <ShieldAlert className="w-5 h-5 text-purple-400" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Bilinçaltı Uyarıları</h3>
-                  <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
-                     Eğer "Korku" veya "Endişe" oranı belirli bir seviyenin üzerine çıkarsa, yapay zeka size özel bir "Rahatlama ve Farkındalık Önerisi" sunar.
+                  <h3 className="text-lg font-bold text-white mb-2">Bilinçaltı Uyarıları</h3>
+                  <p className="text-slate-400 text-xs font-light leading-relaxed">
+                     Eğer "Korku" veya "Endişe" oranı belli bir seviyenin üzerine çıkarsa, yapay zeka size özel bir farkındalık uyarısı sunar.
                   </p>
                </div>
             </div>
@@ -198,89 +202,77 @@ export default function DuyguAnaliziPage() {
          </div>
       </section>
 
-      {/* --- 3. NEDEN KULLANMALIYIM? --- */}
-      <section className="py-16 md:py-24 container mx-auto px-4 md:px-6 max-w-5xl">
-         <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-8 md:mb-12 border-b border-white/10 pb-4 md:pb-6">
-            <div className="p-2 md:p-3 bg-blue-500/10 rounded-xl w-fit">
-               <Fingerprint className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
-            </div>
-            <h2 className="font-serif text-2xl md:text-3xl font-bold">Ruhsal Farkındalık Rehberi</h2>
-         </div>
+      {/* --- REKLAM 2: BÖLÜM ARASI --- */}
+      <div className="max-w-5xl mx-auto w-full px-4 py-12 z-10 relative">
+          <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+          <AdUnit slot="4542150009" format="fluid" />
+      </div>
+
+      {/* ================= 3. DEV SEO MAKALESİ ================= */}
+      <section className="py-12 px-4 md:px-6 max-w-4xl mx-auto relative z-10">
+         <h2 className="font-serif text-2xl md:text-3xl font-bold text-white mb-10 border-b border-white/10 pb-6">
+            Rüya Duygu Analizi ve Psikolojik Haritalama
+         </h2>
          
-         <div className="grid md:grid-cols-2 gap-10 md:gap-16 text-gray-400 text-sm leading-relaxed">
+         <div className="space-y-12 text-slate-400 font-light leading-relaxed text-sm md:text-base">
             
-            <article className="space-y-6">
-               <div>
-                  <h3 className="text-base md:text-lg font-bold text-white mb-2 md:mb-3 flex items-center gap-2">
-                     Bastırılmış Duygularla Yüzleşme
-                  </h3>
-                  <p>
-                     Günlük hayatta görmezden geldiğimiz stres, öfke veya kıskançlık gibi duygular rüyalarda açığa çıkar. <strong>Duygu analizi</strong>, bu gizli hisleri somut verilere dökerek onlarla sağlıklı bir şekilde yüzleşmenizi sağlar.
-                  </p>
-               </div>
-               
-               <div>
-                  <h3 className="text-base md:text-lg font-bold text-white mb-2 md:mb-3 flex items-center gap-2">
-                     Rüya ve Depresyon İlişkisi
-                  </h3>
-                  <p>
-                     Rüyaların sürekli negatif (kabus, hüzün) ağırlıklı olması, psikolojik yorgunluğun işareti olabilir. Sistemimizdeki grafikler, ruh halinizdeki düşüşleri erken fark etmeniz için bir <strong>erken uyarı sistemi</strong> görevi görür.
-                  </p>
-               </div>
-            </article>
-
-            <article className="space-y-6">
-               <div className="bg-[#0f172a] p-5 md:p-6 rounded-2xl border border-white/5">
-                  <h4 className="text-white font-bold mb-3 md:mb-4 text-xs uppercase tracking-wider flex items-center gap-2">
-                     <Activity className="w-4 h-4 text-blue-500" /> Ölçülen Temel Duygular
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                     {[
-                        { name: "Mutluluk", color: "bg-green-500/20 text-green-400" },
-                        { name: "Endişe", color: "bg-yellow-500/20 text-yellow-400" },
-                        { name: "Korku", color: "bg-red-500/20 text-red-400" },
-                        { name: "Huzur", color: "bg-blue-500/20 text-blue-400" },
-                        { name: "Özlem", color: "bg-pink-500/20 text-pink-400" },
-                        { name: "Karmaşa", color: "bg-purple-500/20 text-purple-400" },
-                     ].map((mood, i) => (
-                        <span key={i} className={`px-2 py-1 md:px-3 rounded-lg border border-white/5 text-[10px] md:text-xs font-bold ${mood.color}`}>
-                           {mood.name}
-                        </span>
-                     ))}
-                  </div>
-               </div>
+            <article className="space-y-4">
+               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-blue-400"/> Duygu Analizi (Sentiment Analysis) Nedir?
+               </h3>
                <p>
-                  Her rüya kaydınızda bu duyguların oranı otomatik hesaplanır ve profilinize işlenir. Zamanla kendi <strong>"Duygu Takviminizi"</strong> oluşturmuş olursunuz.
+                  Arama motorlarında sıkça aranan <strong>"psikolojik rüya analizi"</strong> kavramı, sadece sembolleri değil, rüya sırasındaki duygusal durumu da kapsar. <strong>Duygu Analizi</strong>, yapay zekanın girdiğiniz metindeki kelime seçimlerini, cümle yapılarını ve bağlamı inceleyerek o metnin arkasındaki "duyguyu" (korku, neşe, endişe, huzur vb.) matematiksel olarak ölçme işlemidir.
+               </p>
+               <p>
+                  Siz rüyanızı yazarken kullandığınız "kaçıyordum", "nefes nefese", "karanlık" gibi kelimeler sistem tarafından endişe/korku spektrumuna alınırken; "uçuyordum", "parlak", "gülümsüyordu" gibi ifadeler huzur spektrumunda değerlendirilir.
                </p>
             </article>
-         </div>
 
-         {/* Keyword Cloud */}
-         <div className="mt-12 md:mt-16 pt-8 md:pt-10 border-t border-white/5">
-            <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 md:mb-6">İlgili Aramalar</h4>
-            <div className="flex flex-wrap gap-2 md:gap-3">
-               {[
-                  "Rüya psikolojisi", "Bilinçaltı temizliği", "Duygu durumu testi", 
-                  "Online psikolojik analiz", "Rüya yorumu yapay zeka", "Mood tracker",
-                  "Ruh hali takibi", "Depresyon belirtileri rüya", "Stres ölçümü"
-               ].map((tag, i) => (
-                  <span key={i} className="text-[10px] md:text-xs text-gray-500 border border-white/5 px-2 py-1.5 md:px-3 md:py-2 rounded-lg bg-[#020617] hover:border-blue-500/30 hover:text-white transition-colors cursor-default">
-                     #{tag}
-                  </span>
-               ))}
+            <article className="space-y-4">
+               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <BrainCircuit className="w-5 h-5 text-indigo-400"/> Rüyalar ve Bastırılmış Duygular
+               </h3>
+               <p>
+                  Günlük hayatın koşuşturmacasında stres, öfke veya kıskançlık gibi duyguları genellikle halının altına süpürürüz. Ancak Carl Jung'un da belirttiği gibi, bilinçaltı uyumaz. Bastırılan her duygu, gece rüyalarımızda kılık değiştirerek (kabuslar, karmaşık senaryolar) karşımıza çıkar.
+               </p>
+               <p>
+                  <strong>Rüya günlüğü tutmak</strong> ve bu rüyaların duygu haritasını çıkarmak, kişinin kendiyle yüzleşmesi için mükemmel bir terapötik araçtır. Düzenli analiz sayesinde, hayatınızdaki gizli stres faktörlerini (iş, ilişki, gelecek kaygısı) henüz fiziksel bir soruna dönüşmeden fark edebilirsiniz.
+               </p>
+            </article>
+
+            {/* REKLAM 3: SEO İÇERİĞİ ARASI */}
+            <div className="py-6 border-y border-white/5 my-6">
+                <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+                <AdUnit slot="4542150009" format="fluid" />
             </div>
+
+            <article className="space-y-4">
+               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-purple-400"/> Ruhsal Denge Raporu
+               </h3>
+               <p>
+                  Tek bir kötü rüya görmek normaldir, ancak ardışık günlerde sürekli negatif rüyalar görmek <strong>depresyon belirtileri</strong> veya yüksek anksiyete işareti olabilir. Sistemimizin sunduğu "Zaman Çizelgesi" grafikleri, haftalık ve aylık bazda duygu dalgalanmalarınızı görselleştirir. 
+               </p>
+               <p>
+                  Böylece, ruh halinizdeki düşüş trendlerini erken fark edebilir ve kişisel gelişiminiz (veya gerekiyorsa profesyonel bir destek almak) için bilinçli bir adım atabilirsiniz.
+               </p>
+            </article>
+
          </div>
       </section>
 
-      {/* --- FOOTER CTA --- */}
-      <section className="py-16 md:py-20 text-center relative overflow-hidden">
-         <div className="container mx-auto px-4 md:px-6 relative z-10">
-            <h2 className="text-2xl md:text-4xl font-serif font-bold mb-4 md:mb-6 text-white">Ruhunuz Ne Söylüyor?</h2>
-            <p className="text-gray-400 mb-6 md:mb-8 text-base md:text-lg max-w-2xl mx-auto">
-               Bilinçaltınızın gizli mesajlarını çözmek ve duygusal haritanızı çıkarmak için şimdi başlayın.
-            </p>
-            <Link href="/auth?redirect=mood" className="inline-flex w-full sm:w-auto items-center justify-center px-8 py-4 rounded-xl bg-white text-black font-bold text-base md:text-lg hover:bg-gray-200 transition-colors shadow-xl group">
-               Analiz Et <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+      {/* REKLAM 4: İÇERİK SONU MULTIPLEX */}
+      <div className="max-w-4xl mx-auto w-full px-4 mt-4 mb-20 z-10 relative">
+          <p className="text-center text-[10px] text-slate-600 mb-4 uppercase tracking-widest font-bold">İlginizi Çekebilir</p>
+          <AdUnit slot="6481917633" format="autorelaxed" />
+      </div>
+
+      {/* ================= ALT BİTİRİŞ (Minimalist) ================= */}
+      <section className="py-12 text-center border-t border-white/5 relative z-10">
+         <div className="container mx-auto px-4">
+            <h2 className="font-serif text-xl md:text-2xl text-slate-400 mb-4">Kendinizle Yüzleşin.</h2>
+            <Link href="#top" className="inline-flex items-center justify-center p-3 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+               <ArrowDown className="w-5 h-5 animate-bounce" />
             </Link>
          </div>
       </section>

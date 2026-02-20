@@ -1,579 +1,438 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Sparkles, RefreshCcw, Layers, Star, Heart, Moon, Lock, Info, Zap } from "lucide-react";
-import { TAROT_DECK } from "@/utils/tarot-deck";
-import { readTarot } from "@/app/actions/read-tarot";
+import { 
+  Sparkles, Lock, ArrowRight, RefreshCcw, 
+  Layers, Star, Moon, Heart, Compass ,BrainCircuit
+} from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { toast } from "sonner";
+import { TAROT_DECK } from "@/utils/tarot-deck"; 
+import Script from "next/script";
+import AdUnit from "@/components/AdUnit";
 
-// Build hatasını önlemek için dinamik render
-export const dynamic = "force-dynamic";
+// --- SEO SCHEMA ---
+const tarotSchema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "Yapay Zeka Tarot Falı ve Kart Açılımı",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web",
+      "description": "Gelişmiş yapay zeka ile ücretsiz tarot falı baktırın. Geçmiş, şimdi ve gelecek açılımı ile kişisel rehberlik alın."
+    },
+    {
+      "@type": "Article",
+      "headline": "Tarot Falı Nasıl Bakılır? Kartların Gizli Anlamları",
+      "description": "Tarot kartlarının anlamları, 3 kart tarot açılımı ve yapay zeka ile tarot okumanın incelikleri hakkında rehber.",
+      "author": { "@type": "Organization", "name": "Rüya Yorumcum AI" }
+    }
+  ]
+};
 
-// --- TASARIM KONFİGÜRASYONU ---
-const SPREAD_CONFIG = [
-  {
-    id: 'dream_special',
-    name: "Rüya Analizi",
-    desc: "Bilinçaltınızın gizli mesajlarını çözün.",
-    icon: <Moon className="w-5 h-5 md:w-6 md:h-6" />,
-    count: 3,
-    theme: {
-      border: "group-hover:border-amber-400/50 border-purple-500/20",
-      bg: "bg-gradient-to-br from-[#1a0b2e] to-[#0f0518]",
-      iconBg: "bg-purple-900/30 text-amber-400",
-      glow: "shadow-purple-900/20",
-      accent: "text-amber-400",
-      ambient: "from-purple-900/20 via-slate-950 to-slate-950"
-    }
-  },
-  {
-    id: 'three_card',
-    name: "Geçmiş, Şimdi, Gelecek",
-    desc: "Zaman çizgisinde ruhsal yolculuk.",
-    icon: <Layers className="w-5 h-5 md:w-6 md:h-6" />,
-    count: 3,
-    theme: {
-      border: "group-hover:border-indigo-400/50 border-indigo-500/20",
-      bg: "bg-gradient-to-br from-[#0f172a] to-[#020617]",
-      iconBg: "bg-indigo-900/30 text-indigo-300",
-      glow: "shadow-indigo-900/20",
-      accent: "text-indigo-400",
-      ambient: "from-indigo-900/20 via-slate-950 to-slate-950"
-    }
-  },
-  {
-    id: 'single_card',
-    name: "Tek Kart Rehberlik",
-    desc: "Net bir soru için anlık ışık.",
-    icon: <Star className="w-5 h-5 md:w-6 md:h-6" />,
-    count: 1,
-    theme: {
-      border: "group-hover:border-cyan-400/50 border-cyan-500/20",
-      bg: "bg-gradient-to-br from-[#082f49] to-[#020617]",
-      iconBg: "bg-cyan-900/30 text-cyan-300",
-      glow: "shadow-cyan-900/20",
-      accent: "text-cyan-400",
-      ambient: "from-cyan-900/20 via-slate-950 to-slate-950"
-    }
-  },
-  {
-    id: 'love',
-    name: "Aşk ve Uyum",
-    desc: "İlişkinin enerjisi ve kalbin yolu.",
-    icon: <Heart className="w-5 h-5 md:w-6 md:h-6" />,
-    count: 3,
-    theme: {
-      border: "group-hover:border-rose-500/50 border-rose-900/30",
-      bg: "bg-gradient-to-br from-[#2c0b0e] to-[#0f0204]",
-      iconBg: "bg-rose-900/40 text-rose-400",
-      glow: "shadow-rose-900/40",
-      accent: "text-rose-500",
-      ambient: "from-rose-900/20 via-slate-950 to-slate-950"
-    }
-  }
-];
-
-// --- ASIL İÇERİK BİLEŞENİ ---
-function TarotPageContent() {
+export default function TarotLandingClient() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
+  const [user, setUser] = useState<any>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // AŞAMALAR:
+  const [phase, setPhase] = useState<'intention' | 'shuffle' | 'spread' | 'locked_result'>('intention');
   
-  // --- STATE ---
-  const [phase, setPhase] = useState<'type_select' | 'intention' | 'shuffle' | 'spread' | 'reading' | 'result'>('type_select');
-  const [selectedSpread, setSelectedSpread] = useState<any>(SPREAD_CONFIG[1]); 
-  const [intention, setIntention] = useState("");
-  const [deckOrder, setDeckOrder] = useState<number[]>([]); 
-  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
-  const [readingResult, setReadingResult] = useState<any>(null);
-  const [latestDream, setLatestDream] = useState<any>(null);
+  const [question, setQuestion] = useState("");
+  const [selectedCards, setSelectedCards] = useState<any[]>([]);
 
-  // --- 1. MİSAFİR FALINI YAKALAMA (GÜVENLİ VE DÜZELTİLMİŞ) ---
   useEffect(() => {
-    const processGuestReading = async () => {
-      const pendingData = localStorage.getItem('pending_tarot_reading');
-      
-      if (pendingData) {
-        try {
-          const parsedData = JSON.parse(pendingData);
-          
-          // HATA ÇÖZÜMÜ 1: Veri bütünlüğü kontrolü
-          if (!parsedData || !parsedData.cards || !Array.isArray(parsedData.cards)) {
-             console.warn("Geçersiz veya eksik fal verisi, temizleniyor.");
-             localStorage.removeItem('pending_tarot_reading');
-             return;
-          }
-
-          setPhase('reading');
-          
-          const targetSpread = SPREAD_CONFIG.find(s => s.id === 'three_card') || SPREAD_CONFIG[1];
-          setSelectedSpread(targetSpread);
-          setIntention(parsedData.question || "Genel Bakış");
-
-          // HATA ÇÖZÜMÜ 2: Güvenli Kart Eşleştirme (Bulamazsa Joker Kullan)
-          const guestCardNames = parsedData.cards.map((c: any) => c?.name || "Bilinmeyen Kart");
-          
-          const selectedCardsData = parsedData.cards.map((guestCard: any) => {
-             if (!guestCard) return TAROT_DECK[0];
-             
-             // ID veya İsim ile bulmaya çalış
-             const foundCard = TAROT_DECK.find(master => 
-                master.searchKey === guestCard.id || 
-                (guestCard.name && master.name.toLowerCase().includes(guestCard.name.toLowerCase()))
-             );
-             return foundCard || TAROT_DECK[0]; // Bulamazsan Joker döndür
-          });
-
-          // --- API ÇAĞRISI ---
-          const result = await readTarot(parsedData.question, guestCardNames, 'three_card', undefined);
-
-          if (result.success) {
-            setReadingResult({ ...result.data, selectedCardsData });
-            setPhase('result');
-            toast.success("Misafir falınız tamamlandı! (Hesabınıza işlendi)");
-            localStorage.removeItem('pending_tarot_reading');
-          } else {
-             handleApiError(result);
-          }
-
-        } catch (error) {
-          console.error("Misafir falı işleme hatası:", error);
-          setPhase('type_select'); // Hata olursa başa dön
-          localStorage.removeItem('pending_tarot_reading'); // Bozuk veriyi sil
-        }
-      }
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      const checkMobile = () => setIsMobile(window.innerWidth < 768);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
     };
+    init();
+  }, [supabase]);
 
-    processGuestReading();
-  }, []);
-
-  // --- RÜYA KONTROLÜ ---
-  useEffect(() => {
-    const checkLatestDream = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data, error } = await supabase
-            .from('dreams')
-            .select('id, dream_title, dream_text, ai_response') 
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-        if (error) return;
-
-        if (data) {
-             setLatestDream({ 
-                 id: data.id,
-                 title: data.dream_title || "Adsız Rüya", 
-                 description: data.dream_text || data.ai_response?.summary 
-             });
-        }
-      } catch (e) {
-        console.error("Beklenmeyen hata:", e);
-      }
-    };
-    checkLatestDream();
-  }, []);
-
-  // --- YARDIMCI FONKSİYONLAR ---
-  const handleApiError = (result: any) => {
-    const errCode = result.code || result.error;
-    if (errCode === 'NO_CREDIT') {
-        toast.error("Yetersiz Bakiye", {
-            description: "Analiz için krediniz yetersiz.",
-            action: { label: "Yükle", onClick: () => router.push("/dashboard/pricing") },
-            duration: 5000
-        });
-        setPhase('type_select');
-    } else {
-        toast.error(result.message || "Bir hata oluştu.");
-        setPhase('type_select');
-    }
-  };
-
-  const shuffleDeck = () => {
-    const array = Array.from({ length: TAROT_DECK.length }, (_, i) => i);
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    setDeckOrder(array);
-    setSelectedIndices([]);
-  };
-
-  const handleBackNavigation = () => {
-    if (phase === 'type_select') router.back();
-    else if (phase === 'result') reset();
-    else setPhase('type_select');
-  };
-
-  const handleSelectSpread = (spread: any) => {
-    if (spread.id === 'dream_special' && !latestDream) return;
-    setSelectedSpread(spread);
-    shuffleDeck();
-
-    if (spread.id === 'dream_special') {
-        setIntention(`Son gördüğüm rüya (${latestDream.title || 'Adsız'}) bana ne anlatmak istiyor?`);
-        setPhase('shuffle'); 
-        setTimeout(() => setPhase('spread'), 2000);
-    } else {
-        setPhase('intention');
-    }
-  };
-
-  // HATA ÇÖZÜMÜ 3: .trim() hatasını önlemek için güvenli string kontrolü
-  const handleStartRitual = () => {
-    if (!intention || !intention.trim()) return;
+  // 1. AŞAMA: NİYETİ ONAYLA VE KARIŞTIRMAYA GEÇ
+  const handleIntentionSubmit = () => {
+    if (!question.trim()) return;
     setPhase('shuffle');
-    setTimeout(() => setPhase('spread'), 2500); 
+    setTimeout(() => {
+      setPhase('spread');
+    }, 2500);
   };
 
-  const handleCardClick = (deckIndex: number) => {
-    if (selectedIndices.includes(deckIndex) || selectedIndices.length >= selectedSpread.count) return;
-    if (navigator.vibrate) navigator.vibrate(40);
+  // 2. AŞAMA: KART SEÇME
+  const handleCardPick = (index: number) => {
+    if (selectedCards.length >= 3) return;
     
-    const newSelection = [...selectedIndices, deckIndex];
-    setSelectedIndices(newSelection);
-    
-    if (newSelection.length === selectedSpread.count) {
-        setTimeout(() => getReading(newSelection), 1500);
+    const randomCard = TAROT_DECK[Math.floor(Math.random() * TAROT_DECK.length)];
+    const newSelection = [...selectedCards, { ...randomCard, tempId: index }];
+    setSelectedCards(newSelection);
+
+    if (navigator && navigator.vibrate) navigator.vibrate(40);
+
+    // 3 Kart seçildi mi?
+    if (newSelection.length === 3) {
+      setTimeout(() => setPhase('locked_result'), 1200); 
     }
   };
 
-  const getReading = async (indices: number[]) => {
-    setPhase('reading');
+  // 3. AŞAMA: KAYDET VE YÖNLENDİR
+  const handleUnlockResult = (isLoggedIn: boolean) => {
+    const readingData = {
+        question: question,
+        cards: selectedCards.map(c => ({ id: c.id, name: c.name, image: c.image })),
+        date: new Date().toISOString()
+    };
     
-    const selectedCardsData = indices.map(idx => TAROT_DECK[deckOrder[idx] % TAROT_DECK.length]);
-    const cardNames = selectedCardsData.map(c => c.name);
-    
-    let finalQuestion = intention;
-    if (selectedSpread.id === 'dream_special' && latestDream) {
-        finalQuestion += ` (RÜYA İÇERİĞİ: ${latestDream.description})`;
-    }
+    localStorage.setItem('pending_tarot_reading', JSON.stringify(readingData));
 
-    try {
-        const result = await readTarot(finalQuestion, cardNames, selectedSpread.id, latestDream?.id || undefined);
-        
-        if (result.success) {
-            setReadingResult({ ...result.data, selectedCardsData });
-            setPhase('result');
-            toast.success("Kartlar yorumlandı! (2 Kredi düştü)");
-        } else {
-            handleApiError(result);
-        }
-    } catch (e) {
-        toast.error("Bağlantı hatası.");
-        setPhase('type_select');
+    if (isLoggedIn) {
+        // Zaten giriş yapmışsa direkt panele (Dashboard içindeki tarota yönlendiriyor)
+        router.push('/dashboard/tarot?new=true'); 
+    } else {
+        router.push('/auth?redirect=/dashboard/tarot?new=true');
     }
   };
 
-  const reset = () => {
-      setPhase('type_select');
-      setIntention('');
-      setSelectedIndices([]);
-      setReadingResult(null);
-  };
-
-  // --- UI RENDER ---
   return (
-    <div className={`min-h-screen bg-slate-950 text-slate-200 relative flex flex-col font-sans selection:bg-white/20 transition-colors duration-1000 pb-20 md:pb-0`}>
+    <main className="min-h-screen bg-[#0B0F19] text-slate-300 font-sans selection:bg-rose-500/30 pb-24 overflow-x-hidden relative">
+      <Script id="tarot-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(tarotSchema) }} />
       
-      {/* ARKAPLAN */}
-      <div className={`fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] ${selectedSpread.theme.ambient} -z-10 transition-all duration-1000`} />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-black/50 to-transparent pointer-events-none -z-10" />
+      {/* --- ATMOSFER --- */}
+      <div className="fixed inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay z-0" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-rose-600/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
 
-      {/* --- HEADER --- */}
-      <nav className="w-full px-4 md:px-6 py-4 md:py-6 flex items-center justify-between max-w-7xl mx-auto z-50">
-        <button 
-            onClick={handleBackNavigation} 
-            className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-black/20 border border-white/5 hover:bg-white/5 hover:border-white/10 transition-all text-xs md:text-sm font-medium text-slate-400 hover:text-white backdrop-blur-sm"
-        >
-          <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
-          <span>{phase === 'type_select' ? 'Dashboard' : 'Geri'}</span>
-        </button>
+      {/* ================= 1. HERO & İNTERAKTİF UYGULAMA ALANI ================= */}
+      <section className="relative pt-32 md:pt-40 pb-16 px-4 md:px-6 z-10 flex flex-col items-center">
         
-        <div className="flex items-center gap-2 md:gap-3">
-            <Sparkles className={`w-4 h-4 md:w-5 md:h-5 ${selectedSpread.theme.accent}`} />
-            <span className="font-serif text-sm md:text-lg text-white tracking-widest uppercase">Mistik Tarot</span>
+        <div className="text-center mb-10">
+           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/5 text-rose-400 text-[10px] md:text-xs font-mono uppercase tracking-widest shadow-xl">
+             <Star className="w-3.5 h-3.5" /> 3 Kart Tarot Açılımı
+           </div>
+           <h1 className="font-serif text-4xl md:text-6xl font-bold leading-[1.1] text-white tracking-tight mb-4">
+              Geleceğiniz <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-rose-500 to-pink-500">
+                Kartlarda Gizli
+              </span>
+           </h1>
+           <p className="text-slate-400 text-sm md:text-base font-light max-w-xl mx-auto">
+              Niyetinize odaklanın, sorunuzu yazın ve yapay zeka kahinimizin kartlarınızı okumasına izin verin.
+           </p>
         </div>
-        
-        <div className="w-16 md:w-20"></div> 
-      </nav>
 
-      <main className="flex-1 flex flex-col items-center relative px-4 w-full max-w-7xl mx-auto mt-4 md:mt-8 overflow-x-hidden">
-      
-        {/* 1. AÇILIM TİPİ SEÇİMİ */}
-        {phase === 'type_select' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-                <div className="text-center mb-8 md:mb-12">
-                    <h1 className="text-3xl md:text-5xl font-serif text-white mb-2 md:mb-4 drop-shadow-2xl">Rehberini Seç</h1>
-                    <p className="text-slate-400 font-light text-sm md:text-lg flex items-center justify-center gap-2">
-                        <Zap className="w-4 h-4 text-purple-400" /> Her açılım 2 Kredi değerindedir.
-                    </p>
-                </div>
+        {/* --- İNTERAKTİF TAROT KUTUSU --- */}
+        <div className="relative w-full max-w-4xl min-h-[500px] md:min-h-[550px] bg-[#131722]/80 backdrop-blur-xl border border-white/10 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(225,29,72,0.1)] overflow-hidden flex flex-col items-center justify-center p-4 md:p-8 transition-all duration-700">
+            
+            <AnimatePresence mode="wait">
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    {SPREAD_CONFIG.map((spread) => {
-                          const isLocked = spread.id === 'dream_special' && !latestDream;
-                          return (
-                            <motion.div 
-                                key={spread.id}
-                                whileHover={!isLocked ? { y: -8, scale: 1.02 } : {}}
-                                onClick={() => !isLocked && handleSelectSpread(spread)}
-                                className={`
-                                    relative group cursor-pointer rounded-2xl md:rounded-3xl p-5 md:p-6 flex flex-col items-start justify-between min-h-[220px] md:min-h-[280px]
-                                    border backdrop-blur-md transition-all duration-500 overflow-hidden
-                                    ${spread.theme.bg} ${spread.theme.border} ${spread.theme.glow} hover:shadow-2xl
-                                    ${isLocked ? 'opacity-50 grayscale cursor-not-allowed' : ''}
-                                `}
-                            >
-                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay"></div>
-                                <div className="relative z-10 w-full">
-                                    <div className="flex justify-between items-start mb-4 md:mb-6">
-                                        <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl ${spread.theme.iconBg} shadow-inner`}>
-                                            {spread.id === 'dream_special' && isLocked ? <Lock className="w-5 h-5 md:w-6 md:h-6" /> : spread.icon}
-                                        </div>
-                                        <span className="text-[9px] md:text-[10px] font-mono tracking-widest text-slate-400 border border-white/5 px-2 py-1 rounded bg-black/20">
-                                            {spread.count} KART
-                                        </span>
-                                    </div>
-                                    <h3 className={`text-xl md:text-2xl font-serif text-white mb-1 md:mb-2 ${isLocked ? 'text-slate-400' : ''}`}>
-                                        {spread.name}
-                                    </h3>
-                                    <p className="text-xs md:text-sm text-slate-400 leading-relaxed font-light">
-                                        {spread.desc}
-                                    </p>
-                                </div>
-                                {spread.id === 'dream_special' && latestDream && (
-                                     <div className="relative z-10 mt-3 md:mt-4 w-full pt-3 md:pt-4 border-t border-white/5">
-                                          <p className="text-[10px] md:text-xs text-amber-500/80 truncate flex items-center gap-2">
-                                               <Info className="w-3 h-3" /> Son: {latestDream.title}
-                                          </p>
-                                     </div>
-                                )}
-                            </motion.div>
-                          )
-                    })}
-                </div>
-            </motion.div>
-        )}
-
-        {/* 2. NİYET EKRANI */}
-        {phase === 'intention' && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-xl mt-4 md:mt-8">
-                <div className={`relative bg-black/40 border backdrop-blur-xl rounded-[2rem] p-6 md:p-10 text-center shadow-2xl ${selectedSpread.theme.border}`}>
-                    <div className={`w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 md:mb-6 rounded-full flex items-center justify-center ${selectedSpread.theme.iconBg} animate-pulse`}>
-                        {selectedSpread.icon}
+                {/* --- PHASE 1: NİYET (INTENTION) --- */}
+                {phase === 'intention' && (
+                <motion.div 
+                    key="intention"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, filter: "blur(10px)" }}
+                    className="relative z-10 w-full max-w-lg text-center"
+                >
+                    <div className="w-16 h-16 mx-auto bg-rose-500/10 rounded-2xl flex items-center justify-center mb-6 border border-rose-500/20 shadow-[0_0_30px_rgba(225,29,72,0.15)]">
+                        <Layers className="w-8 h-8 text-rose-500" />
                     </div>
-                    <h2 className="text-2xl md:text-3xl font-serif text-white mb-2 md:mb-3">Niyetine Odaklan</h2>
-                    <p className="text-slate-400 text-xs md:text-sm mb-6 md:mb-8 font-light">
-                        Zihnini boşalt ve sorunu evrene fısılda. Kartlar enerjine cevap verecek.
+
+                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-3">Kartlara Ne Sormak İstersiniz?</h2>
+                    <p className="text-slate-400 mb-8 text-sm font-light">
+                        Zihninizi boşaltın. Sadece cevabını aradığınız o tek konuya odaklanın.
                     </p>
-                    <textarea
-                        value={intention}
-                        onChange={(e) => setIntention(e.target.value)}
-                        placeholder="Örn: Bu ilişkide beni neler bekliyor?"
-                        className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-4 md:p-5 text-white placeholder-slate-600 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 resize-none h-28 md:h-36 transition-all text-base md:text-lg font-light"
-                        autoFocus
-                    />
+
+                    <div className="relative group mb-6">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-rose-500 to-pink-500 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-1000"></div>
+                        <input 
+                            type="text"
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            placeholder="Örn: Bu ilişkide beni neler bekliyor?"
+                            className="relative w-full bg-[#0B0F19] text-white p-5 rounded-2xl border border-white/5 outline-none focus:border-rose-500/50 transition-colors text-center text-sm md:text-base placeholder:text-slate-600"
+                            onKeyDown={(e) => e.key === 'Enter' && handleIntentionSubmit()}
+                        />
+                    </div>
+
                     <button 
-                        onClick={handleStartRitual}
-                        disabled={!intention || !intention.trim()} // GÜVENLİK
-                        className="mt-6 md:mt-8 w-full py-3 md:py-4 rounded-xl font-bold text-base md:text-lg tracking-wide transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed bg-white text-black hover:bg-slate-200 hover:scale-[1.02]"
+                        onClick={handleIntentionSubmit}
+                        disabled={!question.trim()}
+                        className="px-10 py-4 bg-white text-[#0B0F19] font-bold rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xl flex items-center gap-2 mx-auto"
                     >
-                        Kartları Karıştır
+                        Enerjimi Gönder <ArrowRight className="w-5 h-5" />
                     </button>
-                </div>
-            </motion.div>
-        )}
+                </motion.div>
+                )}
 
-        {/* ... (ŞU KISIMLAR AYNI KALACAK: Shuffle, Spread, Reading) ... */}
-        {phase === 'shuffle' && (
-            <div className="flex flex-col items-center justify-center h-[400px] md:h-[500px]">
-                {/* ... (Shuffle animasyonları aynı) ... */}
-                <div className="relative w-24 h-36 md:w-32 md:h-48">
-                    {[...Array(5)].map((_, i) => (
-                        <motion.div
+                {/* --- PHASE 2: KARIŞTIRMA (SHUFFLE) --- */}
+                {phase === 'shuffle' && (
+                <motion.div 
+                    key="shuffle"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col items-center justify-center z-10"
+                >
+                    <motion.p 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-rose-400 font-serif text-xl md:text-2xl mb-12 text-center max-w-md italic"
+                    >
+                        "{question}"
+                    </motion.p>
+
+                    <div className="relative w-32 h-48">
+                        {[...Array(5)].map((_, i) => (
+                            <motion.div
                             key={i}
-                            animate={{ x: [0, 30, -30, 0], rotate: [0, 5, -5, 0], scale: [1, 1.05, 1] }}
-                            transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.05 }}
-                            className={`absolute inset-0 rounded-xl bg-slate-900 border border-white/10 shadow-2xl ${selectedSpread.theme.glow}`}
+                            animate={{ x: [0, 60, -60, 0], rotate: [0, 15, -15, 0], scale: [1, 1.05, 1] }}
+                            transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
+                            className="absolute inset-0 bg-gradient-to-br from-[#131722] to-[#0B0F19] rounded-xl border border-rose-500/20 shadow-2xl"
                             style={{ zIndex: i }}
-                        >
-                            <div className="w-full h-full flex items-center justify-center opacity-20">
-                                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                            >
+                            <div className="w-full h-full flex items-center justify-center opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
+                                <RefreshCcw className="w-8 h-8 text-rose-500" />
                             </div>
-                        </motion.div>
-                    ))}
-                </div>
-                <p className="mt-8 md:mt-10 text-slate-300 text-xs md:text-sm font-mono tracking-[0.3em] animate-pulse">ENERJİ YÜKLENİYOR</p>
-            </div>
-        )}
+                            </motion.div>
+                        ))}
+                    </div>
+                    <p className="mt-10 text-slate-500 text-[10px] tracking-widest font-mono uppercase animate-pulse">Kozmik Bağ Bağlanıyor</p>
+                </motion.div>
+                )}
 
-        {phase === 'spread' && (
-            <div className="w-full flex flex-col items-center h-full">
-                {/* ... (Spread Grid render aynı) ... */}
-                <div className="text-center py-4 md:py-6">
-                      <h3 className="text-xl md:text-2xl font-serif text-white">Kartlarını Seç</h3>
-                      <p className={`text-xs md:text-sm mt-1 md:mt-2 font-mono ${selectedSpread.theme.accent}`}>
-                          {selectedIndices.length} / {selectedSpread.count} SEÇİLDİ
-                      </p>
-                </div>
-                <div className="w-full max-w-6xl flex justify-center perspective-1000">
-                    <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2 md:gap-3">
-                        {deckOrder.map((deckIndex, i) => { 
-                            const isSelected = selectedIndices.includes(i);
+                {/* --- PHASE 3: SEÇİM (SPREAD) --- */}
+                {phase === 'spread' && (
+                <motion.div 
+                    key="spread"
+                    className="w-full h-full flex flex-col items-center justify-center py-4 z-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                >
+                    <div className="text-center mb-8">
+                        <h3 className="text-white font-serif text-2xl mb-2">3 Kart Seç</h3>
+                        <p className="text-slate-500 text-xs italic">Niyetin: {question}</p>
+                    </div>
+
+                    {/* Yelpaze */}
+                    <div className="relative h-[220px] md:h-[260px] w-full flex justify-center items-end mt-4 perspective-1000">
+                        {[...Array(22)].map((_, i) => {
+                            if (selectedCards.find(c => c.tempId === i)) return null; 
+                            
+                            const spread = isMobile ? 12 : 20;
+                            const angle = (i - 11) * 3;
+                            const x = (i - 11) * spread;
+                            const y = Math.abs(i - 11) * 2;
+
                             return (
                                 <motion.div
                                     key={i}
-                                    className="relative w-10 h-16 sm:w-14 sm:h-20 md:w-20 md:h-32 cursor-pointer"
-                                    onClick={() => handleCardClick(i)}
-                                    initial={{ opacity: 0, scale: 0.5 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: i * 0.002 }}
+                                    initial={{ y: 300, opacity: 0 }}
+                                    animate={{ y: y, x: x, rotate: angle, opacity: 1 }}
+                                    transition={{ delay: i * 0.02, type: "spring" }}
+                                    whileHover={{ y: y - 40, scale: 1.1, zIndex: 50 }}
+                                    onClick={() => handleCardPick(i)}
+                                    className="absolute w-16 h-28 md:w-24 md:h-40 bg-gradient-to-br from-[#131722] to-[#0B0F19] border border-white/10 rounded-lg cursor-pointer shadow-[-5px_0_15px_rgba(0,0,0,0.5)] hover:border-rose-500 hover:shadow-[0_0_20px_rgba(225,29,72,0.4)] transition-colors origin-bottom"
                                 >
-                                    <motion.div
-                                        className="w-full h-full relative preserve-3d transition-all duration-500"
-                                        initial={false}
-                                        animate={{ rotateY: isSelected ? 180 : 0, y: isSelected ? -20 : 0 }}
-                                        style={{ transformStyle: "preserve-3d" }}
-                                    >
-                                        <div className={`absolute inset-0 backface-hidden rounded md:rounded-lg flex items-center justify-center shadow-md bg-slate-900 border border-white/10 ${isSelected ? 'ring-2 ring-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : ''}`}>
-                                            <div className={`w-full h-full absolute bg-gradient-to-tr ${selectedSpread.theme.ambient} opacity-40`}></div>
-                                        </div>
-                                    </motion.div>
+                                    <div className="w-full h-full flex items-center justify-center opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
                                 </motion.div>
                             )
                         })}
                     </div>
-                </div>
-            </div>
-        )}
 
-        {phase === 'reading' && (
-            <div className="flex flex-col items-center justify-center mt-20 md:mt-32">
-                <div className={`w-12 h-12 md:w-16 md:h-16 border-4 border-t-transparent rounded-full animate-spin ${selectedSpread.theme.accent.replace('text-', 'border-')}`}></div>
-                <h2 className="text-lg md:text-2xl font-serif text-white mt-6 md:mt-8 animate-pulse text-center px-4">Kozmik Bağlantı Kuruluyor...</h2>
-            </div>
-        )}
-
-        {/* 6. SONUÇ EKRANI (GÜVENLİ RENDER) */}
-        {phase === 'result' && readingResult && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-5xl mt-4 md:mt-6 pb-24 md:pb-20">
-                
-                {/* KEHANET ÖZETİ (BANNER) */}
-                <div className={`mb-10 p-6 md:p-10 border rounded-[2.5rem] text-center bg-black/40 backdrop-blur-xl relative overflow-hidden ${selectedSpread.theme.border} shadow-2xl`}>
-                    <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent`}></div>
-                    <Sparkles className={`w-8 h-8 mx-auto mb-4 ${selectedSpread.theme.accent}`} />
-                    <p className="text-white italic text-lg md:text-2xl font-serif leading-relaxed px-4">
-                        "{readingResult.summary}"
-                    </p>
-                </div>
-
-                {/* DETAYLI KART ANALİZLERİ (LİSTE) */}
-                <div className="grid grid-cols-1 gap-6 mb-12">
-                   {readingResult.cards_analysis?.map((analysis: any, idx: number) => {
-                      // GÜVENLİ ERİŞİM
-                      const cardData = readingResult.selectedCardsData ? readingResult.selectedCardsData[idx] : null;
-                      
-                      return (
-                        <motion.div 
-                           key={idx}
-                           initial={{ opacity: 0, x: -30 }}
-                           animate={{ opacity: 1, x: 0 }}
-                           transition={{ delay: idx * 0.2 }}
-                           className="group flex flex-col md:flex-row gap-8 bg-[#0f172a]/40 border border-white/5 p-6 md:p-8 rounded-[2rem] hover:bg-[#1e293b]/50 transition-all duration-500 hover:border-white/10"
-                        >
-                           {/* Sol: Kart Görseli */}
-                           <div className="w-full md:w-48 shrink-0 flex flex-col items-center">
-                              <span className={`text-[10px] uppercase tracking-[0.2em] font-bold mb-4 bg-white/5 px-3 py-1 rounded-full ${selectedSpread.theme.accent}`}>
-                                 {analysis.position}
-                              </span>
-                              <div className="w-32 md:w-full aspect-[2/3] rounded-xl overflow-hidden border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)] transform group-hover:scale-105 transition-transform duration-500 relative">
-                                  {cardData ? (
-                                    <img src={cardData.image} alt={cardData.name} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <div className="w-full h-full bg-slate-800 flex items-center justify-center">?</div>
-                                  )}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                     <span className="text-white font-serif text-xs text-center px-2">{cardData?.name}</span>
-                                  </div>
-                              </div>
-                           </div>
-
-                           {/* Sağ: Kart Yorumu */}
-                           <div className="flex-1 flex flex-col justify-center">
-                              <h4 className="text-2xl font-serif text-white mb-3 text-center md:text-left">{analysis.card_name}</h4>
-                              <div className={`w-12 h-1 mb-4 mx-auto md:mx-0 bg-gradient-to-r from-transparent via-current to-transparent ${selectedSpread.theme.accent.replace('text-', 'text-')}`}></div>
-                              <p className="text-slate-300 text-sm md:text-lg leading-relaxed font-light text-justify italic">
-                                 {analysis.meaning}
-                              </p>
-                           </div>
-                        </motion.div>
-                      );
-                   })}
-                </div>
-
-                {/* GENEL SENTEZ VE TAVSİYE */}
-                <div className="bg-[#020617]/80 border border-white/10 rounded-[2.5rem] p-8 md:p-14 shadow-2xl backdrop-blur-3xl relative overflow-hidden">
-                    {/* Arkaplan Efekti */}
-                    <div className={`absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br ${selectedSpread.theme.ambient} blur-[100px] opacity-30 pointer-events-none`}></div>
-
-                    <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4 relative z-10">
-                        <Layers className={`w-7 h-7 ${selectedSpread.theme.accent}`} />
-                        Kozmik Sentez
-                    </h2>
-                    
-                    <div className="prose prose-invert max-w-none text-slate-300 leading-8 md:leading-10 font-light text-base md:text-xl text-justify mb-10 relative z-10">
-                        <p>{readingResult.synthesis}</p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-8 pt-8 border-t border-white/5 relative z-10">
-                        <div className="bg-white/5 p-6 md:p-8 rounded-3xl border border-white/5 hover:border-white/10 transition-colors">
-                            <h4 className={`text-xs font-bold uppercase mb-4 flex items-center gap-2 ${selectedSpread.theme.accent}`}>
-                                <Star className="w-4 h-4"/> Yol Gösterici Tavsiye
-                            </h4>
-                            <p className="text-slate-200 italic text-sm md:text-lg">"{readingResult.advice}"</p>
-                        </div>
-                        
-                        <div>
-                            <h4 className="text-slate-500 text-xs font-bold uppercase mb-4">Semboller</h4>
-                            <div className="flex flex-wrap gap-3">
-                                {readingResult.keywords?.map((kw: string, i: number) => (
-                                    <span key={i} className="px-4 py-2 rounded-xl bg-white/5 text-xs text-slate-300 border border-white/5 font-medium tracking-wide">
-                                        #{kw}
-                                    </span>
-                                ))}
+                    {/* Slotlar */}
+                    <div className="flex gap-4 mt-12">
+                        {[0, 1, 2].map((slot) => (
+                            <div key={slot} className="w-16 h-24 md:w-20 md:h-32 rounded-xl border-2 border-dashed border-white/10 flex items-center justify-center bg-[#0B0F19] relative">
+                                {selectedCards[slot] ? (
+                                    <motion.div 
+                                    layoutId={`card-${selectedCards[slot].tempId}`}
+                                    className="absolute inset-0 bg-gradient-to-br from-rose-900/40 to-[#0B0F19] rounded-xl border border-rose-500/50 flex items-center justify-center"
+                                    >
+                                        <Sparkles className="w-5 h-5 text-rose-400" />
+                                    </motion.div>
+                                ) : (
+                                    <span className="text-slate-600 font-mono text-xs">{slot + 1}</span>
+                                )}
                             </div>
+                        ))}
+                    </div>
+                </motion.div>
+                )}
+
+                {/* --- PHASE 4: KİLİTLİ SONUÇ --- */}
+                {phase === 'locked_result' && (
+                <motion.div 
+                    key="locked_result" 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="w-full max-w-3xl z-10 flex flex-col items-center justify-center"
+                >
+                    <div className="mb-10 text-center">
+                        <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2">Kartların Açıldı</h3>
+                        <p className="text-slate-400 text-sm font-light">Seçtiğiniz bu 3 kartın kombinasyonu kaderiniz hakkında ne söylüyor?</p>
+                    </div>
+
+                    {/* KARTLAR */}
+                    <div className="flex justify-center gap-4 md:gap-8 mb-10 w-full">
+                        {selectedCards.map((card, i) => (
+                            <motion.div 
+                            key={i}
+                            initial={{ rotateY: 90, opacity: 0 }}
+                            animate={{ rotateY: 0, opacity: 1 }}
+                            transition={{ delay: i * 0.2, type: "spring", stiffness: 100 }}
+                            className="relative w-24 h-40 md:w-36 md:h-56 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group transform hover:-translate-y-2 transition-transform duration-300"
+                            >
+                                <img src={card.image} alt={card.name} className="w-full h-full object-cover" />
+                                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/90 to-transparent p-3 pt-8 text-center">
+                                    <p className="text-rose-400 text-[8px] md:text-[9px] font-bold uppercase tracking-widest mb-1">
+                                        {i === 0 ? "Geçmiş" : i === 1 ? "Şimdi" : "Gelecek"}
+                                    </p>
+                                    <p className="text-white font-serif text-xs md:text-sm font-bold truncate">
+                                        {card.name}
+                                    </p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* KİLİTLİ ANALİZ KUTUSU */}
+                    <div className="w-full bg-[#0B0F19] border border-white/5 rounded-2xl overflow-hidden relative shadow-2xl">
+                        
+                        <div className="p-6 md:p-8 opacity-20 filter blur-[4px] grayscale select-none space-y-3 pointer-events-none">
+                            <h4 className="text-xl font-serif text-white mb-2">Gizli Anlam</h4>
+                            <p className="text-sm">Seçtiğiniz kartlar arasındaki enerji akışı, özellikle {selectedCards[1]?.name} kartının etkisiyle...</p>
+                            <div className="w-full h-3 bg-slate-600 rounded"></div>
+                            <div className="w-2/3 h-3 bg-slate-600 rounded"></div>
+                            <div className="w-3/4 h-3 bg-slate-600 rounded"></div>
+                        </div>
+
+                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/90 to-transparent p-6 text-center">
+                            <div className="w-12 h-12 bg-rose-500/10 rounded-xl flex items-center justify-center mb-4 border border-rose-500/20">
+                                <Lock className="w-5 h-5 text-rose-500" />
+                            </div>
+                            <h3 className="text-lg md:text-xl font-bold text-white mb-2">Detaylı Analiz Hazır</h3>
+                            <p className="text-slate-400 text-xs md:text-sm mb-6 max-w-sm font-light">
+                                Bu kartların aşk, kariyer ve gelecek üzerindeki gizli etkilerini öğrenmek için hemen devam et.
+                            </p>
+
+                            <button 
+                                onClick={() => handleUnlockResult(!!user)}
+                                className="px-8 py-3.5 rounded-xl bg-white text-[#0B0F19] font-bold text-sm md:text-base hover:bg-slate-200 transition-colors shadow-lg flex items-center gap-2"
+                            >
+                                {user ? "Sonucumu Görüntüle" : "Ücretsiz Kilidi Aç ve Oku"} <ArrowRight className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
 
-                    <div className="mt-12 text-center relative z-10">
-                        <button onClick={reset} className="w-full md:w-auto px-12 py-4 rounded-full bg-white text-black font-bold uppercase tracking-widest hover:scale-[1.02] hover:bg-slate-200 transition-all shadow-xl flex items-center justify-center gap-3 mx-auto">
-                            <RefreshCcw className="w-4 h-4" /> Yeni Bir Yolculuk
-                        </button>
-                    </div>
-                </div>
+                </motion.div>
+                )}
 
-            </motion.div>
-        )}
+            </AnimatePresence>
+        </div>
+      </section>
 
-      </main>
-    </div>
-  );
-}
+      {/* --- REKLAM 1: HERO ALTI --- */}
+      <div className="max-w-5xl mx-auto w-full px-4 py-4 z-10 relative">
+          <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+          <AdUnit slot="8565155493" format="auto" />
+      </div>
 
-// --- ANA EXPORT (SUSPENSE WRAPPER) ---
-export default function TarotPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white font-serif">Kozmik veri yükleniyor...</div>}>
-       <TarotPageContent />
-    </Suspense>
+      {/* ================= 2. NASIL ÇALIŞIR ================= */}
+      <section className="py-20 border-y border-white/5 relative z-10 bg-[#131722]/30">
+         <div className="container mx-auto px-4 md:px-6 max-w-5xl">
+            <div className="text-center mb-16">
+               <h2 className="font-serif text-3xl md:text-4xl font-bold text-white mb-4">Geleneksel Bilgelik, Modern Algoritma</h2>
+               <p className="text-slate-400 text-sm md:text-base font-light max-w-2xl mx-auto">
+                  Sıradan bir fal uygulamasının ötesinde, seçtiğiniz kartların sembolizmini sizin niyetinizle harmanlayarak size özel bir yaşam rehberi sunuyoruz.
+               </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-rose-500/20 transition-all">
+                  <Moon className="w-6 h-6 text-rose-400 mb-5"/>
+                  <h3 className="text-lg font-bold text-white mb-2">Bilinçaltı Yansıması</h3>
+                  <p className="text-xs text-slate-400 font-light leading-relaxed">Kartlar rastgele gelmez. Seçim anınızdaki niyetiniz, algoritmanın sizin enerjinizle senkronize olmasını sağlar.</p>
+               </div>
+               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-rose-500/20 transition-all">
+                  <Compass className="w-6 h-6 text-rose-400 mb-5"/>
+                  <h3 className="text-lg font-bold text-white mb-2">Derin Semboloji</h3>
+                  <p className="text-xs text-slate-400 font-light leading-relaxed">Rider-Waite destesinin 78 kartlık derin sembolizmini kullanarak yüzeysel yorumlardan kaçınır, kök nedene ineriz.</p>
+               </div>
+               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-rose-500/20 transition-all">
+                  <BrainCircuit className="w-6 h-6 text-rose-400 mb-5"/>
+                  <h3 className="text-lg font-bold text-white mb-2">Yapay Zeka Sentezi</h3>
+                  <p className="text-xs text-slate-400 font-light leading-relaxed">Sorduğunuz özel soru ile kartların kombinasyonunu NLP ile birleştirerek eyleme dökülebilir tavsiyeler verir.</p>
+               </div>
+            </div>
+         </div>
+      </section>
+
+      {/* --- REKLAM 2 --- */}
+      <div className="max-w-5xl mx-auto w-full px-4 py-12 z-10 relative">
+          <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+          <AdUnit slot="4542150009" format="fluid" />
+      </div>
+
+      {/* ================= 3. DEV SEO MAKALESİ ================= */}
+      <section className="py-12 px-4 md:px-6 max-w-4xl mx-auto relative z-10">
+         <h2 className="font-serif text-2xl md:text-3xl font-bold text-white mb-10 border-b border-white/10 pb-6">
+            Tarot Falı ve Kartların Gizemli Dünyası
+         </h2>
+         
+         <div className="space-y-12 text-slate-400 font-light leading-relaxed text-sm md:text-base">
+            
+            <article className="space-y-4">
+               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-rose-400"/> Tarot Falı Nedir? Nasıl Bakılır?
+               </h3>
+               <p>
+                  Yüzyıllardır insanların geleceği anlamlandırmak ve içsel rehberlik bulmak için başvurduğu <strong>Tarot</strong>, 78 kartlık bir desteden oluşur. İnternette en çok aranan <strong>"Ücretsiz tarot falı bak"</strong> veya <strong>"3 kart tarot açılımı"</strong> gibi terimler, insanların hızlıca bir yol göstericiye ihtiyaç duyduğunu kanıtlar.
+               </p>
+               <p>
+                  Ancak tarot sadece geleceği söyleyen bir araç değil, aynı zamanda bilinçaltınızın aynasıdır. Platformumuzda kartlarınızı seçerken asıl önemli olan, zihninizde tuttuğunuz o spesifik <strong>niyet</strong>tir (Aşk, Kariyer, Karar aşaması vb.).
+               </p>
+            </article>
+
+            <article className="space-y-4">
+               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <Star className="w-5 h-5 text-rose-400"/> 3 Kart Açılımı (Geçmiş, Şimdi, Gelecek)
+               </h3>
+               <p>
+                  En popüler ve etkili yöntemlerden biri <strong>3 kart tarot açılımı</strong>dır. Birinci kart geçmişte yaşadığınız ve bugünü şekillendiren kök nedeni; ikinci kart şu anki enerjinizi ve durumunuzu; üçüncü kart ise bu yolda devam ederseniz varacağınız muhtemel geleceği (potansiyel sonucu) gösterir.
+               </p>
+            </article>
+
+            {/* REKLAM 3: SEO İÇERİĞİ ARASI */}
+            <div className="py-6 border-y border-white/5 my-6">
+                <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+                <AdUnit slot="4542150009" format="fluid" />
+            </div>
+
+            <article className="space-y-4">
+               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <BrainCircuit className="w-5 h-5 text-rose-400"/> Yapay Zeka ile Modern Yorumlama
+               </h3>
+               <p>
+                  Geleneksel falcılardan farklı olarak, sistemimiz yapay zeka destekli bir <strong>tarot okuması</strong> gerçekleştirir. Seçtiğiniz kartların Majör Arkana (Büyük sırlar) mı yoksa Minör Arkana mı olduğunu analiz eder ve sorduğunuz soruya en uygun, psikolojik temelli, eyleme geçirilebilir bir sentez raporu sunar.
+               </p>
+            </article>
+
+         </div>
+      </section>
+
+      {/* REKLAM 4: İÇERİK SONU MULTIPLEX */}
+      <div className="max-w-4xl mx-auto w-full px-4 mt-4 mb-20 z-10 relative">
+          <p className="text-center text-[10px] text-slate-600 mb-4 uppercase tracking-widest font-bold">İlginizi Çekebilir</p>
+          <AdUnit slot="6481917633" format="autorelaxed" />
+      </div>
+
+    </main>
   );
 }

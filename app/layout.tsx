@@ -10,6 +10,8 @@ import NavbarWrapper from "@/components/NavbarWrapper";
 import HideOnDashboard from "@/components/HideOnDashboard";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
+// --- 1. FONTLAR ---
+// Tasarımın "Mistik" havası için Cinzel, "Modern" okunabilirliği için Manrope
 const cinzel = Cinzel({ 
   subsets: ["latin"], 
   variable: "--font-cinzel",
@@ -22,27 +24,20 @@ const manrope = Manrope({
   display: "swap",
 });
 
+// --- 2. METADATA & SEO ---
 export const metadata: Metadata = {
-  // Canonical URL ayarı
   metadataBase: new URL('https://www.ruyayorumcum.com.tr'),
-  
   alternates: {
     canonical: './',
   },
-  
   title: {
     default: "Rüya Yorumcum AI - İslami ve Psikolojik Rüya Tabirleri",
     template: "%s | Rüya Yorumcum AI", 
   },
   description: "Rüyalarınızın gizli mesajlarını yapay zeka ile çözün. İslami kaynaklar ve modern psikoloji ışığında size özel rüya yorumları.",
-
-  // --- EKLENEN KISIM: Google AdSense Meta Doğrulaması ---
-  // Bu, <meta name="google-adsense-account" content="..."> etiketini oluşturur.
   other: {
     "google-adsense-account": "ca-pub-1582674739139734",
   },
-  
-  // Robots ayarı
   robots: {
     index: true,
     follow: true,
@@ -54,14 +49,12 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-
   manifest: "/manifest.json",
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
     apple: '/icon.png',
   },
-  
   openGraph: {
     title: 'Rüya Yorumcum AI',
     description: 'Rüyalarınızın gizli mesajlarını yapay zeka ile çözün.',
@@ -70,8 +63,6 @@ export const metadata: Metadata = {
     locale: 'tr_TR',
     type: 'website',
   },
-  
-  // NOT: Google Search Console (Webmaster Tools) doğrulama kodun varsa burayı güncellemeyi unutma.
   verification: {
     google: 'google-site-verification-kodunuzu-buraya-yazin', 
     yandex: 'yandex-verification-kodunuz',
@@ -87,6 +78,7 @@ export const viewport: Viewport = {
   themeColor: "#020617",
 };
 
+// --- 3. SCHEMA MARKUP ---
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
@@ -102,25 +94,23 @@ const jsonLd = {
   }
 };
 
+// --- 4. ROOT LAYOUT ---
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr">
+    <html lang="tr" className={`${cinzel.variable} ${manrope.variable}`}>
       <head>
-        {/* Schema Markup */}
+        {/* Schema JSON-LD */}
         <Script
           id="json-ld-website"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         
-        {/* --- GOOGLE ADSENSE (ANA SCRIPT - DÜZELTİLMİŞ HALİ) --- 
-            Burada Next.js'in "Script" bileşeni YERİNE standart HTML "script" etiketi kullanıyoruz.
-            Böylece kodun sayfa sonuna taşınmasını engelliyor ve HEAD içinde kalmasını sağlıyoruz.
-        */}
+        {/* Google AdSense (HEAD içine manuel script) */}
         <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
@@ -128,7 +118,8 @@ export default function RootLayout({
         ></script>
       </head>
       
-      <body className={`${cinzel.variable} ${manrope.variable} font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh]`}>
+      {/* Body: Font değişkenlerini ve temel renkleri buraya uyguladık */}
+      <body className="font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh] relative selection:bg-[#fbbf24]/30">
         
         {/* Google Analytics & GTM */}
         <Script
@@ -147,33 +138,38 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* 1. NAVBAR */}
+        {/* MASAÜSTÜ NAVBAR */}
         <HideOnDashboard>
            <NavbarWrapper /> 
         </HideOnDashboard>
 
-        <main className="flex-grow pb-24 md:pb-0">
+        {/* ANA İÇERİK */}
+        <main className="flex-grow pb-24 md:pb-0 z-10 relative">
           {children}
         </main>
 
-        {/* 2. FOOTER */}
-        <div className="hidden md:block">
+        {/* MASAÜSTÜ FOOTER */}
+        <div className="hidden md:block z-10 relative">
           <HideOnDashboard>
              <Footer />
           </HideOnDashboard>
         </div>
 
-        {/* 3. MOBİL MENÜ */}
+        {/* MOBİL MENÜ (Bottom Nav) */}
         <HideOnDashboard>
            <MobileNav />
         </HideOnDashboard>
 
+        {/* BİLDİRİMLER (Toast) */}
         <Toaster position="top-center" richColors theme="dark" /> 
         
-        <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+        {/* NOISE TEXTURE OVERLAY (Tüm sayfada hafif bir doku oluşturur) */}
+        <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
         
+        {/* ÇEREZ POLİTİKASI */}
         <CookieConsent />
 
+        {/* VERCEL SPEED INSIGHTS */}
         <SpeedInsights />
 
       </body>

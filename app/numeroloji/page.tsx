@@ -6,9 +6,10 @@ import Link from "next/link";
 import { 
   Hash, Calculator, Sparkles, Star, 
   Binary, Infinity, Fingerprint, 
-  ArrowRight, BookOpen, Quote, Calendar, User
+  ArrowRight, BookOpen, Quote, Calendar, User, ArrowDown
 } from "lucide-react";
 import Script from "next/script";
+import AdUnit from "@/components/AdUnit"; 
 
 // --- SEO SCHEMA ---
 const numerologySchema = {
@@ -16,15 +17,15 @@ const numerologySchema = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "name": "Rüya Numerolojisi ve Ebcet Hesaplama",
+      "name": "Rüya Numerolojisi ve Yaşam Yolu Hesaplama",
       "applicationCategory": "LifestyleApplication",
       "operatingSystem": "Web",
-      "description": "Rüyalarınızdaki sembollerin Ebcet değerini hesaplayın ve şanslı sayılarınızı öğrenin."
+      "description": "Doğum tarihiniz ve isminizle yaşam yolu sayınızı, kader şifrenizi ve Ebcet değerinizi hesaplayın."
     },
     {
       "@type": "Article",
-      "headline": "Rüyaların Sayısal Şifresi: Ebcet ve Numeroloji Nedir?",
-      "description": "Pisagor numerolojisi ve İslam geleneğindeki Ebcet hesabının rüya tabirindeki yeri.",
+      "headline": "Numeroloji Nedir? İsim ve Doğum Tarihi ile Kader Sayısı Hesaplama",
+      "description": "Pisagor numerolojisi ve İslam geleneğindeki Ebcet hesabının hayatımıza ve rüyalarımıza etkisi.",
       "author": { "@type": "Organization", "name": "Rüya Yorumcum AI" }
     }
   ]
@@ -33,128 +34,121 @@ const numerologySchema = {
 export default function NumerolojiLandingPage() {
   const router = useRouter();
   
-  // --- HOOK MODELİ İÇİN STATE ---
   const [fullName, setFullName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // --- HESAPLAMA VE YÖNLENDİRME ---
+  // Günümüz tarihini YYYY-MM-DD formatında al (Maksimum tarih için)
+  const today = new Date().toISOString().split('T')[0];
+
   const handleStartAnalysis = () => {
     if (!fullName.trim() || !birthDate) return;
-    
     setIsCalculating(true);
 
-    // 1. Verileri paketle
     const pendingData = { fullName, birthDate };
 
-    // 2. LocalStorage'a kaydet (Dashboard'da yakalamak için)
     if (typeof window !== 'undefined') {
         localStorage.setItem("pending_numerology_data", JSON.stringify(pendingData));
     }
 
-    // 3. Yapay bir gecikme (Hesaplanıyor hissi) ve Yönlendirme
     setTimeout(() => {
-        // Doğrudan genel numeroloji sayfasına yönlendiriyoruz (Auth middleware araya girecek)
         router.push("/auth?redirect=/dashboard/numerology/genel");
     }, 800);
   };
 
   return (
-    <main className="min-h-screen bg-[#020617] text-white font-sans selection:bg-amber-500/30 pb-12 md:pb-20 overflow-x-hidden">
+    <main className="min-h-screen bg-[#0B0F19] text-slate-300 font-sans selection:bg-amber-500/30 pb-20 overflow-x-hidden relative scroll-smooth">
       <Script
         id="numerology-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(numerologySchema) }}
       />
 
-      {/* --- 1. HERO SECTION --- */}
-      <section className="relative pt-28 md:pt-32 pb-12 md:pb-20 px-4 md:px-6 overflow-hidden">
-        {/* Arkaplan Efektleri */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[350px] h-[350px] md:w-[1200px] md:h-[800px] bg-amber-600/5 rounded-[100%] blur-[80px] md:blur-[150px] pointer-events-none"></div>
-        <div className="absolute top-20 right-5 md:right-20 w-16 h-16 md:w-32 md:h-32 border border-white/5 rounded-full animate-spin-slow opacity-20 pointer-events-none"></div>
-        <div className="absolute bottom-20 left-5 md:left-20 w-24 h-24 md:w-48 md:h-48 border border-dashed border-white/5 rounded-full animate-reverse-spin opacity-20 pointer-events-none"></div>
+      {/* --- ATMOSFER --- */}
+      <div className="fixed inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay z-0" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-amber-600/5 rounded-full blur-[150px] pointer-events-none z-0"></div>
 
-        <div className="container mx-auto max-w-7xl grid lg:grid-cols-2 gap-10 md:gap-16 items-center relative z-10">
+      {/* ================= 1. HERO SECTION (Minimal & Akademik) ================= */}
+      <section className="relative pt-32 md:pt-48 pb-16 px-4 md:px-6 z-10 min-h-[85vh] flex items-center">
+        <div className="container mx-auto max-w-7xl grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           
-          {/* SOL: METİN VE VAAT */}
-          <div className="space-y-6 md:space-y-8 text-center lg:text-left order-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-amber-500/20 transition-colors justify-center lg:justify-start">
-              <Hash className="w-3 h-3" /> Evrenin Matematiksel Dili
+          {/* SOL: COPYWRITING */}
+          <div className="lg:col-span-7 space-y-6 text-center lg:text-left relative z-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/5 text-slate-400 text-[10px] md:text-xs font-mono uppercase tracking-widest shadow-xl">
+              <Hash className="w-3.5 h-3.5 text-amber-500" /> Pisagor & Ebcet Sistemi
             </div>
             
-            <h1 className="font-serif text-4xl lg:text-7xl font-bold leading-[1.1]">
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-7xl font-bold leading-[1.1] text-white tracking-tight">
               Sayıların <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-600">
-                Gizemini Çözün
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">
+                Gizemini Çözün.
               </span>
             </h1>
             
-            <p className="text-gray-400 text-base md:text-lg leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              Her ismin bir frekansı, her doğum tarihinin bir kaderi vardır. <strong>Ebcet hesabı</strong> ve <strong>Pisagor numerolojisi</strong> ile ruhunuzun sayısal şifresini hemen çözün.
+            <p className="text-slate-400 text-sm md:text-base font-light leading-relaxed max-w-xl mx-auto lg:mx-0">
+              Evren matematikle konuşur. İsminizin frekansını ve doğum tarihinizin kaderinize etkisini antik numeroloji yöntemleriyle bilimsel bir temelde keşfedin.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
               <button 
                 onClick={() => document.getElementById('calculator-card')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-black font-bold text-base md:text-lg hover:scale-105 transition-all shadow-[0_0_30px_rgba(245,158,11,0.3)] flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm hover:bg-white/10 hover:border-amber-500/30 transition-colors flex items-center justify-center gap-2 shadow-lg backdrop-blur-sm group"
               >
-                <Calculator className="w-5 h-5" /> Şanslı Sayımı Bul
+                <Calculator className="w-4 h-4 text-amber-500" /> Analize Başla
               </button>
-              <Link href="#nasil-calisir" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-base md:text-lg hover:bg-white/10 transition-colors flex items-center justify-center">
-                Ebcet Nedir?
-              </Link>
             </div>
 
-            <div className="pt-4 md:pt-6 flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-6 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider border-t border-white/5 mt-4 md:mt-6">
-               <span className="flex items-center gap-2"><Infinity className="w-3 h-3 md:w-4 md:h-4 text-amber-500" /> Sonsuz Döngü</span>
-               <span className="flex items-center gap-2"><Binary className="w-3 h-3 md:w-4 md:h-4 text-amber-500" /> Ebcet Değeri</span>
-               <span className="flex items-center gap-2"><Star className="w-3 h-3 md:w-4 md:h-4 text-amber-500" /> Şans Faktörü</span>
+            <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-[9px] md:text-[10px] font-mono text-slate-500 uppercase tracking-widest border-t border-white/5 mt-6">
+               <span className="flex items-center gap-1.5"><Infinity className="w-3 h-3 text-slate-600" /> Yaşam Yolu Raporu</span>
+               <span className="flex items-center gap-1.5"><Binary className="w-3 h-3 text-slate-600" /> İsim Titreşimi</span>
             </div>
           </div>
 
           {/* SAĞ: İNTERAKTİF HESAPLAMA KARTI (HOOK) */}
-          <div id="calculator-card" className="order-2 perspective-1000 group relative px-2 md:px-0">
-             <div className="relative z-30 bg-[#0f172a] border border-amber-500/30 rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-2xl transform transition-transform duration-700 hover:shadow-amber-900/20">
+          <div id="calculator-card" className="lg:col-span-5 relative w-full perspective-1000 mt-4 lg:mt-0 px-2 md:px-0">
+             <div className="relative z-30 bg-[#131722]/90 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-[0_20px_60px_-15px_rgba(245,158,11,0.1)]">
                 
                 {/* Header */}
-                <div className="flex justify-between items-center mb-6 md:mb-8 pb-4 border-b border-white/5">
+                <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500 animate-pulse"><Hash className="w-5 h-5 md:w-6 md:h-6"/></div>
+                      <div className="p-2 bg-amber-500/10 rounded-xl"><Hash className="w-5 h-5 text-amber-500"/></div>
                       <div>
-                         <h3 className="text-white font-bold text-base md:text-lg">Numeroloji Haritanı Çıkar</h3>
-                         <p className="text-[10px] md:text-xs text-gray-500">Ücretsiz Yaşam Yolu Analizi</p>
+                         <h3 className="text-white font-bold text-sm md:text-base">Numeroloji Paneli</h3>
+                         <p className="text-[10px] text-slate-500 font-mono">Ücretsiz Şifre Çözücü</p>
                       </div>
                    </div>
                 </div>
 
                 {/* FORM INPUTLARI */}
-                <div className="space-y-4 md:space-y-5">
+                <div className="space-y-5">
                     
                     {/* İsim Input */}
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Adın Soyadın</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Adınız Soyadınız</label>
                         <div className="relative group/input">
-                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within/input:text-amber-500 transition-colors" />
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within/input:text-amber-500 transition-colors" />
                             <input 
                                 type="text" 
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
-                                placeholder="Örn: Ahmet Yılmaz"
-                                className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-gray-600 outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all font-medium"
+                                placeholder="Örn: Yunus Emre"
+                                className="w-full bg-[#0B0F19] border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-sm text-white placeholder-slate-600 outline-none focus:border-amber-500/30 transition-all"
                             />
                         </div>
                     </div>
 
-                    {/* Tarih Input */}
+                    {/* Tarih Input (Sınırlandırılmış) */}
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Doğum Tarihin</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Doğum Tarihiniz</label>
                         <div className="relative group/input">
-                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within/input:text-amber-500 transition-colors" />
+                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within/input:text-amber-500 transition-colors" />
                             <input 
                                 type="date" 
                                 value={birthDate}
+                                min="1920-01-01" // 1920'den öncesine izin verme
+                                max={today}      // Gelecek tarihe izin verme
                                 onChange={(e) => setBirthDate(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-gray-600 outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all font-medium appearance-none min-h-[56px]"
+                                className="w-full bg-[#0B0F19] border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-sm text-white placeholder-slate-600 outline-none focus:border-amber-500/30 transition-all appearance-none min-h-[50px] [color-scheme:dark]"
                             />
                         </div>
                     </div>
@@ -163,73 +157,68 @@ export default function NumerolojiLandingPage() {
                     <button 
                         onClick={handleStartAnalysis}
                         disabled={!fullName.trim() || !birthDate || isCalculating}
-                        className="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-black font-bold text-base uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group/btn"
+                        className="w-full mt-2 py-4 rounded-xl bg-amber-500 text-[#0B0F19] font-bold text-sm hover:bg-amber-400 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group/btn"
                     >
                         {isCalculating ? (
-                            <>Hesaplanıyor...</>
+                            <span className="font-mono animate-pulse">Veriler İşleniyor...</span>
                         ) : (
                             <>
-                                Analizi Başlat <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                                Frekansımı Hesapla <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                             </>
                         )}
                     </button>
-
-                    <p className="text-[10px] text-gray-600 text-center mt-2">
-                        *Pisagor ve Ebcet sistemlerine göre hesaplanır.
-                    </p>
                 </div>
-
              </div>
-
-             {/* Arka Dekorasyon */}
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-amber-500/10 blur-[60px] md:blur-[100px] -z-10"></div>
           </div>
 
         </div>
       </section>
 
-      {/* --- 2. TEKNOLOJİ VE TARİHÇE (Aynı kaldı) --- */}
-      <section id="nasil-calisir" className="py-16 md:py-24 bg-[#050a1f] border-t border-white/5 relative">
+      {/* --- REKLAM 1: HERO ALTI --- */}
+      <div className="max-w-6xl mx-auto w-full px-4 py-8 z-10 relative border-t border-white/5">
+          <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+          <AdUnit slot="8565155493" format="auto" />
+      </div>
+
+      {/* ================= 2. NASIL ÇALIŞIR (3'lü Kart) ================= */}
+      <section className="py-20 bg-[#131722]/30 border-y border-white/5 relative z-10">
          <div className="container mx-auto px-4 md:px-6 max-w-6xl">
             
-            <div className="text-center mb-12 md:mb-20">
-               <h2 className="font-serif text-2xl md:text-5xl font-bold mb-4 md:mb-6">Sayıların Diliyle Konuşmak</h2>
-               <p className="text-gray-400 text-sm md:text-lg max-w-3xl mx-auto">
-                  Antik çağlardan beri sayıların evrensel bir dili olduğuna inanılır. Platformumuz, bu kadim bilgeliği modern algoritmalarla birleştirir.
+            <div className="text-center mb-16">
+               <h2 className="font-serif text-3xl md:text-4xl font-bold text-white mb-4">Sistem Nasıl Analiz Eder?</h2>
+               <p className="text-slate-400 text-sm md:text-base font-light max-w-2xl mx-auto">
+                  Antik çağlardan günümüze kadar gelen iki büyük numerolojik öğretiyi dijital ortamda birleştirdik.
                </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-               {/* KART 1 */}
-               <div className="bg-[#0f172a] p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 hover:border-amber-500/30 transition-all group">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4 md:mb-6 text-amber-400 group-hover:scale-110 transition-transform">
-                     <Binary className="w-6 h-6 md:w-7 md:h-7" />
+            <div className="grid md:grid-cols-3 gap-8">
+               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-white/10 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-5 border border-white/10">
+                     <Binary className="w-5 h-5 text-amber-500" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Ebcet Hesabı</h3>
-                  <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
-                     İslam kültüründe harflerin sayısal değerleri vardır. Rüyadaki anahtar kelimelerin Ebcet değerini hesaplayarak size özel mesajı çözeriz.
+                  <h3 className="text-lg font-bold text-white mb-2">Ebcet Metodolojisi</h3>
+                  <p className="text-slate-400 text-xs font-light leading-relaxed">
+                     Arap alfabesindeki harflerin sayısal değerlerine dayanan bu sistemle, isminizin arkasında yatan manevi ağırlığı hesaplıyoruz.
                   </p>
                </div>
 
-               {/* KART 2 */}
-               <div className="bg-[#0f172a] p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 hover:border-orange-500/30 transition-all group">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 md:mb-6 text-orange-400 group-hover:scale-110 transition-transform">
-                     <Calculator className="w-6 h-6 md:w-7 md:h-7" />
+               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-white/10 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-5 border border-white/10">
+                     <Calculator className="w-5 h-5 text-amber-500" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Yaşam Yolu Analizi</h3>
-                  <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
-                     Doğum tarihiniz ve rüyanın görüldüğü tarih arasındaki matematiksel ilişkiyi inceler. Bu rüyanın hayatınızın hangi döngüsüne denk geldiğini bulur.
+                  <h3 className="text-lg font-bold text-white mb-2">Yaşam Yolu (Pisagor)</h3>
+                  <p className="text-slate-400 text-xs font-light leading-relaxed">
+                     Doğum tarihinizdeki rakamların tek haneli bir sayıya indirgenmesiyle elde edilen "Kader Sayınızı" buluyoruz.
                   </p>
                </div>
 
-               {/* KART 3 */}
-               <div className="bg-[#0f172a] p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 hover:border-yellow-500/30 transition-all group">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-yellow-500/10 flex items-center justify-center mb-4 md:mb-6 text-yellow-400 group-hover:scale-110 transition-transform">
-                     <Star className="w-6 h-6 md:w-7 md:h-7" />
+               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-white/10 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-5 border border-white/10">
+                     <Star className="w-5 h-5 text-amber-500" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-3">Şanslı Sayılar</h3>
-                  <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
-                     Rüyanızdan türetilen sayısal kombinasyonları (Loto, Şans Topu vb. için) size sunar. Bilinçaltınızın size fısıldadığı rakamları kaçırmayın.
+                  <h3 className="text-lg font-bold text-white mb-2">Kişisel Yıllar</h3>
+                  <p className="text-slate-400 text-xs font-light leading-relaxed">
+                     İçinde bulunduğunuz yılın sizin için şanslı mı yoksa bir dönüşüm yılı mı olduğunu hesaplayarak geleceğe ışık tutuyoruz.
                   </p>
                </div>
             </div>
@@ -237,93 +226,80 @@ export default function NumerolojiLandingPage() {
          </div>
       </section>
 
-      {/* --- 3. SEO MAKALELERİ VE BİLGİ --- */}
-      <section className="py-16 md:py-24 container mx-auto px-4 md:px-6 max-w-5xl">
-         <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-8 md:mb-12 border-b border-white/10 pb-4 md:pb-6">
-            <div className="p-2 md:p-3 bg-amber-500/10 rounded-xl w-fit">
-               <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-amber-400" />
-            </div>
-            <h2 className="font-serif text-2xl md:text-3xl font-bold">Numeroloji Rehberi</h2>
-         </div>
+      {/* --- REKLAM 2: BÖLÜM ARASI --- */}
+      <div className="max-w-5xl mx-auto w-full px-4 py-12 z-10 relative">
+          <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+          <AdUnit slot="4542150009" format="fluid" />
+      </div>
+
+      {/* ================= 3. DEV SEO MAKALESİ (Ansiklopedik Bilgi) ================= */}
+      <section className="py-12 px-4 md:px-6 max-w-4xl mx-auto relative z-10">
+         <h2 className="font-serif text-2xl md:text-3xl font-bold text-white mb-10 border-b border-white/10 pb-6">
+            Numeroloji ve Ebcet Hesabı Nedir?
+         </h2>
          
-         <div className="grid md:grid-cols-2 gap-8 md:gap-16 text-gray-400 text-sm leading-relaxed">
+         <div className="space-y-12 text-slate-400 font-light leading-relaxed text-sm md:text-base">
             
-            <article className="space-y-6">
-               <div>
-                  <h3 className="text-base md:text-lg font-bold text-white mb-2 md:mb-3 flex items-center gap-2">
-                     Nikola Tesla ve 3-6-9 Kodu
-                  </h3>
-                  <p>
-                     Tesla, "3, 6 ve 9'un gizemini çözseydiniz, evrenin anahtarına sahip olurdunuz" demiştir. Rüyalarınızda bu sayıların veya katlarının ne sıklıkla tekrar ettiğini analiz ediyoruz.
-                  </p>
-               </div>
-               
-               <div>
-                  <h3 className="text-base md:text-lg font-bold text-white mb-2 md:mb-3 flex items-center gap-2">
-                     Melek Sayıları (Angel Numbers)
-                  </h3>
-                  <p>
-                     Rüyanızda sürekli <strong>11:11</strong>, <strong>222</strong> veya <strong>444</strong> gibi tekrar eden sayılar mı görüyorsunuz? Bunlar "Melek Sayıları" olarak bilinir ve özel bir mesajı vardır.
-                  </p>
-               </div>
+            <article className="space-y-4">
+               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <Hash className="w-5 h-5 text-amber-500"/> Doğum Tarihi ile Yaşam Yolu Sayısı Hesaplama
+               </h3>
+               <p>
+                  Numeroloji, evrendeki her şeyin sayısal bir frekansa sahip olduğunu savunan kadim bir ilimdir. İnternette sıkça aranan <strong>"Kader sayısı nasıl hesaplanır?"</strong> sorusunun temeli Pisagor sistemine dayanır. Doğum tarihinizdeki gün, ay ve yıl rakamları toplanarak 1 ile 9 arasında tek haneli bir değere veya 11, 22, 33 gibi <strong>"Üstat Sayılara"</strong> (Master Numbers) indirgenir.
+               </p>
+               <p>
+                  Elde edilen bu <strong>yaşam yolu sayısı</strong>, kişinin bu hayattaki amacını, aşması gereken engelleri ve en güçlü yeteneklerini ortaya koyar. Kariyer seçiminden ilişki uyumuna kadar hayatın her alanında bir pusula görevi görür.
+               </p>
             </article>
 
-            <article className="space-y-6">
-               <div className="bg-[#0f172a] p-5 md:p-6 rounded-2xl border border-white/5 relative">
-                  <Quote className="absolute top-3 right-3 md:top-4 md:right-4 w-6 h-6 md:w-8 md:h-8 text-white/5 rotate-180" />
-                  <h4 className="text-white font-bold mb-3 md:mb-4 text-xs uppercase tracking-wider flex items-center gap-2">
-                     <Fingerprint className="w-4 h-4 text-amber-500" /> Örnek Analiz
-                  </h4>
-                  <p className="italic text-gray-500 mb-3 md:mb-4">
-                     "Rüyamda <strong>7</strong> katlı bir bina gördüm."
-                  </p>
-                  <ul className="space-y-2 text-xs md:text-sm">
-                     <li className="flex justify-between items-center border-b border-white/5 pb-2">
-                        <span>Sembolik Anlam:</span>
-                        <span className="text-amber-400 font-bold">Manevi Yükseliş</span>
-                     </li>
-                     <li className="flex justify-between items-center border-b border-white/5 pb-2">
-                        <span>Gezegen:</span>
-                        <span className="text-amber-400 font-bold">Neptün (Sezgi)</span>
-                     </li>
-                     <li className="flex justify-between items-center pt-2">
-                        <span>Tarot Karşılığı:</span>
-                        <span className="text-amber-400 font-bold">Savaş Arabası</span>
-                     </li>
-                  </ul>
-               </div>
+            <article className="space-y-4">
+               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-amber-500"/> Ebcet Hesabı ve İsim Analizi
+               </h3>
+               <p>
+                  İslam ve Ortadoğu geleneğinde yer alan <strong>Ebcet hesabı</strong>, Arap alfabesindeki her harfin belirli bir sayısal değere sahip olması prensibine dayanır. "İsim numerolojisi" olarak da bilinen bu yöntemde, adınızın ve soyadınızın harfleri toplanarak size özel bir rakam elde edilir.
+               </p>
+               <p>
+                  Özellikle yeni doğan bebeklere isim verirken veya hayatınızdaki önemli olayların (evlilik, iş kurma) tarihlerini seçerken bu sayısal titreşimlerden faydalanılır. İsminizin toplam değeri, karakterinizin dışa vurumunu ve insanların sizi nasıl algıladığını (İfade Sayısı) belirler.
+               </p>
             </article>
-         </div>
 
-         {/* Keyword Cloud */}
-         <div className="mt-12 md:mt-16 pt-8 md:pt-10 border-t border-white/5">
-            <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 md:mb-6">Popüler Hesaplamalar</h4>
-            <div className="flex flex-wrap gap-2 md:gap-3">
-               {[
-                  "Ebcet Hesabı", "İsim Analizi", "Doğum Tarihi Numerolojisi", 
-                  "Şanslı Sayılar", "Melek Sayıları", "11:11 Anlamı",
-                  "Rüya Sayısal Loto", "Kader Sayısı Hesaplama", "Aşk Uyumu Numeroloji"
-               ].map((tag, i) => (
-                  <span key={i} className="text-[10px] md:text-xs text-gray-500 border border-white/5 px-2 py-1.5 md:px-3 md:py-2 rounded-lg bg-[#020617] hover:border-amber-500/30 hover:text-white transition-colors cursor-default">
-                     #{tag}
-                  </span>
-               ))}
+            {/* REKLAM 3: SEO İÇERİĞİ ARASI */}
+            <div className="py-6 border-y border-white/5 my-6">
+                <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+                <AdUnit slot="4542150009" format="fluid" />
             </div>
+
+            <article className="space-y-4">
+               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <Fingerprint className="w-5 h-5 text-amber-500"/> Melek Sayıları (11:11, 333) ve Evrensel Mesajlar
+               </h3>
+               <p>
+                  Eğer sürekli olarak saate baktığınızda <strong>11:11</strong>, <strong>22:22</strong> görüyor veya rüyalarınızda 333, 777 gibi rakamlarla karşılaşıyorsanız, bu durum numerolojide "Melek Sayıları" (Angel Numbers) olarak adlandırılır. 
+               </p>
+               <p>
+                  Evrenin sizinle eşzamanlılık (synchronicity) üzerinden iletişim kurma şeklidir. Örneğin; 111 yeni başlangıçları, 777 ise spiritüel aydınlanmayı ve doğru yolda olduğunuzu simgeler. Platformumuz, girdiğiniz veriler ışığında hayatınızda tekrar eden bu gizli kalıpları da analiz eder.
+               </p>
+            </article>
+
          </div>
       </section>
 
-      {/* --- FOOTER CTA --- */}
-      <section className="py-16 md:py-20 text-center relative overflow-hidden">
-         <div className="container mx-auto px-4 md:px-6 relative z-10">
-            <h2 className="text-2xl md:text-4xl font-serif font-bold mb-4 md:mb-6 text-white">Sayıların Rehberliğine Güvenin</h2>
-            <p className="text-gray-400 mb-6 md:mb-8 text-base md:text-lg max-w-2xl mx-auto">
-               Rüyalarınızdaki matematiksel kodu çözmek ve şanslı sayılarınızı öğrenmek için hemen başlayın.
-            </p>
+      {/* REKLAM 4: İÇERİK SONU MULTIPLEX */}
+      <div className="max-w-4xl mx-auto w-full px-4 mt-4 mb-20 z-10 relative">
+          <p className="text-center text-[10px] text-slate-600 mb-4 uppercase tracking-widest font-bold">İlginizi Çekebilir</p>
+          <AdUnit slot="6481917633" format="autorelaxed" />
+      </div>
+
+      {/* ================= ALT BİTİRİŞ (Minimalist) ================= */}
+      <section className="py-12 text-center border-t border-white/5 relative z-10">
+         <div className="container mx-auto px-4">
+            <h2 className="font-serif text-xl md:text-2xl text-slate-400 mb-4">Kodunuzu Çözün.</h2>
             <button 
-                onClick={() => document.getElementById('calculator-card')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex w-full sm:w-auto items-center justify-center px-8 py-4 rounded-xl bg-white text-black font-bold text-base md:text-lg hover:bg-gray-200 transition-colors shadow-xl group"
+               onClick={() => document.getElementById('calculator-card')?.scrollIntoView({ behavior: 'smooth' })}
+               className="inline-flex items-center justify-center p-3 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all"
             >
-               Hemen Hesapla <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+               <ArrowDown className="w-5 h-5 animate-bounce" />
             </button>
          </div>
       </section>
