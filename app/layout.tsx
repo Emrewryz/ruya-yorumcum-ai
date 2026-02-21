@@ -119,6 +119,9 @@ export default function RootLayout({
         
         {/* Monetag Doğrulama Kodu */}
         <meta name="monetag" content="4bd56e59726a926274326a7f50b82613" />
+
+        {/* --- YENİ EKLENEN MONETAG REKLAM KODU --- */}
+        <script src="https://quge5.com/88/tag.min.js" data-zone="213154" async data-cfasync="false"></script>
         
       </head>
       
