@@ -116,9 +116,10 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
           crossOrigin="anonymous"
         ></script>
-        <head>
-  <meta name="monetag" content="4bd56e59726a926274326a7f50b82613" />
-</head>
+        
+        {/* Monetag Doğrulama Kodu */}
+        <meta name="monetag" content="4bd56e59726a926274326a7f50b82613" />
+        
       </head>
       
       {/* Body: Font değişkenlerini ve temel renkleri buraya uyguladık */}
