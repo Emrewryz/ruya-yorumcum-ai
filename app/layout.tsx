@@ -11,7 +11,6 @@ import HideOnDashboard from "@/components/HideOnDashboard";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // --- 1. FONTLAR ---
-// Tasarımın "Mistik" havası için Cinzel, "Modern" okunabilirliği için Manrope
 const cinzel = Cinzel({ 
   subsets: ["latin"], 
   variable: "--font-cinzel",
@@ -110,24 +109,35 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         
-        {/* Google AdSense (HEAD içine manuel script) */}
+        {/* Google AdSense (Onaylanana kadar beklemede) */}
         <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
           crossOrigin="anonymous"
         ></script>
-        
-        {/* --- MONETAG VIGNETTE (Tüm sitede geçerli olan geçiş reklamı) --- */}
-        <script 
-          dangerouslySetInnerHTML={{
-            __html: `(function(s){s.dataset.zone='10639916',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`
-          }} 
-        />
       </head>
       
-      {/* Body: Font değişkenlerini ve temel renkleri buraya uyguladık */}
       <body className="font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh] relative selection:bg-[#fbbf24]/30">
         
+        {/* --- YENİ: ADCASH TAM EKRAN (INTERSTITIAL) KODU --- */}
+        <Script 
+          id="aclib-base" 
+          src="https://acscdn.com/script/aclib.js" 
+          strategy="afterInteractive" 
+        />
+        <Script id="aclib-interstitial-runner" strategy="lazyOnload">
+          {`
+            // Script yüklendiğinde tam ekran reklamı tetikle
+            setTimeout(() => {
+              if (typeof aclib !== 'undefined') {
+                aclib.runInterstitial({
+                    zoneId: '11000026',
+                });
+              }
+            }, 1000);
+          `}
+        </Script>
+
         {/* Google Analytics & GTM */}
         <Script
           strategy="afterInteractive"
@@ -170,7 +180,7 @@ export default function RootLayout({
         {/* BİLDİRİMLER (Toast) */}
         <Toaster position="top-center" richColors theme="dark" /> 
         
-        {/* NOISE TEXTURE OVERLAY (Tüm sayfada hafif bir doku oluşturur) */}
+        {/* NOISE TEXTURE OVERLAY */}
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
         
         {/* ÇEREZ POLİTİKASI */}
