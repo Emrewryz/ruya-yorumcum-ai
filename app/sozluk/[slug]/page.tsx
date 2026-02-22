@@ -9,6 +9,7 @@ import {
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import Script from 'next/script';
+import AdcashBanner from "@/components/AdcashBanner";
 
 // --- TİP TANIMLAMALARI ---
 interface UltimateDreamData {
@@ -116,20 +117,6 @@ const LegacyRenderer = ({ blocks }: { blocks: LegacyBlock[] }) => (
     {blocks.map((block, i) => (
       <div key={i}>{block.text}</div>
     ))}
-  </div>
-);
-
-// --- ADCASH BANNER BİLEŞENİ (Sıfır Riskli İframe Yöntemi) ---
-const AdcashBanner = () => (
-  <div className="w-[300px] h-[250px] bg-[#131722] rounded-xl overflow-hidden flex items-center justify-center border border-white/5 shadow-lg mx-auto">
-    <iframe 
-      srcDoc={`<!DOCTYPE html><html><head><script id="aclib" type="text/javascript" src="https://acscdn.com/script/aclib.js"></script><style>body{margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:center;}</style></head><body><div><script type="text/javascript">aclib.runBanner({zoneId: '10999954'});</script></div></body></html>`}
-      width="300"
-      height="250"
-      frameBorder="0"
-      scrolling="no"
-      title="Sponsorlu İçerik"
-    ></iframe>
   </div>
 );
 
