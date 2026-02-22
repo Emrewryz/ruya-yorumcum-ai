@@ -8,8 +8,8 @@ import { motion } from "framer-motion";
 import { 
   Search, Sparkles, BookOpen, ArrowRight, Loader2, Flame, BrainCircuit, Moon
 } from "lucide-react";
-import AdUnit from "@/components/AdUnit";
 import { getMoonPhase, MoonPhase } from "@/utils/moon"; 
+import AdcashBanner from "@/components/AdcashBanner"; // YENİ REKLAM BİLEŞENİMİZ EKLENDİ
 
 interface DictionaryItem {
   term: string;
@@ -154,12 +154,12 @@ export default function DictionaryPage() {
                                   </article>
                               </Link>
 
-                              {/* EĞER ŞARTLAR SAĞLANIYORSA REKLAMI GÖSTER */}
+                              {/* EĞER ŞARTLAR SAĞLANIYORSA LİSTE İÇİ REKLAMI GÖSTER */}
                               {showAd && (
                                   <div className="sm:col-span-2 py-4 flex justify-center items-center bg-[#0B0F19] border-y border-white/5 my-2">
-                                    <div className="w-full">
-                                        <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest">Sponsorlu</p>
-                                        <AdUnit slot="8565155493" format="auto" />
+                                    <div className="w-full flex flex-col items-center">
+                                        <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+                                        <AdcashBanner zoneId="11000138" />
                                     </div>
                                   </div>
                               )}
@@ -245,20 +245,20 @@ export default function DictionaryPage() {
                      </div>
                    )}
 
-                   {/* Sağ Sütun Reklam */}
-                   <div className="bg-[#131722] border border-white/5 rounded-3xl p-4 text-center">
-                      <p className="text-[9px] text-slate-600 mb-2 uppercase tracking-widest">Sponsorlu</p>
-                      <AdUnit slot="8565155493" format="rectangle" />
+                   {/* SAĞ SÜTUN REKLAMI */}
+                   <div className="bg-[#131722] border border-white/5 rounded-3xl p-4 flex flex-col items-center shadow-lg">
+                      <p className="text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+                      <AdcashBanner zoneId="10999954" />
                    </div>
 
                 </div>
             </aside>
          </div>
 
-         {/* --- REKLAM (MULTIPLEX) --- */}
-         <div className="mt-16 w-full pt-8 border-t border-white/5">
-             <p className="text-center text-[10px] text-slate-600 mb-4 uppercase tracking-widest font-medium">BUNLAR DA İLGİNİZİ ÇEKEBİLİR</p>
-             <AdUnit slot="6481917633" format="autorelaxed" />
+         {/* --- REKLAM (SAYFA SONU) --- */}
+         <div className="mt-16 w-full pt-8 border-t border-white/5 flex flex-col items-center">
+             <p className="text-center text-[10px] text-slate-600 mb-4 uppercase tracking-widest font-medium font-bold">BUNLAR DA İLGİNİZİ ÇEKEBİLİR</p>
+             <AdcashBanner zoneId="11000146" />
          </div>
 
       </section>

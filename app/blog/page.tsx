@@ -9,7 +9,7 @@ import {
   ArrowRight, PenTool, Search, Loader2, BrainCircuit,
   Layers, Hash, Star
 } from "lucide-react";
-import AdUnit from "@/components/AdUnit";
+import AdcashBanner from "@/components/AdcashBanner"; // YENİ REKLAM BİLEŞENİMİZ EKLENDİ
 
 // --- DİNAMİK HİZMET KUTUSU VERİLERİ ---
 const SERVICES = [
@@ -259,10 +259,10 @@ export default function BlogListingPage() {
 
                               {/* REKLAM KUTUSU (Grid arasına girer ve 2 sütunu kaplar) */}
                               {showAd && (
-                                  <div className="col-span-1 md:col-span-2 py-6 flex justify-center items-center bg-[#0a0c10] border-y border-white/5 my-2 rounded-3xl">
-                                      <div className="w-full">
+                                  <div className="col-span-1 md:col-span-2 py-6 flex flex-col items-center justify-center bg-[#0a0c10] border-y border-white/5 my-2 rounded-3xl">
+                                      <div className="w-full flex flex-col items-center">
                                           <p className="text-center text-[10px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
-                                          <AdUnit slot="8565155493" format="fluid" />
+                                          <AdcashBanner zoneId="11000138" />
                                       </div>
                                   </div>
                               )}
@@ -274,9 +274,9 @@ export default function BlogListingPage() {
             )}
 
             {/* --- LİSTE SONU REKLAM --- */}
-            <div className="mt-10 w-full border-t border-white/5 pt-8">
+            <div className="mt-10 w-full border-t border-white/5 pt-8 flex flex-col items-center">
                  <p className="text-center text-[10px] text-slate-600 mb-4 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
-                 <AdUnit slot="6481917633" format="autorelaxed" />
+                 <AdcashBanner zoneId="11000146" />
             </div>
 
         </div>
@@ -340,9 +340,9 @@ export default function BlogListingPage() {
                </div>
 
                {/* 3. SAĞ SÜTUN REKLAM */}
-               <div className="bg-[#131722] border border-white/5 rounded-[2rem] p-4 text-center shadow-xl">
+               <div className="bg-[#131722] border border-white/5 rounded-[2rem] p-4 flex flex-col items-center text-center shadow-xl">
                   <p className="text-[10px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
-                  <AdUnit slot="8565155493" format="rectangle" />
+                  <AdcashBanner zoneId="10999954" />
                </div>
 
             </div>

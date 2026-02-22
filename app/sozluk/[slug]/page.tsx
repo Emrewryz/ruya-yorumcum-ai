@@ -208,10 +208,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
             </div>
 
             {/* REKLAM 1: Yazı Başı */}
-            <div className="w-full flex flex-col items-center">
-               <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
-               <AdcashBanner />
-            </div>
+<div className="w-full flex flex-col items-center">
+   <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
+   <AdcashBanner zoneId="10999954" />
+</div>
 
             {/* İÇERİK DETAYLARI */}
             {isUltimate && ultimateData ? (
@@ -268,10 +268,11 @@ export default async function Page({ params }: { params: { slug: string } }) {
                  </section>
 
                  {/* REKLAM 2: Senaryolardan Önce */}
-                 <div className="w-full bg-white/[0.01] py-8 my-8 border-y border-white/5 flex flex-col items-center">
-                     <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
-                     <AdcashBanner />
-                 </div>
+                 {/* REKLAM 2: Senaryolardan Önce */}
+<div className="w-full bg-white/[0.01] py-8 my-8 border-y border-white/5 flex flex-col items-center">
+   <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+   <AdcashBanner zoneId="11000138" />
+</div>
 
                  {/* --- Senaryolar --- */}
                  <section>
@@ -372,10 +373,11 @@ export default async function Page({ params }: { params: { slug: string } }) {
             )}
 
             {/* REKLAM 3: Makale Sonu */}
-            <div className="pt-10 border-t border-white/5 mt-10 flex flex-col items-center">
-               <p className="text-center text-[9px] text-slate-600 mb-4 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
-               <AdcashBanner />
-            </div>
+           {/* REKLAM 2: Senaryolardan Önce */}
+<div className="w-full bg-white/[0.01] py-8 my-8 border-y border-white/5 flex flex-col items-center">
+   <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
+   <AdcashBanner zoneId="11000138" />
+</div>
 
         </article>
 
@@ -430,11 +432,11 @@ export default async function Page({ params }: { params: { slug: string } }) {
               )}
 
               {/* REKLAM 4: Sidebar Reklamı */}
-              <div className="bg-[#131722] border border-white/5 rounded-2xl p-4 flex flex-col items-center shadow-lg">
-                  <p className="text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
-                  <AdcashBanner />
-              </div>
-
+              {/* REKLAM 3: Makale Sonu */}
+<div className="pt-10 border-t border-white/5 mt-10 flex flex-col items-center">
+   <p className="text-center text-[9px] text-slate-600 mb-4 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
+   <AdcashBanner zoneId="11000146" />
+</div>
               {/* 3. BENZER RÜYALAR */}
               {relatedDreams.length > 0 && (
                   <div className="bg-[#131722] border border-white/5 rounded-2xl p-5 shadow-lg">

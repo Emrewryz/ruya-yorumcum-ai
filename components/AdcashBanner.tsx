@@ -2,20 +2,26 @@
 
 import { useEffect, useRef } from "react";
 
-export default function AdcashBanner() {
+// Dışarıdan gelecek özellikleri (props) tanımlıyoruz
+interface AdcashBannerProps {
+  zoneId: string;
+}
+
+export default function AdcashBanner({ zoneId }: AdcashBannerProps) {
   const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Sadece tarayıcıda çalışmasını ve çift yüklemeyi (React Strict Mode) engelliyoruz
+    // Sadece tarayıcıda çalışmasını ve çift yüklemeyi engelliyoruz
     if (typeof window !== "undefined" && (window as any).aclib && bannerRef.current) {
       if (bannerRef.current.innerHTML === "") {
         const script = document.createElement("script");
         script.type = "text/javascript";
-        script.text = `aclib.runBanner({zoneId: '10999954'});`;
+        // Gelen dinamik zoneId'yi buraya yerleştiriyoruz
+        script.text = `aclib.runBanner({zoneId: '${zoneId}'});`;
         bannerRef.current.appendChild(script);
       }
     }
-  }, []);
+  }, [zoneId]);
 
   return (
     <div 
