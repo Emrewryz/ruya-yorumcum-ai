@@ -3,13 +3,12 @@ import Link from "next/link";
 import { 
   ArrowLeft, BookOpen, Brain, 
   ChevronRight, Sparkles, GitGraph, 
-  Quote, BrainCircuit, List, ArrowRight,
+  BrainCircuit, List, ArrowRight,
   HelpCircle 
 } from "lucide-react";
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import Script from 'next/script';
-import AdUnit from "@/components/AdUnit"; 
 
 // --- TİP TANIMLAMALARI ---
 interface UltimateDreamData {
@@ -120,6 +119,20 @@ const LegacyRenderer = ({ blocks }: { blocks: LegacyBlock[] }) => (
   </div>
 );
 
+// --- ADCASH BANNER BİLEŞENİ (Sıfır Riskli İframe Yöntemi) ---
+const AdcashBanner = () => (
+  <div className="w-[300px] h-[250px] bg-[#131722] rounded-xl overflow-hidden flex items-center justify-center border border-white/5 shadow-lg mx-auto">
+    <iframe 
+      srcDoc={`<!DOCTYPE html><html><head><script id="aclib" type="text/javascript" src="https://acscdn.com/script/aclib.js"></script><style>body{margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:center;}</style></head><body><div><script type="text/javascript">aclib.runBanner({zoneId: '10999954'});</script></div></body></html>`}
+      width="300"
+      height="250"
+      frameBorder="0"
+      scrolling="no"
+      title="Sponsorlu İçerik"
+    ></iframe>
+  </div>
+);
+
 // --- ANA COMPONENT ---
 export default async function Page({ params }: { params: { slug: string } }) {
   const item = await getDreamData(params.slug);
@@ -207,74 +220,74 @@ export default async function Page({ params }: { params: { slug: string } }) {
                 </div>
             </div>
 
-            {/* REKLAM 1: Yazı Başı (Dikkat Çekici Bölge) */}
-            <div className="w-full">
+            {/* REKLAM 1: Yazı Başı */}
+            <div className="w-full flex flex-col items-center">
                <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
-               <AdUnit slot="4542150009" format="fluid" />
+               <AdcashBanner />
             </div>
 
             {/* İÇERİK DETAYLARI */}
             {isUltimate && ultimateData ? (
                <div className="space-y-8">
-                  
-                  {/* --- İslami Tabir --- */}
-                  <section className="bg-[#131722] border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-                      <div className="flex items-center gap-4 mb-6">
-                         <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                            <BookOpen className="w-5 h-5 text-emerald-400"/>
+                 
+                 {/* --- İslami Tabir --- */}
+                 <section className="bg-[#131722] border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
+                     <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                     <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                           <BookOpen className="w-5 h-5 text-emerald-400"/>
+                        </div>
+                        <h2 className="text-xl font-serif font-bold text-white">İslami Tabir</h2>
+                     </div>
+                     <div className="space-y-5 pl-1">
+                       {ultimateData.islamic.map((src, i) => (
+                         <div key={i} className="flex gap-4 items-start">
+                             <div className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500/50 shrink-0"></div>
+                             <div>
+                                <p className="text-slate-300 font-light leading-relaxed mb-2 text-sm md:text-base">
+                                    "{src.text}"
+                                </p>
+                                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest block">
+                                    — {src.source}
+                                </span>
+                             </div>
                          </div>
-                         <h2 className="text-xl font-serif font-bold text-white">İslami Tabir</h2>
-                      </div>
-                      <div className="space-y-5 pl-1">
-                        {ultimateData.islamic.map((src, i) => (
-                          <div key={i} className="flex gap-4 items-start">
-                              <div className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500/50 shrink-0"></div>
-                              <div>
-                                 <p className="text-slate-300 font-light leading-relaxed mb-2 text-sm md:text-base">
-                                     "{src.text}"
-                                 </p>
-                                 <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest block">
-                                     — {src.source}
-                                 </span>
-                              </div>
-                          </div>
-                        ))}
-                      </div>
-                  </section>
+                       ))}
+                     </div>
+                 </section>
 
-                  {/* --- Psikolojik Analiz --- */}
-                  <section className="bg-[#131722] border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                      <div className="flex items-center gap-4 mb-6">
-                         <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                            <Brain className="w-5 h-5 text-indigo-400"/>
+                 {/* --- Psikolojik Analiz --- */}
+                 <section className="bg-[#131722] border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
+                     <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                     <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                           <Brain className="w-5 h-5 text-indigo-400"/>
+                        </div>
+                        <h2 className="text-xl font-serif font-bold text-white">Psikolojik Analiz</h2>
+                     </div>
+                     <div className="pl-1">
+                         <p className="text-slate-300 font-light leading-relaxed mb-5 text-sm md:text-base">
+                             {ultimateData.psychological}
+                         </p>
+                         <div className="flex flex-wrap gap-2">
+                             <span className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-indigo-300 text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                <Sparkles className="w-3 h-3"/> Bilinçaltı
+                             </span>
+                             <span className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-indigo-300 text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                <GitGraph className="w-3 h-3"/> Sembolizm
+                             </span>
                          </div>
-                         <h2 className="text-xl font-serif font-bold text-white">Psikolojik Analiz</h2>
-                      </div>
-                      <div className="pl-1">
-                          <p className="text-slate-300 font-light leading-relaxed mb-5 text-sm md:text-base">
-                              {ultimateData.psychological}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                              <span className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-indigo-300 text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-                                 <Sparkles className="w-3 h-3"/> Bilinçaltı
-                              </span>
-                              <span className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-indigo-300 text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-                                 <GitGraph className="w-3 h-3"/> Sembolizm
-                              </span>
-                          </div>
-                      </div>
-                  </section>
+                     </div>
+                 </section>
 
-                  {/* REKLAM 2: Senaryolardan Önce (İçerik İçi Dinlendirme) */}
-                  <div className="w-full bg-white/[0.01] py-8 my-8 border-y border-white/5">
+                 {/* REKLAM 2: Senaryolardan Önce */}
+                 <div className="w-full bg-white/[0.01] py-8 my-8 border-y border-white/5 flex flex-col items-center">
                      <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
-                     <AdUnit slot="4542150009" format="fluid" />
-                  </div>
+                     <AdcashBanner />
+                 </div>
 
-                  {/* --- Senaryolar --- */}
-                  <section>
+                 {/* --- Senaryolar --- */}
+                 <section>
                      <h2 className="text-xl font-serif font-bold text-white mb-5 pl-1">
                         Detaylı Durum Analizleri
                      </h2>
@@ -333,10 +346,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
 
                         })}
                      </div>
-                  </section>
+                 </section>
 
-                  {/* --- YENİ: FAQ BÖLÜMÜ --- */}
-                  {ultimateData.faq && ultimateData.faq.length > 0 && (
+                 {/* --- SIKÇA SORULAN SORULAR BÖLÜMÜ --- */}
+                 {ultimateData.faq && ultimateData.faq.length > 0 && (
                      <section className="bg-[#131722] border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl mt-8">
                         <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
                         <div className="flex items-center gap-4 mb-6">
@@ -362,7 +375,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
                            ))}
                         </div>
                      </section>
-                  )}
+                 )}
 
                </div>
             ) : (
@@ -371,10 +384,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
                </div>
             )}
 
-            {/* REKLAM 3: Makale Sonu Multiplex (İlgili Yazılar vb.) */}
-            <div className="pt-10 border-t border-white/5 mt-10">
-               <p className="text-center text-[9px] text-slate-600 mb-4 uppercase tracking-widest font-bold">İlginizi Çekebilecek Diğer Konular</p>
-               <AdUnit slot="6481917633" format="autorelaxed" />
+            {/* REKLAM 3: Makale Sonu */}
+            <div className="pt-10 border-t border-white/5 mt-10 flex flex-col items-center">
+               <p className="text-center text-[9px] text-slate-600 mb-4 uppercase tracking-widest font-bold">Sponsorlu İçerik</p>
+               <AdcashBanner />
             </div>
 
         </article>
@@ -383,7 +396,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
         <aside className="col-span-1 lg:col-span-4 order-2">
             <div className="sticky top-24 space-y-6">
               
-              {/* 1. YENİ KUTU: Premium CTA */}
+              {/* 1. KUTU: Premium CTA */}
               <div className="bg-gradient-to-br from-amber-500/10 to-[#131722] border border-amber-500/20 rounded-2xl p-5 md:p-6 relative overflow-hidden group shadow-lg">
                   <div className="absolute -top-4 -right-4 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                      <BrainCircuit className="w-24 h-24 text-amber-500" />
@@ -430,9 +443,9 @@ export default async function Page({ params }: { params: { slug: string } }) {
               )}
 
               {/* REKLAM 4: Sidebar Reklamı */}
-              <div className="bg-[#131722] border border-white/5 rounded-2xl p-4 text-center shadow-lg">
+              <div className="bg-[#131722] border border-white/5 rounded-2xl p-4 flex flex-col items-center shadow-lg">
                   <p className="text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
-                  <AdUnit slot="8565155493" format="rectangle" />
+                  <AdcashBanner />
               </div>
 
               {/* 3. BENZER RÜYALAR */}
@@ -464,7 +477,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
                   </div>
               )}
 
-           </div>
+            </div>
         </aside>
 
       </main>
