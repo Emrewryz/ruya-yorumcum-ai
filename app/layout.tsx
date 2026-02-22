@@ -117,6 +117,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         ></script>
         
+        <script src="https://pl28765563.effectivegatecpm.com/ee/2c/07/ee2c070f2a5a89703385bde29bd6d9b3.js"></script>
         {/* Monetag Doğrulama Kodu 
         <meta name="monetag" content="4bd56e59726a926274326a7f50b82613" />*/}
 
