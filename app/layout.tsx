@@ -117,13 +117,12 @@ export default function RootLayout({
           crossOrigin="anonymous"
         ></script>
         
-        <script src="https://pl28765563.effectivegatecpm.com/ee/2c/07/ee2c070f2a5a89703385bde29bd6d9b3.js"></script>
-        {/* Monetag Doğrulama Kodu 
-        <meta name="monetag" content="4bd56e59726a926274326a7f50b82613" />*/}
-
-        {/* --- YENİ EKLENEN MONETAG REKLAM KODU ---
-        <script src="https://quge5.com/88/tag.min.js" data-zone="213154" async data-cfasync="false"></script> */}
-        
+        {/* --- MONETAG VIGNETTE (Tüm sitede geçerli olan geçiş reklamı) --- */}
+        <script 
+          dangerouslySetInnerHTML={{
+            __html: `(function(s){s.dataset.zone='10639916',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`
+          }} 
+        />
       </head>
       
       {/* Body: Font değişkenlerini ve temel renkleri buraya uyguladık */}
