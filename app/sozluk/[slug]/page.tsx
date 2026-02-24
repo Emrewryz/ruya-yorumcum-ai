@@ -4,7 +4,7 @@ import {
   ArrowLeft, BookOpen, Brain, 
   ChevronRight, Sparkles, GitGraph, 
   BrainCircuit, List, ArrowRight,
-  HelpCircle 
+  HelpCircle, Clock, Home, CheckCircle2
 } from "lucide-react";
 import type { Metadata } from 'next';
 import { cache } from 'react';
@@ -45,13 +45,6 @@ interface LegacyBlock {
   items?: string[];
 }
 
-// --- YARDIMCI FONKSİYONLAR ---
-const formatTerm = (term: string) => {
-  if (!term) return "";
-  let clean = term.replace(/^rüyada\s+/i, '').replace(/\s+görmek$/i, '');
-  return clean.charAt(0).toUpperCase() + clean.slice(1);
-}
-
 // --- VERİ ÇEKME FONKSİYONLARI ---
 const getDreamData = cache(async (slug: string) => {
   const supabase = createClient();
@@ -74,6 +67,18 @@ const getRelatedDreams = async (keywords: string[] | null, currentId: string): P
   if (error) console.error("Keyword Hatası:", error);
   return (data as RelatedDream[]) || [];
 };
+
+const getLatestDreams = cache(async (): Promise<RelatedDream[]> => {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('dream_dictionary')
+    .select('slug, term, description, first_letter')
+    .order('created_at', { ascending: false })
+    .limit(5);
+  
+  if (error) console.error("Son Rüyalar Hatası:", error);
+  return (data as RelatedDream[]) || [];
+});
 
 const getValidSlugs = async (slugsToCheck: string[]) => {
   if (!slugsToCheck || slugsToCheck.length === 0) return [];
@@ -98,21 +103,24 @@ const parseContent = (rawContent: string | null): UltimateDreamData | LegacyBloc
   }
 };
 
-// --- METADATA ---
+// --- METADATA (Tamamen Kullanıcının Girdiği Başlığa Sadık) ---
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const item = await getDreamData(params.slug);
   if (!item) return { title: 'Rüya Tabiri Bulunamadı' };
-  const cleanTerm = formatTerm(item.term);
 
   return {
-    title: `Rüyada ${cleanTerm} Görmek - İslami ve Psikolojik Yorumu`,
+    title: `${item.term} - Diyanet ve Psikolojik Yorumu`,
     description: item.description.substring(0, 160),
+    openGraph: {
+      title: item.term,
+      description: item.description.substring(0, 160),
+      type: 'article',
+    }
   };
 }
 
-// --- ESKİ RENDERER ---
 const LegacyRenderer = ({ blocks }: { blocks: LegacyBlock[] }) => (
-  <div className="space-y-4 text-[var(--text-muted)] leading-relaxed font-light text-sm md:text-base">
+  <div className="space-y-4 text-[var(--text-muted)] leading-relaxed font-normal text-base md:text-lg">
     {blocks.map((block, i) => (
       <div key={i}>{block.text}</div>
     ))}
@@ -124,14 +132,14 @@ export default async function Page({ params }: { params: { slug: string } }) {
   const item = await getDreamData(params.slug);
   const supabase = createClient();
 
-  if (!item) return <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] flex items-center justify-center">İçerik bulunamadı.</div>;
+  if (!item) return <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] flex items-center justify-center font-medium">Bu rüya tabiri henüz eklenmemiş veya yayından kaldırılmış olabilir.</div>;
 
-  const [relatedDreams] = await Promise.all([
+  const [relatedDreams, latestDreams] = await Promise.all([
     getRelatedDreams(item.keywords, item.id),
+    getLatestDreams(),
     supabase.rpc('increment_search_count', { row_id: item.id })
   ]);
 
-  const cleanTitle = formatTerm(item.term);
   const contentData = parseContent(item.content);
   const isUltimate = !Array.isArray(contentData) && (contentData as any).type === 'ultimate';
   const ultimateData = isUltimate ? contentData as UltimateDreamData : null;
@@ -144,13 +152,16 @@ export default async function Page({ params }: { params: { slug: string } }) {
     validSlugs = await getValidSlugs(potentialSlugs);
   }
 
+  // Schema.org Yapısal Verileri
   const schemas: any[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'Article',
-      headline: `Rüyada ${cleanTitle} Görmek`,
+      headline: item.term,
       description: item.description,
-      author: { '@type': 'Organization', name: 'RüyaYorumcum' },
+      author: { '@type': 'Organization', name: 'RüyaYorumcum AI' },
+      publisher: { '@type': 'Organization', name: 'RüyaYorumcum AI' },
+      datePublished: item.created_at,
     }
   ];
 
@@ -170,62 +181,72 @@ export default async function Page({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] font-sans pb-20 selection:bg-amber-500/30 relative scroll-smooth">
+    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] font-sans pb-20 selection:bg-amber-500/30 relative scroll-smooth antialiased">
       <Script id="json-ld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }} />
 
-      {/* Geri Butonu */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-32 relative z-20">
-         <Link href="/sozluk" className="inline-flex items-center gap-2 text-[var(--text-muted)] hover:text-amber-500 transition-colors text-xs font-bold uppercase tracking-widest pl-2">
-            <ArrowLeft className="w-4 h-4" /> Sözlüğe Dön
-         </Link>
-      </div>
-
-      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-28 md:pt-32 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
         
-        {/* ================= SOL İÇERİK (lg:col-span-8) - ANA YAZI ALANI ================= */}
+        {/* ================= SOL İÇERİK (lg:col-span-8) ================= */}
         <article className="col-span-1 lg:col-span-8 order-1 space-y-8">
             
-            {/* 1. HERO KUTUSU */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[1.5rem] p-6 md:p-10 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+            {/* Breadcrumb */}
+            <nav className="flex items-center text-[var(--text-muted)] text-xs md:text-sm font-medium overflow-x-auto whitespace-nowrap pb-2 scrollbar-hide" aria-label="Breadcrumb">
+              <Link href="/" className="hover:text-amber-500 flex items-center gap-1.5 transition-colors">
+                <Home className="w-3.5 h-3.5" /> Ana Sayfa
+              </Link>
+              <ChevronRight className="w-4 h-4 mx-1.5 opacity-50 shrink-0" />
+              <Link href="/sozluk" className="hover:text-amber-500 transition-colors">
+                Rüya Sözlüğü
+              </Link>
+              <ChevronRight className="w-4 h-4 mx-1.5 opacity-50 shrink-0" />
+              <span className="text-[var(--text-main)] truncate">{item.term}</span>
+            </nav>
+
+            {/* HERO KUTUSU (Başlık doğrudan veritabanından alınır) */}
+            <header className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[1.5rem] p-6 md:p-10 shadow-lg md:shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 md:w-80 h-64 md:h-80 bg-amber-500/10 rounded-full blur-[80px] md:blur-[100px] pointer-events-none"></div>
                 <div className="relative z-10">
-                   <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 text-[10px] font-bold uppercase tracking-widest mb-6 border border-amber-500/20">
+                   <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4 md:mb-6 border border-amber-500/20">
                       {item.category || 'RÜYA TABİRİ'}
                    </div>
-                   <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--text-main)] mb-6 leading-[1.1] tracking-tight">
-                      Rüyada <span className="text-amber-500">{cleanTitle}</span> Görmek
+                   <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--text-main)] mb-6 leading-[1.2] md:leading-[1.1] tracking-tight">
+                      {item.term}
                    </h1>
                    <div className="border-l-2 border-amber-500/50 pl-4 md:pl-5">
-                      <p className="text-base md:text-lg text-[var(--text-muted)] font-light leading-relaxed">
-                         {isUltimate ? ultimateData!.summary : item.description}
-                      </p>
+                      {isUltimate && ultimateData ? (
+                        <div 
+                          className="text-base md:text-lg text-[var(--text-muted)] font-normal leading-relaxed [&>strong]:font-semibold [&>strong]:text-[var(--text-main)] [&>em]:italic [&>a]:text-amber-500 hover:[&>a]:underline transition-all"
+                          dangerouslySetInnerHTML={{ __html: ultimateData.summary }}
+                        />
+                      ) : (
+                        <p className="text-base md:text-lg text-[var(--text-muted)] font-normal leading-relaxed">{item.description}</p>
+                      )}
                    </div>
                 </div>
-            </div>
+            </header>
 
-            {/* İÇERİK DETAYLARI */}
             {isUltimate && ultimateData ? (
                <div className="space-y-8">
                  
-                 {/* --- İslami Tabir --- */}
-                 <section className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
-                     <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-                     <div className="flex items-center gap-4 mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                           <BookOpen className="w-5 h-5 text-emerald-500 dark:text-emerald-400"/>
+                 {/* İslami Tabir */}
+                 <section className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-md md:shadow-xl">
+                     <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+                     <div className="flex items-center gap-4 mb-6 md:mb-8">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                           <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-emerald-600 dark:text-emerald-400"/>
                         </div>
-                        <h2 className="text-xl font-serif font-bold text-[var(--text-main)]">İslami Tabir</h2>
+                        <h2 className="text-xl md:text-2xl font-serif font-bold text-[var(--text-main)]">Dini ve Geleneksel Tabir</h2>
                      </div>
-                     <div className="space-y-5 pl-1">
+                     <div className="space-y-6 md:space-y-8 pl-1 md:pl-2">
                        {ultimateData.islamic.map((src, i) => (
                          <div key={i} className="flex gap-4 items-start">
-                             <div className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500/50 shrink-0"></div>
+                             <div className="mt-2.5 w-2 h-2 rounded-full bg-emerald-500/50 shrink-0"></div>
                              <div>
-                                <p className="text-[var(--text-muted)] font-light leading-relaxed mb-2 text-sm md:text-base">
+                                <p className="text-[var(--text-main)] font-normal leading-relaxed mb-2 md:mb-3 text-base md:text-lg">
                                    "{src.text}"
                                 </p>
-                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest block">
-                                   — {src.source}
+                                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-500 uppercase tracking-widest block">
+                                   — Kaynak: {src.source}
                                 </span>
                              </div>
                          </div>
@@ -233,113 +254,92 @@ export default async function Page({ params }: { params: { slug: string } }) {
                      </div>
                  </section>
 
-                 {/* --- Psikolojik Analiz --- */}
-                 <section className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
-                     <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                     <div className="flex items-center gap-4 mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                           <Brain className="w-5 h-5 text-indigo-500 dark:text-indigo-400"/>
+                 {/* Psikolojik Analiz */}
+                 <section className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-md md:shadow-xl">
+                     <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
+                     <div className="flex items-center gap-4 mb-6 md:mb-8">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                           <Brain className="w-5 h-5 md:w-6 md:h-6 text-indigo-600 dark:text-indigo-400"/>
                         </div>
-                        <h2 className="text-xl font-serif font-bold text-[var(--text-main)]">Psikolojik Analiz</h2>
+                        <h2 className="text-xl md:text-2xl font-serif font-bold text-[var(--text-main)]">Psikolojik ve Modern Analiz</h2>
                      </div>
-                     <div className="pl-1">
-                         <p className="text-[var(--text-muted)] font-light leading-relaxed mb-5 text-sm md:text-base">
-                             {ultimateData.psychological}
-                         </p>
-                         <div className="flex flex-wrap gap-2">
-                             <span className="px-3 py-1.5 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg text-indigo-600 dark:text-indigo-300 text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-                                <Sparkles className="w-3 h-3"/> Bilinçaltı
+                     <div className="pl-1 md:pl-2">
+                         <div 
+                           className="text-[var(--text-muted)] font-normal leading-relaxed mb-6 md:mb-8 text-base md:text-lg [&>strong]:font-semibold [&>strong]:text-[var(--text-main)] [&>em]:italic [&>a]:text-amber-500 hover:[&>a]:underline transition-all"
+                           dangerouslySetInnerHTML={{ __html: ultimateData.psychological }}
+                         />
+                         <div className="flex flex-wrap gap-2 md:gap-3">
+                             <span className="px-3 py-1.5 md:px-4 md:py-2 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg text-indigo-700 dark:text-indigo-300 text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 md:gap-2">
+                                <Sparkles className="w-3 h-3 md:w-4 md:h-4"/> Bilinçaltı
                              </span>
-                             <span className="px-3 py-1.5 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg text-indigo-600 dark:text-indigo-300 text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-                                <GitGraph className="w-3 h-3"/> Sembolizm
+                             <span className="px-3 py-1.5 md:px-4 md:py-2 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg text-indigo-700 dark:text-indigo-300 text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 md:gap-2">
+                                <GitGraph className="w-3 h-3 md:w-4 md:h-4"/> Sembolizm
                              </span>
                          </div>
                      </div>
                  </section>
 
-                 {/* --- Senaryolar --- */}
+                 {/* Senaryolar - Linkleme Hatası Düzeltildi */}
                  <section>
-                     <h2 className="text-xl font-serif font-bold text-[var(--text-main)] mb-5 pl-1">
-                        Detaylı Durum Analizleri
+                     <h2 className="text-xl md:text-2xl font-serif font-bold text-[var(--text-main)] mb-6 md:mb-8 pl-1">
+                        Bu Rüyanın Farklı Durum Analizleri
                      </h2>
-                     <div className="space-y-3">
+                     <div className="space-y-4">
                         {ultimateData.scenarios.map((scene, i) => {
                            const hasLink = scene.slug ? validSlugs.includes(scene.slug) : false;
                            
-                           const CardContent = (
-                              <>
-                                 {hasLink && <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-[30px] group-hover:bg-amber-500/10 transition-colors pointer-events-none"></div>}
-
-                                 <div className="flex-1 pr-4 relative z-10">
-                                    <div className="flex items-center gap-2 mb-2">
-                                       <div className={`w-2 h-2 rounded-full ${scene.isPositive ? 'bg-emerald-500' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`}></div>
-                                       <h3 className={`text-base font-bold transition-colors ${hasLink ? 'text-[var(--text-main)] group-hover:text-amber-500' : 'text-[var(--text-main)]'}`}>
-                                          {scene.title}
-                                       </h3>
-                                    </div>
-                                    <p className="text-[var(--text-muted)] text-sm leading-relaxed font-light pl-4">
-                                       {scene.description}
-                                    </p>
-                                 </div>
-                                 
-                                 {hasLink && (
-                                    <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-black/5 dark:bg-white/5 group-hover:bg-amber-500 text-[var(--text-muted)] group-hover:text-white transition-all ml-4 md:ml-0 relative z-10 shadow-md">
-                                       <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                                    </div>
-                                 )}
-                              </>
-                           );
-
-                           const baseClasses = "relative scroll-mt-24 bg-[var(--bg-card)] border rounded-2xl p-5 md:p-6 flex flex-col md:flex-row gap-4 md:items-center justify-between group transition-colors overflow-hidden";
-
-                           if (hasLink) {
-                              return (
-                                 <Link 
-                                    key={i} 
-                                    id={`senaryo-${i}`} 
-                                    href={`/sozluk/${scene.slug}`}
-                                    className={`${baseClasses} border-[var(--border-color)] cursor-pointer hover:border-amber-500/50 hover:bg-black/5 dark:hover:bg-[#1a1f2e]`}
-                                 >
-                                    {CardContent}
-                                 </Link>
-                              );
-                           }
-
                            return (
                               <div 
                                  key={i} 
                                  id={`senaryo-${i}`} 
-                                 className={`${baseClasses} border-[var(--border-color)]`}
+                                 className="relative scroll-mt-24 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-5 md:p-6 flex flex-col transition-all overflow-hidden shadow-sm hover:shadow-md"
                               >
-                                 {CardContent}
+                                 <div className="flex items-center gap-3 mb-2 md:mb-3">
+                                    <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shrink-0 ${scene.isPositive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`}></div>
+                                    <h3 className="text-base md:text-lg font-bold text-[var(--text-main)]">
+                                       {scene.title}
+                                    </h3>
+                                 </div>
+                                 <p className="text-[var(--text-muted)] text-sm md:text-base leading-relaxed font-normal pl-5 md:pl-6">
+                                    {scene.description}
+                                 </p>
+                                 
+                                 {/* Tıklanabilir Link Sadece Buton Olarak Eklendi */}
+                                 {hasLink && (
+                                    <Link 
+                                       href={`/sozluk/${scene.slug}`}
+                                       className="mt-4 ml-5 md:ml-6 inline-flex items-center gap-2 text-amber-500 hover:text-amber-400 text-sm font-semibold transition-colors w-fit"
+                                    >
+                                       Bu Tabiri Detaylı İncele <ArrowRight className="w-4 h-4" />
+                                    </Link>
+                                 )}
                               </div>
                            );
-
                         })}
                      </div>
                  </section>
 
-                 {/* --- SIKÇA SORULAN SORULAR BÖLÜMÜ --- */}
+                 {/* SIKÇA SORULAN SORULAR BÖLÜMÜ */}
                  {ultimateData.faq && ultimateData.faq.length > 0 && (
-                     <section className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl mt-8">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-                        <div className="flex items-center gap-4 mb-6">
-                           <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                              <HelpCircle className="w-5 h-5 text-amber-500 dark:text-amber-400"/>
+                     <section className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-md md:shadow-xl mt-10">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500"></div>
+                        <div className="flex items-center gap-4 mb-6 md:mb-8">
+                           <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                              <HelpCircle className="w-5 h-5 md:w-6 md:h-6 text-amber-600 dark:text-amber-400"/>
                            </div>
-                           <h2 className="text-xl font-serif font-bold text-[var(--text-main)]">Sıkça Sorulan Sorular</h2>
+                           <h2 className="text-xl md:text-2xl font-serif font-bold text-[var(--text-main)]">Sıkça Sorulan Sorular</h2>
                         </div>
-                        <div className="space-y-4 pl-1">
+                        <div className="space-y-4 md:space-y-5 pl-1 md:pl-2">
                            {ultimateData.faq.map((faqItem, i) => (
                               <details 
                                  key={i} 
                                  className="group bg-black/5 dark:bg-white/5 border border-[var(--border-color)] rounded-2xl open:bg-black/10 dark:open:bg-white/[0.07] transition-all duration-300"
                               >
-                                 <summary className="cursor-pointer p-4 md:p-5 font-medium text-[var(--text-main)] group-open:text-amber-500 transition-colors flex items-center justify-between list-none">
-                                    <span>{faqItem.question}</span>
-                                    <ChevronRight className="w-4 h-4 transition-transform duration-300 group-open:rotate-90 text-[var(--text-muted)]" />
+                                 <summary className="cursor-pointer p-4 md:p-5 font-semibold text-base md:text-lg text-[var(--text-main)] group-open:text-amber-500 transition-colors flex items-center justify-between list-none">
+                                    <span className="pr-4">{faqItem.question}</span>
+                                    <ChevronRight className="w-5 h-5 transition-transform duration-300 group-open:rotate-90 text-[var(--text-muted)] shrink-0" />
                                  </summary>
-                                 <div className="p-4 md:p-5 pt-0 text-[var(--text-muted)] font-light text-sm md:text-base leading-relaxed border-t border-[var(--border-color)] mt-2">
+                                 <div className="p-4 md:p-5 pt-0 text-[var(--text-muted)] font-normal text-sm md:text-base leading-relaxed border-t border-[var(--border-color)] mt-2">
                                     {faqItem.answer}
                                  </div>
                               </details>
@@ -348,42 +348,54 @@ export default async function Page({ params }: { params: { slug: string } }) {
                      </section>
                  )}
 
+                 {/* YAZAR KUTUSU */}
+                 <section className="bg-black/5 dark:bg-white/5 border border-[var(--border-color)] rounded-3xl p-6 md:p-8 mt-10 flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-6 shadow-sm">
+                     <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
+                         <CheckCircle2 className="w-8 h-8 md:w-10 md:h-10 text-amber-600 dark:text-amber-500" />
+                     </div>
+                     <div>
+                         <h4 className="text-[var(--text-main)] font-bold text-lg mb-2">Rüya Yorumcum AI Uzman Sistemi</h4>
+                         <p className="text-[var(--text-muted)] text-sm md:text-base font-normal leading-relaxed">
+                             Bu sayfa, İslami rüya tabiri kaynakları (İmam Nablusi, İbn-i Şirin vb.) ve modern psikolojik analiz yöntemleri (Jungian sembolizm) kullanılarak hazırlanmıştır. Amacımız, rüya gören kullanıcılara en kapsamlı, güvenilir ve derinlemesine rüya yorumunu sunmaktır.
+                         </p>
+                     </div>
+                 </section>
+
                </div>
             ) : (
-               <div className="bg-[var(--bg-card)] p-6 rounded-2xl border border-[var(--border-color)]">
+               <div className="bg-[var(--bg-card)] p-6 md:p-8 rounded-3xl border border-[var(--border-color)] shadow-md md:shadow-xl">
                   <LegacyRenderer blocks={contentData as LegacyBlock[]} />
                </div>
             )}
         </article>
 
-        {/* ================= SAĞ SIDEBAR (lg:col-span-4) - YARDIMCI ARAÇLAR ================= */}
+        {/* ================= SAĞ SIDEBAR (lg:col-span-4) ================= */}
         <aside className="col-span-1 lg:col-span-4 order-2">
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-28 space-y-6 md:space-y-8">
               
-              {/* 1. KUTU: Premium CTA */}
-              <div className="bg-gradient-to-br from-amber-500/10 to-[var(--bg-card)] border border-amber-500/20 rounded-2xl p-5 md:p-6 relative overflow-hidden group shadow-lg">
+              <div className="bg-gradient-to-br from-amber-500/10 to-[var(--bg-card)] border border-amber-500/20 rounded-2xl p-6 relative overflow-hidden group shadow-lg">
                   <div className="absolute -top-4 -right-4 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                     <BrainCircuit className="w-24 h-24 text-amber-500" />
+                     <BrainCircuit className="w-28 h-28 text-amber-500" />
                   </div>
                   <div className="relative z-10 space-y-3">
-                     <h3 className="text-amber-600 dark:text-amber-400 font-serif font-bold text-lg">Rüyanız Size Özeldir</h3>
-                     <p className="text-xs text-[var(--text-muted)] font-light leading-relaxed">
-                        Sözlükteki genel tabirler yerine, rüyanızın tüm detaylarını yapay zekaya anlatın. Size özel, 3 boyutlu psikolojik analizinizi anında hazırlayalım.
+                     <h3 className="text-amber-600 dark:text-amber-400 font-serif font-bold text-xl">Rüyanız Size Özeldir</h3>
+                     <p className="text-sm md:text-base text-[var(--text-main)] font-light leading-relaxed mb-2 opacity-90">
+                        Sözlükteki genel tabirler yerine, rüyanızın tüm detaylarını yapay zekaya anlatın. Size özel analiz anında hazırlansın.
                      </p>
-                     <Link href="/dashboard" className="w-full py-3 bg-[#fbbf24] hover:bg-[#f59e0b] text-[#0B0F19] rounded-xl text-xs font-bold shadow-lg shadow-amber-500/20 transition-colors flex items-center justify-center gap-2 mt-2">
-                        <Sparkles className="w-3 h-3 text-[#0B0F19]" /> Özel Analiz Yaptır
+                     <Link href="/dashboard" className="w-full py-3.5 bg-[#fbbf24] hover:bg-[#f59e0b] text-[#0B0F19] rounded-xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-colors flex items-center justify-center gap-2 mt-4">
+                        <Sparkles className="w-4 h-4 text-[#0B0F19]" /> Ücretsiz Analiz Yaptır
                      </Link>
                   </div>
               </div>
 
-              {/* 2. İÇİNDEKİLER */}
+              {/* İÇİNDEKİLER */}
               {isUltimate && ultimateData && ultimateData.scenarios.length > 0 && (
-                  <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-5 shadow-lg">
-                      <h3 className="text-amber-600 dark:text-amber-500 font-bold text-[9px] uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-[var(--border-color)] pb-3">
-                          <List className="w-3 h-3" /> 
-                          Bu Rüyanın Diğer Halleri
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-5 md:p-6 shadow-lg">
+                      <h3 className="text-amber-600 dark:text-amber-500 font-bold text-xs md:text-sm uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-[var(--border-color)] pb-3">
+                          <List className="w-4 h-4" /> 
+                          Rüyanın Diğer Halleri
                       </h3>
-                      <ul className="space-y-1">
+                      <ul className="space-y-1.5 md:space-y-2">
                           {ultimateData.scenarios.map((scene, i) => {
                              const hasLink = scene.slug ? validSlugs.includes(scene.slug) : false;
                              const hrefTarget = hasLink ? `/sozluk/${scene.slug}` : `#senaryo-${i}`;
@@ -392,10 +404,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
                                 <li key={i}>
                                   <Link 
                                     href={hrefTarget} 
-                                    className="group flex items-start gap-2.5 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-300"
+                                    className="group flex items-start gap-3 p-2 md:p-2.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-300"
                                   >
-                                      <ChevronRight className="w-3 h-3 text-[var(--text-muted)] group-hover:text-amber-500 shrink-0 mt-0.5 transition-colors" />
-                                      <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">
+                                      <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-amber-500 shrink-0 mt-0.5 transition-colors" />
+                                      <span className="text-sm md:text-base font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors line-clamp-2">
                                           {scene.title}
                                       </span>
                                   </Link>
@@ -406,26 +418,55 @@ export default async function Page({ params }: { params: { slug: string } }) {
                   </div>
               )}
 
-              {/* 3. BENZER RÜYALAR */}
-              {relatedDreams.length > 0 && (
-                  <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-5 shadow-lg">
-                      <h3 className="text-amber-600 dark:text-amber-500 font-bold text-[9px] uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-[var(--border-color)] pb-3">
-                          <GitGraph className="w-3 h-3" /> 
-                          Benzer Rüyalar
+              {/* YENİ EKLENEN RÜYALAR (Başlıklar Veritabanından Direkt Okunur) */}
+              {latestDreams.length > 0 && (
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-5 md:p-6 shadow-lg">
+                      <h3 className="text-emerald-600 dark:text-emerald-500 font-bold text-xs md:text-sm uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-[var(--border-color)] pb-3">
+                          <Clock className="w-4 h-4" /> 
+                          Yeni Eklenen Tabirler
                       </h3>
-                      <ul className="space-y-1.5">
+                      <ul className="space-y-2">
+                          {latestDreams.map((latest) => (
+                              <li key={latest.slug}>
+                                <Link 
+                                  href={`/sozluk/${latest.slug}`} 
+                                  className="group flex flex-col p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-[var(--border-color)]"
+                                >
+                                      <div className="flex items-center justify-between">
+                                          <h4 className="text-sm md:text-base font-bold text-[var(--text-main)] group-hover:text-emerald-500 truncate pr-2 transition-colors">
+                                              {latest.term}
+                                          </h4>
+                                      </div>
+                                      <p className="text-xs md:text-sm text-[var(--text-muted)] line-clamp-1 mt-1 font-normal">
+                                          {latest.description}
+                                      </p>
+                                </Link>
+                              </li>
+                          ))}
+                      </ul>
+                  </div>
+              )}
+
+              {/* BENZER RÜYALAR (Başlıklar Veritabanından Direkt Okunur) */}
+              {relatedDreams.length > 0 && (
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-5 md:p-6 shadow-lg">
+                      <h3 className="text-indigo-600 dark:text-indigo-400 font-bold text-xs md:text-sm uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-[var(--border-color)] pb-3">
+                          <GitGraph className="w-4 h-4" /> 
+                          İlişkili Rüyalar
+                      </h3>
+                      <ul className="space-y-2">
                           {relatedDreams.slice(0, 5).map((related) => (
                               <li key={related.slug}>
                                 <Link 
                                   href={`/sozluk/${related.slug}`} 
-                                  className="group flex flex-col p-2.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-300"
+                                  className="group flex flex-col p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-[var(--border-color)]"
                                 >
                                       <div className="flex items-center justify-between">
-                                          <h4 className="text-xs font-bold text-[var(--text-main)] group-hover:text-amber-500 truncate pr-2">
-                                              {formatTerm(related.term)}
+                                          <h4 className="text-sm md:text-base font-bold text-[var(--text-main)] group-hover:text-indigo-500 truncate pr-2 transition-colors">
+                                              {related.term}
                                           </h4>
                                       </div>
-                                      <p className="text-[10px] text-[var(--text-muted)] line-clamp-1 mt-0.5 font-light">
+                                      <p className="text-xs md:text-sm text-[var(--text-muted)] line-clamp-1 mt-1 font-normal">
                                           {related.description}
                                       </p>
                                 </Link>
