@@ -9,6 +9,7 @@ import CookieConsent from "@/components/CookieConsent";
 import NavbarWrapper from "@/components/NavbarWrapper"; 
 import HideOnDashboard from "@/components/HideOnDashboard";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ThemeProvider } from "next-themes";
 
 // --- 1. FONTLAR ---
 const cinzel = Cinzel({ 
@@ -34,9 +35,6 @@ export const metadata: Metadata = {
     template: "%s | Rüya Yorumcum AI", 
   },
   description: "Rüyalarınızın gizli mesajlarını yapay zeka ile çözün. İslami kaynaklar ve modern psikoloji ışığında size özel rüya yorumları.",
-  other: {
-    "google-adsense-account": "ca-pub-1582674739139734",
-  },
   robots: {
     index: true,
     follow: true,
@@ -74,7 +72,6 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#020617",
 };
 
 // --- 3. SCHEMA MARKUP ---
@@ -100,7 +97,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className={`${cinzel.variable} ${manrope.variable}`}>
+    // suppressHydrationWarning eklendi (next-themes için zorunludur, hydration hatasını önler)
+    <html lang="tr" suppressHydrationWarning className={`${cinzel.variable} ${manrope.variable}`}>
       <head>
         {/* Schema JSON-LD */}
         <Script
@@ -108,87 +106,68 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        
-        {/* Google AdSense (Onaylanana kadar beklemede) */}
-        <script 
-          async 
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1582674739139734"
-          crossOrigin="anonymous"
-        ></script>
       </head>
       
-      <body className="font-sans bg-[#020617] text-white antialiased flex flex-col min-h-[100dvh] relative selection:bg-[#fbbf24]/30">
+      {/* Body class'larından hardcoded renkler (bg-[#020617], text-white) çıkarıldı.
+        Artık renkleri globals.css'teki CSS değişkenleri (var(--bg-main), vs.) yönetecek.
+      */}
+      <body className="font-sans antialiased flex flex-col min-h-[100dvh] relative selection:bg-amber-500/30">
         
-        {/* --- YENİ: ADCASH TAM EKRAN (INTERSTITIAL) KODU --- */}
-        <Script 
-          id="aclib-base" 
-          src="https://acscdn.com/script/aclib.js" 
-          strategy="afterInteractive" 
-        />
-        <Script id="aclib-interstitial-runner" strategy="lazyOnload">
-          {`
-            // Script yüklendiğinde tam ekran reklamı tetikle
-            setTimeout(() => {
-              if (typeof aclib !== 'undefined') {
-                aclib.runInterstitial({
-                    zoneId: '11000026',
-                });
-              }
-            }, 1000);
-          `}
-        </Script>
+        {/* THEME PROVIDER EKLENDİ */}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          
+          {/* Google Analytics & GTM */}
+          <Script
+            strategy="afterInteractive"
+            src="https://www.googletagmanager.com/gtag/js?id=G-W3T96RLZHL"
+          />
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
+          >
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-W3T96RLZHL'); 
+            `}
+          </Script>
 
-        {/* Google Analytics & GTM */}
-        <Script
-          strategy="afterInteractive"
-          src="https://www.googletagmanager.com/gtag/js?id=G-W3T96RLZHL"
-        />
-        <Script
-          id="google-analytics"
-          strategy="afterInteractive"
-        >
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-W3T96RLZHL'); 
-          `}
-        </Script>
-
-        {/* MASAÜSTÜ NAVBAR */}
-        <HideOnDashboard>
-           <NavbarWrapper /> 
-        </HideOnDashboard>
-
-        {/* ANA İÇERİK */}
-        <main className="flex-grow pb-24 md:pb-0 z-10 relative">
-          {children}
-        </main>
-
-        {/* MASAÜSTÜ FOOTER */}
-        <div className="hidden md:block z-10 relative">
+          {/* MASAÜSTÜ NAVBAR */}
           <HideOnDashboard>
-             <Footer />
+             <NavbarWrapper /> 
           </HideOnDashboard>
-        </div>
 
-        {/* MOBİL MENÜ (Bottom Nav) */}
-        <HideOnDashboard>
-           <MobileNav />
-        </HideOnDashboard>
+          {/* ANA İÇERİK */}
+          <main className="flex-grow pb-24 md:pb-0 z-10 relative">
+            {children}
+          </main>
 
-        {/* BİLDİRİMLER (Toast) */}
-        <Toaster position="top-center" richColors theme="dark" /> 
-        
-        {/* NOISE TEXTURE OVERLAY */}
-        <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
-        
-        {/* ÇEREZ POLİTİKASI */}
-        <CookieConsent />
+          {/* MASAÜSTÜ FOOTER */}
+          <div className="hidden md:block z-10 relative">
+            <HideOnDashboard>
+               <Footer />
+            </HideOnDashboard>
+          </div>
 
-        {/* VERCEL SPEED INSIGHTS */}
-        <SpeedInsights />
+          {/* MOBİL MENÜ (Bottom Nav) */}
+          <HideOnDashboard>
+             <MobileNav />
+          </HideOnDashboard>
 
+          {/* BİLDİRİMLER (Toast) - Theme 'system' olarak ayarlandı ki temaya uyum sağlasın */}
+          <Toaster position="top-center" richColors theme="system" /> 
+          
+          {/* MASAÜSTÜ İÇİN NOISE DIV'I EKLENDİ (Mobilde globals.css ile gizlenecek) */}
+          <div className="bg-noise"></div>
+          
+          {/* ÇEREZ POLİTİKASI */}
+          <CookieConsent />
+
+          {/* VERCEL SPEED INSIGHTS */}
+          <SpeedInsights />
+
+        </ThemeProvider>
       </body>
     </html>
   );

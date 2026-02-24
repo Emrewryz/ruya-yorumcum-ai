@@ -2,67 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 2, 6, 23;
-  --background-end-rgb: 2, 6, 23;
-  /* Mobil tarayıcı yüksekliği */
-  --app-height: 100dvh; 
+@layer base {
+  /* --- AÇIK TEMA (Daha sıcak, göz yormayan krem/taş tonları) --- */
+  :root {
+    --bg-main: #F5F5F4; /* stone-100: Kırık beyaz/hafif gri, gözü dinlendirir */
+    --bg-card: #FFFFFF; /* Kartlar tam beyaz ki zeminle ayrışsın */
+    --text-main: #1C1917; /* stone-900: Tam siyah değil, koyu antrasit */
+    --text-muted: #57534E; /* stone-500 */
+    --border-color: #E7E5E4; /* stone-200: Belirgin ama yumuşak sınır */
+    --app-height: 100dvh;
+  }
+
+  /* --- KOYU TEMA (Mevcut mistik tasarım - Aynen kalıyor) --- */
+  .dark {
+    --bg-main: #0B0F19;
+    --bg-card: #131722;
+    --text-main: #F8FAFC; 
+    --text-muted: #94A3B8; 
+    --border-color: rgba(255, 255, 255, 0.05);
+  }
 }
 
 html {
-  /* Bu özellik mobilde sayfanın lastik gibi esnemesini engeller, masaüstüne zararı yoktur */
   overscroll-behavior-y: none;
   height: 100%;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: #020617;
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-manrope), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
-  min-height: 100vh; /* Masaüstü varsayılan */
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease; /* Tema geçişini yumuşatır */
 }
 
 /* --- SADECE MOBİL CİHAZLAR İÇİN APP HİSSİYATI KURALLARI --- */
 @media (max-width: 768px) {
   body {
-    min-height: var(--app-height); /* Adres çubuğu sorununu çözer */
-    user-select: none;             /* Mobilde yazı seçmeyi engeller (App hissi) */
+    min-height: var(--app-height);
+    user-select: none;
     -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent; /* Tıklama mavisini kaldırır */
-    touch-action: manipulation;    /* Çift tıkla zoom'u kapatır */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
-  /* Mobilde scrollbar gizlensin, temiz görünsün */
   ::-webkit-scrollbar {
     display: none;
+  }
+
+  /* MOBİLDE NOISE EFEKTİNİ KAPATIYORUZ (GPU Performansı için) */
+  .bg-noise {
+    display: none !important;
   }
 }
 
 /* --- MASAÜSTÜ İÇİN ÖZEL KURALLAR --- */
 @media (min-width: 769px) {
-  /* Masaüstünde scrollbar şık görünsün */
   ::-webkit-scrollbar {
     width: 8px;
     display: block;
   }
-  ::-webkit-scrollbar-track { background: #020617; }
+  ::-webkit-scrollbar-track { background: var(--bg-main); }
   ::-webkit-scrollbar-thumb { background: #4c1d95; border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
-}
-
-/* Diğer stillerin (Noise, Glass Panel, AutoFill) aynen kalabilir */
-.bg-noise {
-  position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  pointer-events: none; z-index: 50; opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-}
-
-.glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  
+  .bg-noise {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    pointer-events: none; z-index: 50; opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
 }

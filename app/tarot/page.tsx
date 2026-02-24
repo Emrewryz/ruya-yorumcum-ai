@@ -10,7 +10,6 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { TAROT_DECK } from "@/utils/tarot-deck"; 
 import Script from "next/script";
-import AdUnit from "@/components/AdUnit";
 
 // --- SEO SCHEMA ---
 const tarotSchema = {
@@ -100,33 +99,32 @@ export default function TarotLandingClient() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0B0F19] text-slate-300 font-sans selection:bg-rose-500/30 pb-24 overflow-x-hidden relative">
+    <main className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] font-sans selection:bg-rose-500/30 pb-24 overflow-x-hidden relative">
       <Script id="tarot-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(tarotSchema) }} />
       
       {/* --- ATMOSFER --- */}
-      <div className="fixed inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay z-0" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-rose-600/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-rose-600/10 rounded-full blur-[150px] pointer-events-none z-0 dark:opacity-100 opacity-60"></div>
 
       {/* ================= 1. HERO & İNTERAKTİF UYGULAMA ALANI ================= */}
       <section className="relative pt-32 md:pt-40 pb-16 px-4 md:px-6 z-10 flex flex-col items-center">
         
         <div className="text-center mb-10">
-           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/5 text-rose-400 text-[10px] md:text-xs font-mono uppercase tracking-widest shadow-xl">
+           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-[var(--bg-card)] dark:bg-white/[0.03] border border-[var(--border-color)] dark:border-white/5 text-rose-500 dark:text-rose-400 text-[10px] md:text-xs font-mono uppercase tracking-widest shadow-sm dark:shadow-xl">
              <Star className="w-3.5 h-3.5" /> 3 Kart Tarot Açılımı
            </div>
-           <h1 className="font-serif text-4xl md:text-6xl font-bold leading-[1.1] text-white tracking-tight mb-4">
+           <h1 className="font-serif text-4xl md:text-6xl font-bold leading-[1.1] text-[var(--text-main)] tracking-tight mb-4">
               Geleceğiniz <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-rose-500 to-pink-500">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-600 dark:from-rose-300 dark:via-rose-500 dark:to-pink-500">
                 Kartlarda Gizli
               </span>
            </h1>
-           <p className="text-slate-400 text-sm md:text-base font-light max-w-xl mx-auto">
+           <p className="text-[var(--text-muted)] text-sm md:text-base font-light max-w-xl mx-auto">
               Niyetinize odaklanın, sorunuzu yazın ve yapay zeka kahinimizin kartlarınızı okumasına izin verin.
            </p>
         </div>
 
         {/* --- İNTERAKTİF TAROT KUTUSU --- */}
-        <div className="relative w-full max-w-4xl min-h-[500px] md:min-h-[550px] bg-[#131722]/80 backdrop-blur-xl border border-white/10 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(225,29,72,0.1)] overflow-hidden flex flex-col items-center justify-center p-4 md:p-8 transition-all duration-700">
+        <div className="relative w-full max-w-4xl min-h-[500px] md:min-h-[550px] bg-[var(--bg-card)]/90 dark:bg-[#131722]/80 backdrop-blur-xl border border-[var(--border-color)] dark:border-white/10 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 dark:shadow-[0_20px_60px_-15px_rgba(225,29,72,0.1)] overflow-hidden flex flex-col items-center justify-center p-4 md:p-8 transition-all duration-700">
             
             <AnimatePresence mode="wait">
 
@@ -143,8 +141,8 @@ export default function TarotLandingClient() {
                         <Layers className="w-8 h-8 text-rose-500" />
                     </div>
 
-                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-3">Kartlara Ne Sormak İstersiniz?</h2>
-                    <p className="text-slate-400 mb-8 text-sm font-light">
+                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-[var(--text-main)] mb-3">Kartlara Ne Sormak İstersiniz?</h2>
+                    <p className="text-[var(--text-muted)] mb-8 text-sm font-light">
                         Zihninizi boşaltın. Sadece cevabını aradığınız o tek konuya odaklanın.
                     </p>
 
@@ -155,7 +153,7 @@ export default function TarotLandingClient() {
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
                             placeholder="Örn: Bu ilişkide beni neler bekliyor?"
-                            className="relative w-full bg-[#0B0F19] text-white p-5 rounded-2xl border border-white/5 outline-none focus:border-rose-500/50 transition-colors text-center text-sm md:text-base placeholder:text-slate-600"
+                            className="relative w-full bg-[var(--bg-main)] dark:bg-[#0B0F19] text-[var(--text-main)] p-5 rounded-2xl border border-[var(--border-color)] dark:border-white/5 outline-none focus:border-rose-500/50 transition-colors text-center text-sm md:text-base placeholder:text-[var(--text-muted)]"
                             onKeyDown={(e) => e.key === 'Enter' && handleIntentionSubmit()}
                         />
                     </div>
@@ -163,7 +161,7 @@ export default function TarotLandingClient() {
                     <button 
                         onClick={handleIntentionSubmit}
                         disabled={!question.trim()}
-                        className="px-10 py-4 bg-white text-[#0B0F19] font-bold rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xl flex items-center gap-2 mx-auto"
+                        className="px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-[#0B0F19] font-bold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xl flex items-center gap-2 mx-auto active:scale-95"
                     >
                         Enerjimi Gönder <ArrowRight className="w-5 h-5" />
                     </button>
@@ -182,7 +180,7 @@ export default function TarotLandingClient() {
                     <motion.p 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-rose-400 font-serif text-xl md:text-2xl mb-12 text-center max-w-md italic"
+                        className="text-rose-500 dark:text-rose-400 font-serif text-xl md:text-2xl mb-12 text-center max-w-md italic"
                     >
                         "{question}"
                     </motion.p>
@@ -193,16 +191,16 @@ export default function TarotLandingClient() {
                             key={i}
                             animate={{ x: [0, 60, -60, 0], rotate: [0, 15, -15, 0], scale: [1, 1.05, 1] }}
                             transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
-                            className="absolute inset-0 bg-gradient-to-br from-[#131722] to-[#0B0F19] rounded-xl border border-rose-500/20 shadow-2xl"
+                            className="absolute inset-0 bg-gradient-to-br from-slate-200 dark:from-[#131722] to-slate-100 dark:to-[#0B0F19] rounded-xl border border-rose-500/20 shadow-2xl"
                             style={{ zIndex: i }}
                             >
-                            <div className="w-full h-full flex items-center justify-center opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
+                            <div className="w-full h-full flex items-center justify-center opacity-30">
                                 <RefreshCcw className="w-8 h-8 text-rose-500" />
                             </div>
                             </motion.div>
                         ))}
                     </div>
-                    <p className="mt-10 text-slate-500 text-[10px] tracking-widest font-mono uppercase animate-pulse">Kozmik Bağ Bağlanıyor</p>
+                    <p className="mt-10 text-[var(--text-muted)] text-[10px] tracking-widest font-mono uppercase animate-pulse">Kozmik Bağ Bağlanıyor</p>
                 </motion.div>
                 )}
 
@@ -216,8 +214,8 @@ export default function TarotLandingClient() {
                     exit={{ opacity: 0 }}
                 >
                     <div className="text-center mb-8">
-                        <h3 className="text-white font-serif text-2xl mb-2">3 Kart Seç</h3>
-                        <p className="text-slate-500 text-xs italic">Niyetin: {question}</p>
+                        <h3 className="text-[var(--text-main)] font-serif text-2xl mb-2">3 Kart Seç</h3>
+                        <p className="text-[var(--text-muted)] text-xs italic">Niyetin: {question}</p>
                     </div>
 
                     {/* Yelpaze */}
@@ -238,9 +236,8 @@ export default function TarotLandingClient() {
                                     transition={{ delay: i * 0.02, type: "spring" }}
                                     whileHover={{ y: y - 40, scale: 1.1, zIndex: 50 }}
                                     onClick={() => handleCardPick(i)}
-                                    className="absolute w-16 h-28 md:w-24 md:h-40 bg-gradient-to-br from-[#131722] to-[#0B0F19] border border-white/10 rounded-lg cursor-pointer shadow-[-5px_0_15px_rgba(0,0,0,0.5)] hover:border-rose-500 hover:shadow-[0_0_20px_rgba(225,29,72,0.4)] transition-colors origin-bottom"
+                                    className="absolute w-16 h-28 md:w-24 md:h-40 bg-gradient-to-br from-slate-200 dark:from-[#131722] to-slate-100 dark:to-[#0B0F19] border border-[var(--border-color)] dark:border-white/10 rounded-lg cursor-pointer shadow-[-5px_0_15px_rgba(0,0,0,0.1)] dark:shadow-[-5px_0_15px_rgba(0,0,0,0.5)] hover:border-rose-500 dark:hover:border-rose-500 hover:shadow-[0_0_20px_rgba(225,29,72,0.2)] dark:hover:shadow-[0_0_20px_rgba(225,29,72,0.4)] transition-colors origin-bottom"
                                 >
-                                    <div className="w-full h-full flex items-center justify-center opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
                                 </motion.div>
                             )
                         })}
@@ -249,16 +246,16 @@ export default function TarotLandingClient() {
                     {/* Slotlar */}
                     <div className="flex gap-4 mt-12">
                         {[0, 1, 2].map((slot) => (
-                            <div key={slot} className="w-16 h-24 md:w-20 md:h-32 rounded-xl border-2 border-dashed border-white/10 flex items-center justify-center bg-[#0B0F19] relative">
+                            <div key={slot} className="w-16 h-24 md:w-20 md:h-32 rounded-xl border-2 border-dashed border-[var(--border-color)] dark:border-white/10 flex items-center justify-center bg-[var(--bg-main)] dark:bg-[#0B0F19] relative">
                                 {selectedCards[slot] ? (
                                     <motion.div 
                                     layoutId={`card-${selectedCards[slot].tempId}`}
-                                    className="absolute inset-0 bg-gradient-to-br from-rose-900/40 to-[#0B0F19] rounded-xl border border-rose-500/50 flex items-center justify-center"
+                                    className="absolute inset-0 bg-gradient-to-br from-rose-100 dark:from-rose-900/40 to-[var(--bg-main)] dark:to-[#0B0F19] rounded-xl border border-rose-500/50 flex items-center justify-center"
                                     >
-                                        <Sparkles className="w-5 h-5 text-rose-400" />
+                                        <Sparkles className="w-5 h-5 text-rose-500 dark:text-rose-400" />
                                     </motion.div>
                                 ) : (
-                                    <span className="text-slate-600 font-mono text-xs">{slot + 1}</span>
+                                    <span className="text-[var(--text-muted)] font-mono text-xs">{slot + 1}</span>
                                 )}
                             </div>
                         ))}
@@ -275,8 +272,8 @@ export default function TarotLandingClient() {
                     className="w-full max-w-3xl z-10 flex flex-col items-center justify-center"
                 >
                     <div className="mb-10 text-center">
-                        <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2">Kartların Açıldı</h3>
-                        <p className="text-slate-400 text-sm font-light">Seçtiğiniz bu 3 kartın kombinasyonu kaderiniz hakkında ne söylüyor?</p>
+                        <h3 className="text-2xl md:text-3xl font-serif font-bold text-[var(--text-main)] mb-2">Kartların Açıldı</h3>
+                        <p className="text-[var(--text-muted)] text-sm font-light">Seçtiğiniz bu 3 kartın kombinasyonu kaderiniz hakkında ne söylüyor?</p>
                     </div>
 
                     {/* KARTLAR */}
@@ -287,10 +284,10 @@ export default function TarotLandingClient() {
                             initial={{ rotateY: 90, opacity: 0 }}
                             animate={{ rotateY: 0, opacity: 1 }}
                             transition={{ delay: i * 0.2, type: "spring", stiffness: 100 }}
-                            className="relative w-24 h-40 md:w-36 md:h-56 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group transform hover:-translate-y-2 transition-transform duration-300"
+                            className="relative w-24 h-40 md:w-36 md:h-56 rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-white/10 group transform hover:-translate-y-2 transition-transform duration-300"
                             >
                                 <img src={card.image} alt={card.name} className="w-full h-full object-cover" />
-                                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/90 to-transparent p-3 pt-8 text-center">
+                                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/80 to-transparent p-3 pt-8 text-center">
                                     <p className="text-rose-400 text-[8px] md:text-[9px] font-bold uppercase tracking-widest mb-1">
                                         {i === 0 ? "Geçmiş" : i === 1 ? "Şimdi" : "Gelecek"}
                                     </p>
@@ -303,28 +300,29 @@ export default function TarotLandingClient() {
                     </div>
 
                     {/* KİLİTLİ ANALİZ KUTUSU */}
-                    <div className="w-full bg-[#0B0F19] border border-white/5 rounded-2xl overflow-hidden relative shadow-2xl">
+                    <div className="w-full bg-[var(--bg-main)] dark:bg-[#0B0F19] border border-[var(--border-color)] dark:border-white/5 rounded-2xl overflow-hidden relative shadow-2xl">
                         
                         <div className="p-6 md:p-8 opacity-20 filter blur-[4px] grayscale select-none space-y-3 pointer-events-none">
-                            <h4 className="text-xl font-serif text-white mb-2">Gizli Anlam</h4>
-                            <p className="text-sm">Seçtiğiniz kartlar arasındaki enerji akışı, özellikle {selectedCards[1]?.name} kartının etkisiyle...</p>
-                            <div className="w-full h-3 bg-slate-600 rounded"></div>
-                            <div className="w-2/3 h-3 bg-slate-600 rounded"></div>
-                            <div className="w-3/4 h-3 bg-slate-600 rounded"></div>
+                            <h4 className="text-xl font-serif text-[var(--text-main)] mb-2">Gizli Anlam</h4>
+                            <p className="text-sm text-[var(--text-muted)]">Seçtiğiniz kartlar arasındaki enerji akışı, özellikle {selectedCards[1]?.name} kartının etkisiyle...</p>
+                            <div className="w-full h-3 bg-slate-400 dark:bg-slate-600 rounded"></div>
+                            <div className="w-2/3 h-3 bg-slate-400 dark:bg-slate-600 rounded"></div>
+                            <div className="w-3/4 h-3 bg-slate-400 dark:bg-slate-600 rounded"></div>
                         </div>
 
-                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/90 to-transparent p-6 text-center">
-                            <div className="w-12 h-12 bg-rose-500/10 rounded-xl flex items-center justify-center mb-4 border border-rose-500/20">
-                                <Lock className="w-5 h-5 text-rose-500" />
+                        {/* Fade-out Gradient - Temaya Duyarlı */}
+                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gradient-to-t from-[var(--bg-main)] via-[var(--bg-main)]/90 dark:from-[#0B0F19] dark:via-[#0B0F19]/90 to-transparent p-6 text-center">
+                            <div className="w-12 h-12 bg-rose-500/10 rounded-xl flex items-center justify-center mb-4 border border-rose-500/20 shadow-sm">
+                                <Lock className="w-5 h-5 text-rose-600 dark:text-rose-500" />
                             </div>
-                            <h3 className="text-lg md:text-xl font-bold text-white mb-2">Detaylı Analiz Hazır</h3>
-                            <p className="text-slate-400 text-xs md:text-sm mb-6 max-w-sm font-light">
+                            <h3 className="text-lg md:text-xl font-bold text-[var(--text-main)] mb-2">Detaylı Analiz Hazır</h3>
+                            <p className="text-[var(--text-muted)] text-xs md:text-sm mb-6 max-w-sm font-light">
                                 Bu kartların aşk, kariyer ve gelecek üzerindeki gizli etkilerini öğrenmek için hemen devam et.
                             </p>
 
                             <button 
                                 onClick={() => handleUnlockResult(!!user)}
-                                className="px-8 py-3.5 rounded-xl bg-white text-[#0B0F19] font-bold text-sm md:text-base hover:bg-slate-200 transition-colors shadow-lg flex items-center gap-2"
+                                className="px-8 py-3.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-[#0B0F19] font-bold text-sm md:text-base hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors shadow-lg flex items-center gap-2 active:scale-95"
                             >
                                 {user ? "Sonucumu Görüntüle" : "Ücretsiz Kilidi Aç ve Oku"} <ArrowRight className="w-4 h-4" />
                             </button>
@@ -338,59 +336,47 @@ export default function TarotLandingClient() {
         </div>
       </section>
 
-      {/* --- REKLAM 1: HERO ALTI --- */}
-      <div className="max-w-5xl mx-auto w-full px-4 py-4 z-10 relative">
-          <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
-          <AdUnit slot="8565155493" format="auto" />
-      </div>
-
       {/* ================= 2. NASIL ÇALIŞIR ================= */}
-      <section className="py-20 border-y border-white/5 relative z-10 bg-[#131722]/30">
+      <section className="py-20 border-y border-[var(--border-color)] dark:border-white/5 relative z-10 bg-slate-50 dark:bg-[#131722]/30">
          <div className="container mx-auto px-4 md:px-6 max-w-5xl">
             <div className="text-center mb-16">
-               <h2 className="font-serif text-3xl md:text-4xl font-bold text-white mb-4">Geleneksel Bilgelik, Modern Algoritma</h2>
-               <p className="text-slate-400 text-sm md:text-base font-light max-w-2xl mx-auto">
+               <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--text-main)] mb-4">Geleneksel Bilgelik, Modern Algoritma</h2>
+               <p className="text-[var(--text-muted)] text-sm md:text-base font-light max-w-2xl mx-auto">
                   Sıradan bir fal uygulamasının ötesinde, seçtiğiniz kartların sembolizmini sizin niyetinizle harmanlayarak size özel bir yaşam rehberi sunuyoruz.
                </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-rose-500/20 transition-all">
-                  <Moon className="w-6 h-6 text-rose-400 mb-5"/>
-                  <h3 className="text-lg font-bold text-white mb-2">Bilinçaltı Yansıması</h3>
-                  <p className="text-xs text-slate-400 font-light leading-relaxed">Kartlar rastgele gelmez. Seçim anınızdaki niyetiniz, algoritmanın sizin enerjinizle senkronize olmasını sağlar.</p>
+               <div className="bg-[var(--bg-card)] dark:bg-[#0B0F19] p-8 rounded-[1.5rem] border border-[var(--border-color)] dark:border-white/5 hover:border-rose-500/30 transition-all shadow-sm">
+                  <Moon className="w-6 h-6 text-rose-500 dark:text-rose-400 mb-5"/>
+                  <h3 className="text-lg font-bold text-[var(--text-main)] mb-2">Bilinçaltı Yansıması</h3>
+                  <p className="text-xs text-[var(--text-muted)] font-light leading-relaxed">Kartlar rastgele gelmez. Seçim anınızdaki niyetiniz, algoritmanın sizin enerjinizle senkronize olmasını sağlar.</p>
                </div>
-               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-rose-500/20 transition-all">
-                  <Compass className="w-6 h-6 text-rose-400 mb-5"/>
-                  <h3 className="text-lg font-bold text-white mb-2">Derin Semboloji</h3>
-                  <p className="text-xs text-slate-400 font-light leading-relaxed">Rider-Waite destesinin 78 kartlık derin sembolizmini kullanarak yüzeysel yorumlardan kaçınır, kök nedene ineriz.</p>
+               <div className="bg-[var(--bg-card)] dark:bg-[#0B0F19] p-8 rounded-[1.5rem] border border-[var(--border-color)] dark:border-white/5 hover:border-rose-500/30 transition-all shadow-sm">
+                  <Compass className="w-6 h-6 text-rose-500 dark:text-rose-400 mb-5"/>
+                  <h3 className="text-lg font-bold text-[var(--text-main)] mb-2">Derin Semboloji</h3>
+                  <p className="text-xs text-[var(--text-muted)] font-light leading-relaxed">Rider-Waite destesinin 78 kartlık derin sembolizmini kullanarak yüzeysel yorumlardan kaçınır, kök nedene ineriz.</p>
                </div>
-               <div className="bg-[#0B0F19] p-8 rounded-[1.5rem] border border-white/5 hover:border-rose-500/20 transition-all">
-                  <BrainCircuit className="w-6 h-6 text-rose-400 mb-5"/>
-                  <h3 className="text-lg font-bold text-white mb-2">Yapay Zeka Sentezi</h3>
-                  <p className="text-xs text-slate-400 font-light leading-relaxed">Sorduğunuz özel soru ile kartların kombinasyonunu NLP ile birleştirerek eyleme dökülebilir tavsiyeler verir.</p>
+               <div className="bg-[var(--bg-card)] dark:bg-[#0B0F19] p-8 rounded-[1.5rem] border border-[var(--border-color)] dark:border-white/5 hover:border-rose-500/30 transition-all shadow-sm">
+                  <BrainCircuit className="w-6 h-6 text-rose-500 dark:text-rose-400 mb-5"/>
+                  <h3 className="text-lg font-bold text-[var(--text-main)] mb-2">Yapay Zeka Sentezi</h3>
+                  <p className="text-xs text-[var(--text-muted)] font-light leading-relaxed">Sorduğunuz özel soru ile kartların kombinasyonunu NLP ile birleştirerek eyleme dökülebilir tavsiyeler verir.</p>
                </div>
             </div>
          </div>
       </section>
 
-      {/* --- REKLAM 2 --- */}
-      <div className="max-w-5xl mx-auto w-full px-4 py-12 z-10 relative">
-          <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
-          <AdUnit slot="4542150009" format="fluid" />
-      </div>
-
       {/* ================= 3. DEV SEO MAKALESİ ================= */}
       <section className="py-12 px-4 md:px-6 max-w-4xl mx-auto relative z-10">
-         <h2 className="font-serif text-2xl md:text-3xl font-bold text-white mb-10 border-b border-white/10 pb-6">
+         <h2 className="font-serif text-2xl md:text-3xl font-bold text-[var(--text-main)] mb-10 border-b border-[var(--border-color)] dark:border-white/10 pb-6">
             Tarot Falı ve Kartların Gizemli Dünyası
          </h2>
          
-         <div className="space-y-12 text-slate-400 font-light leading-relaxed text-sm md:text-base">
+         <div className="space-y-12 text-[var(--text-muted)] font-light leading-relaxed text-sm md:text-base">
             
             <article className="space-y-4">
-               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-rose-400"/> Tarot Falı Nedir? Nasıl Bakılır?
+               <h3 className="text-lg md:text-xl font-bold text-[var(--text-main)] flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-rose-500 dark:text-rose-400"/> Tarot Falı Nedir? Nasıl Bakılır?
                </h3>
                <p>
                   Yüzyıllardır insanların geleceği anlamlandırmak ve içsel rehberlik bulmak için başvurduğu <strong>Tarot</strong>, 78 kartlık bir desteden oluşur. İnternette en çok aranan <strong>"Ücretsiz tarot falı bak"</strong> veya <strong>"3 kart tarot açılımı"</strong> gibi terimler, insanların hızlıca bir yol göstericiye ihtiyaç duyduğunu kanıtlar.
@@ -401,23 +387,17 @@ export default function TarotLandingClient() {
             </article>
 
             <article className="space-y-4">
-               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
-                  <Star className="w-5 h-5 text-rose-400"/> 3 Kart Açılımı (Geçmiş, Şimdi, Gelecek)
+               <h3 className="text-lg md:text-xl font-bold text-[var(--text-main)] flex items-center gap-2">
+                  <Star className="w-5 h-5 text-rose-500 dark:text-rose-400"/> 3 Kart Açılımı (Geçmiş, Şimdi, Gelecek)
                </h3>
                <p>
                   En popüler ve etkili yöntemlerden biri <strong>3 kart tarot açılımı</strong>dır. Birinci kart geçmişte yaşadığınız ve bugünü şekillendiren kök nedeni; ikinci kart şu anki enerjinizi ve durumunuzu; üçüncü kart ise bu yolda devam ederseniz varacağınız muhtemel geleceği (potansiyel sonucu) gösterir.
                </p>
             </article>
 
-            {/* REKLAM 3: SEO İÇERİĞİ ARASI */}
-            <div className="py-6 border-y border-white/5 my-6">
-                <p className="text-center text-[9px] text-slate-600 mb-2 uppercase tracking-widest font-bold">Sponsorlu</p>
-                <AdUnit slot="4542150009" format="fluid" />
-            </div>
-
             <article className="space-y-4">
-               <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
-                  <BrainCircuit className="w-5 h-5 text-rose-400"/> Yapay Zeka ile Modern Yorumlama
+               <h3 className="text-lg md:text-xl font-bold text-[var(--text-main)] flex items-center gap-2">
+                  <BrainCircuit className="w-5 h-5 text-rose-500 dark:text-rose-400"/> Yapay Zeka ile Modern Yorumlama
                </h3>
                <p>
                   Geleneksel falcılardan farklı olarak, sistemimiz yapay zeka destekli bir <strong>tarot okuması</strong> gerçekleştirir. Seçtiğiniz kartların Majör Arkana (Büyük sırlar) mı yoksa Minör Arkana mı olduğunu analiz eder ve sorduğunuz soruya en uygun, psikolojik temelli, eyleme geçirilebilir bir sentez raporu sunar.
@@ -426,12 +406,6 @@ export default function TarotLandingClient() {
 
          </div>
       </section>
-
-      {/* REKLAM 4: İÇERİK SONU MULTIPLEX */}
-      <div className="max-w-4xl mx-auto w-full px-4 mt-4 mb-20 z-10 relative">
-          <p className="text-center text-[10px] text-slate-600 mb-4 uppercase tracking-widest font-bold">İlginizi Çekebilir</p>
-          <AdUnit slot="6481917633" format="autorelaxed" />
-      </div>
 
     </main>
   );

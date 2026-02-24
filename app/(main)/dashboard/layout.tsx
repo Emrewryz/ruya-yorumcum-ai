@@ -6,17 +6,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#0B0F19] text-white font-sans selection:bg-amber-500/30 overflow-hidden">
+    <div className="flex min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] font-sans selection:bg-amber-500/30 overflow-hidden transition-colors duration-300">
       
-      {/* 1. AKILLI SOL NAVBAR (Dar halde 80px, üzerine gelince 256px olur) */}
+      {/* 1. MASAÜSTÜ SOL NAVBAR (Sadece md ve üzeri ekranlarda görünür) */}
       <Sidebar />
 
       {/* 2. ANA İÇERİK ALANI 
-          Menü dar olduğu için sadece ml-20 (80px) boşluk bırakıyoruz.
-          Menü açıldığında içeriği itmek yerine üstüne şık bir gölgeyle açılır. 
+          Mobilde: ml-0 (tam genişlik) ve pb-24 (alt menü boşluğu)
+          Masaüstünde: md:ml-20 (sol menü boşluğu)
       */}
-      <main className="flex-1 ml-20 relative w-[calc(100%-5rem)] h-screen overflow-y-auto overflow-x-hidden">
-        <div className="p-6 md:p-10 max-w-[1200px] mx-auto w-full">
+      <main className="flex-1 ml-0 md:ml-20 relative w-full md:w-[calc(100%-5rem)] h-screen overflow-y-auto overflow-x-hidden pb-24 md:pb-0">
+        <div className="p-4 md:p-10 max-w-[1200px] mx-auto w-full">
           {children}
         </div>
       </main>

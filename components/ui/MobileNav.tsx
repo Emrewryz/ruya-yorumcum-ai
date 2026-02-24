@@ -34,7 +34,7 @@ export default function MobileNav() {
       setUser(user);
     };
     checkUser();
-  }, []);
+  }, [supabase]);
 
   // Menü açıldığında scroll'u engelle
   useEffect(() => {
@@ -65,12 +65,12 @@ export default function MobileNav() {
 
   // Açılır Menüdeki Hizmetler (Tüm Sayfalar)
   const allServices = [
-    { name: "Rüya Analizi", href: "/ruya-tabiri", icon: Sparkles, color: "text-yellow-400" },
-    { name: "Doğum Haritası", href: "/astroloji", icon: Compass, color: "text-indigo-400" },
-    { name: "Tarot Falı", href: "/tarot", icon: Layers, color: "text-pink-400" },
-    { name: "Numeroloji", href: "/numeroloji", icon: Hash, color: "text-amber-500" },
-    { name: "Duygu Analizi", href: "/duygu-analizi", icon: BrainCircuit, color: "text-emerald-400" },
-    { name: "Rüya Görselleştir", href: "/ruya-gorsellestirme", icon: Palette, color: "text-purple-400" },
+    { name: "Rüya Analizi", href: "/ruya-tabiri", icon: Sparkles, color: "text-amber-500" },
+    { name: "Doğum Haritası", href: "/astroloji", icon: Compass, color: "text-indigo-500" },
+    { name: "Tarot Falı", href: "/tarot", icon: Layers, color: "text-pink-500" },
+    { name: "Numeroloji", href: "/numeroloji", icon: Hash, color: "text-blue-500" },
+    { name: "Duygu Analizi", href: "/duygu-analizi", icon: BrainCircuit, color: "text-emerald-500" },
+    { name: "Rüya Görselleştir", href: "/ruya-gorsellestirme", icon: Palette, color: "text-purple-500" },
   ];
 
   // Profil & Diğer Linkler
@@ -89,14 +89,14 @@ export default function MobileNav() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[60] bg-[#020617] pb-24 overflow-y-auto md:hidden"
+            className="fixed inset-0 z-[60] bg-[var(--bg-main)] pb-24 overflow-y-auto md:hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-white/10 sticky top-0 bg-[#020617]/95 backdrop-blur-md z-10">
-              <span className="text-xl font-serif font-bold text-white">Menü & Hizmetler</span>
+            <div className="flex items-center justify-between p-6 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-main)]/95 backdrop-blur-md z-10">
+              <span className="text-xl font-serif font-bold text-[var(--text-main)]">Menü & Hizmetler</span>
               <button 
                 onClick={() => setIsMenuOpen(false)}
-                className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white"
+                className="p-2 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-[var(--text-main)] transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -105,28 +105,28 @@ export default function MobileNav() {
             <div className="p-6 space-y-8">
               {/* Kullanıcı Durumu */}
               {user ? (
-                <div className="bg-gradient-to-r from-white/10 to-transparent p-4 rounded-2xl border border-white/5 flex items-center gap-4">
+                <div className="bg-gradient-to-r from-black/5 dark:from-white/10 to-transparent p-4 rounded-2xl border border-[var(--border-color)] flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-[#fbbf24] text-black flex items-center justify-center font-bold text-xl">
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
-                     <div className="text-sm text-gray-400">Hoş geldin,</div>
-                     <div className="font-bold text-white truncate max-w-[150px]">{user.user_metadata?.full_name || user.email?.split('@')[0]}</div>
+                     <div className="text-sm text-[var(--text-muted)]">Hoş geldin,</div>
+                     <div className="font-bold text-[var(--text-main)] truncate max-w-[150px]">{user.user_metadata?.full_name || user.email?.split('@')[0]}</div>
                   </div>
                   <Link 
                      href="/dashboard" 
                      onClick={() => setIsMenuOpen(false)}
-                     className="px-4 py-2 bg-white/10 rounded-lg text-xs font-bold hover:bg-white/20 transition-colors"
+                     className="px-4 py-2 bg-black/5 dark:bg-white/10 rounded-lg text-xs font-bold hover:bg-black/10 dark:hover:bg-white/20 transition-colors text-[var(--text-main)]"
                   >
                     Panel
                   </Link>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
-                   <Link href="/auth?mode=login" onClick={() => setIsMenuOpen(false)} className="py-3 bg-white/5 rounded-xl text-center font-bold text-sm text-gray-300 border border-white/10">
+                   <Link href="/auth?mode=login" onClick={() => setIsMenuOpen(false)} className="py-3 bg-[var(--bg-card)] rounded-xl text-center font-bold text-sm text-[var(--text-main)] border border-[var(--border-color)] shadow-sm">
                       Giriş Yap
                    </Link>
-                   <Link href="/auth?mode=signup" onClick={() => setIsMenuOpen(false)} className="py-3 bg-[#fbbf24] text-black rounded-xl text-center font-bold text-sm shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                   <Link href="/auth?mode=signup" onClick={() => setIsMenuOpen(false)} className="py-3 bg-[#fbbf24] text-[#020617] rounded-xl text-center font-bold text-sm shadow-lg shadow-amber-500/20">
                       Kayıt Ol
                    </Link>
                 </div>
@@ -134,17 +134,17 @@ export default function MobileNav() {
 
               {/* HİZMETLER GRID */}
               <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Keşfet</h3>
+                <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-4">Keşfet</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {allServices.map((service) => (
                     <Link
                       key={service.name}
                       href={service.href}
                       onClick={() => setIsMenuOpen(false)}
-                      className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 hover:border-[#fbbf24]/30 transition-all group"
+                      className="flex flex-col gap-3 p-4 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl hover:border-amber-500/30 transition-all group shadow-sm"
                     >
                       <service.icon className={`w-6 h-6 ${service.color}`} />
-                      <span className="text-sm font-medium text-gray-200 group-hover:text-white">{service.name}</span>
+                      <span className="text-sm font-medium text-[var(--text-main)] group-hover:text-amber-600 dark:group-hover:text-amber-400">{service.name}</span>
                     </Link>
                   ))}
                 </div>
@@ -153,22 +153,22 @@ export default function MobileNav() {
               {/* HIZLI LİNKLER */}
               {user && (
                 <div>
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Hesabım</h3>
+                  <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-4">Hesabım</h3>
                   <div className="space-y-2">
                     {userLinks.map((link) => (
                       <Link
                         key={link.name}
                         href={link.href}
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors"
+                        className="flex items-center gap-4 p-4 bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors shadow-sm"
                       >
-                         <link.icon className="w-5 h-5 text-gray-400" />
-                         <span className="text-sm text-gray-200">{link.name}</span>
+                         <link.icon className="w-5 h-5 text-[var(--text-muted)]" />
+                         <span className="text-sm text-[var(--text-main)]">{link.name}</span>
                       </Link>
                     ))}
                     <button 
                       onClick={handleSignOut}
-                      className="w-full flex items-center gap-4 p-4 bg-red-500/10 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
+                      className="w-full flex items-center gap-4 p-4 bg-red-50 dark:bg-red-500/10 rounded-xl border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors shadow-sm"
                     >
                       <LogOut className="w-5 h-5" />
                       <span className="text-sm font-medium">Çıkış Yap</span>
@@ -184,7 +184,7 @@ export default function MobileNav() {
       {/* --- ALT SABİT BAR --- */}
       <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
         {/* Glass Effect Background */}
-        <div className="absolute inset-0 bg-[#020617]/90 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]" />
+        <div className="absolute inset-0 bg-white/90 dark:bg-[#020617]/90 backdrop-blur-xl border-t border-[var(--border-color)] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)]" />
         
         <div className="relative flex justify-around items-end h-[84px] pb-5 px-2">
           {bottomNavItems.map((item: any) => {
@@ -199,10 +199,10 @@ export default function MobileNav() {
                   href={item.href} 
                   className="relative -top-8 group"
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#fbbf24] to-[#d97706] flex items-center justify-center shadow-[0_0_25px_rgba(251,191,36,0.4)] border-[6px] border-[#020617] group-active:scale-95 transition-transform duration-200">
-                    <Icon className="w-7 h-7 text-black fill-black/10" strokeWidth={2} />
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#fbbf24] to-[#d97706] flex items-center justify-center shadow-lg shadow-amber-500/40 border-[6px] border-[var(--bg-main)] group-active:scale-95 transition-transform duration-200">
+                    <Icon className="w-7 h-7 text-white dark:text-[#020617] fill-white/20 dark:fill-black/10" strokeWidth={2} />
                   </div>
-                  <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-[#fbbf24] opacity-80 whitespace-nowrap">
+                  <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-amber-600 dark:text-amber-500 whitespace-nowrap">
                     YORUMLA
                   </div>
                 </Link>
@@ -219,13 +219,13 @@ export default function MobileNav() {
                 {item.href ? (
                   <Link 
                     href={item.href} 
-                    className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-300 ${isActive ? "text-[#fbbf24]" : "text-gray-500 hover:text-gray-300"}`}
+                    className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-300 ${isActive ? "text-amber-600 dark:text-amber-500" : "text-[var(--text-muted)] hover:text-[var(--text-main)]"}`}
                   >
-                    <Icon className={`w-6 h-6 ${isActive ? "fill-current/20" : ""}`} strokeWidth={isActive ? 2.5 : 1.5} />
+                    <Icon className={`w-6 h-6 ${isActive ? "fill-amber-600/20 dark:fill-amber-500/20" : ""}`} strokeWidth={isActive ? 2.5 : 1.5} />
                     <span className="text-[10px] font-medium tracking-wide">{item.name}</span>
                   </Link>
                 ) : (
-                  <div className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-300 ${isMenuOpen && item.name === "Menü" ? "text-[#fbbf24]" : "text-gray-500 hover:text-gray-300"}`}>
+                  <div className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-300 ${isMenuOpen && item.name === "Menü" ? "text-amber-600 dark:text-amber-500" : "text-[var(--text-muted)] hover:text-[var(--text-main)]"}`}>
                     <Icon className="w-6 h-6" strokeWidth={1.5} />
                     <span className="text-[10px] font-medium tracking-wide">{item.name}</span>
                   </div>
