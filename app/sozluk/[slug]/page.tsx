@@ -296,9 +296,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
                               >
                                  <div className="flex items-center gap-3 mb-2 md:mb-3">
                                     <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shrink-0 ${scene.isPositive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`}></div>
-                                    <h3 className="text-base md:text-lg font-bold text-[var(--text-main)]">
-                                       {scene.title}
-                                    </h3>
+                                   <h3 className="text-base md:text-lg font-bold text-[var(--text-main)]">
+   {/* BAŞTAKİ H3: YAZISINI TEMİZLER */}
+   {scene.title.replace(/^H3:\s*/i, '')}
+</h3>
                                  </div>
                                  <p className="text-[var(--text-muted)] text-sm md:text-base leading-relaxed font-normal pl-5 md:pl-6">
                                     {scene.description}
