@@ -10,6 +10,7 @@ import NavbarWrapper from "@/components/NavbarWrapper";
 import HideOnDashboard from "@/components/HideOnDashboard";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "next-themes";
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 // --- 1. FONTLAR ---
 const cinzel = Cinzel({ 
@@ -97,7 +98,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // suppressHydrationWarning eklendi (next-themes için zorunludur, hydration hatasını önler)
     <html lang="tr" suppressHydrationWarning className={`${cinzel.variable} ${manrope.variable}`}>
       <head>
         {/* Schema JSON-LD */}
@@ -108,31 +108,14 @@ export default function RootLayout({
         />
       </head>
       
-      {/* Body class'larından hardcoded renkler (bg-[#020617], text-white) çıkarıldı.
-        Artık renkleri globals.css'teki CSS değişkenleri (var(--bg-main), vs.) yönetecek.
+      {/* Global Renkler ve Yumuşak Geçiş (Transition) eklendi.
+        Açık modda: #faf9f6 ve koyu gri metin, Gece modunda: stone-950 ve açık gri metin.
       */}
-      <body className="font-sans antialiased flex flex-col min-h-[100dvh] relative selection:bg-amber-500/30">
+      <body className="font-sans antialiased flex flex-col min-h-[100dvh] relative bg-[#faf9f6] dark:bg-stone-950 text-stone-900 dark:text-stone-100 selection:bg-amber-500/30 dark:selection:bg-amber-500/20 transition-colors duration-300">
         
-        {/* THEME PROVIDER EKLENDİ */}
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        {/* THEME PROVIDER: system varsayılan yapıldı */}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
           
-          {/* Google Analytics & GTM */}
-          <Script
-            strategy="afterInteractive"
-            src="https://www.googletagmanager.com/gtag/js?id=G-W3T96RLZHL"
-          />
-          <Script
-            id="google-analytics"
-            strategy="afterInteractive"
-          >
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-W3T96RLZHL'); 
-            `}
-          </Script>
-
           {/* MASAÜSTÜ NAVBAR */}
           <HideOnDashboard>
              <NavbarWrapper /> 
@@ -155,16 +138,17 @@ export default function RootLayout({
              <MobileNav />
           </HideOnDashboard>
 
-          {/* BİLDİRİMLER (Toast) - Theme 'system' olarak ayarlandı ki temaya uyum sağlasın */}
+          {/* BİLDİRİMLER (Toast) */}
           <Toaster position="top-center" richColors theme="system" /> 
           
-          {/* MASAÜSTÜ İÇİN NOISE DIV'I EKLENDİ (Mobilde globals.css ile gizlenecek) */}
-          <div className="bg-noise"></div>
+          {/* BACKGROUND NOISE: pointer-events-none ve z-[-1] ile tıklama engellemeleri çözüldü */}
+          <div className="bg-noise fixed inset-0 pointer-events-none z-[-1] opacity-50 dark:opacity-30 mix-blend-overlay"></div>
           
           {/* ÇEREZ POLİTİKASI */}
           <CookieConsent />
 
-          {/* VERCEL SPEED INSIGHTS */}
+          {/* ANALYTICS & SPEED INSIGHTS (Next.js 14 Uyumlu) */}
+          <GoogleAnalytics gaId="G-W3T96RLZHL" />
           <SpeedInsights />
 
         </ThemeProvider>

@@ -19,10 +19,11 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-[var(--bg-main)] text-[var(--text-muted)] relative overflow-hidden font-sans border-t border-[var(--border-color)]">
+    // bg-[var(...)] yerine transparan bıraktık, böylece layout.tsx'teki body arkaplanıyla bütünleşecek.
+    <footer className="w-full relative overflow-hidden font-sans border-t border-stone-200 dark:border-stone-800 transition-colors duration-300">
       
-      {/* Arkaplan Işığı (Açık temada daha net) */}
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none -z-10 dark:opacity-50"></div>
+      {/* Arkaplan Işığı */}
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none -z-10 dark:opacity-40"></div>
 
       <div className="max-w-7xl mx-auto px-6 pt-16 pb-8 relative z-10">
         
@@ -34,10 +35,10 @@ export default function Footer() {
                  <div className="w-12 h-12 rounded-2xl border border-amber-500/30 flex items-center justify-center bg-amber-500/10 shadow-sm">
                     <Moon className="w-6 h-6 text-amber-500 fill-amber-500/20 -rotate-12" strokeWidth={1.5} />
                  </div>
-                 <span className="font-serif text-3xl text-[var(--text-main)] font-bold tracking-wide">RüyaYorumcum</span>
+                 <span className="font-serif text-3xl text-stone-900 dark:text-stone-50 font-bold tracking-wide">RüyaYorumcum</span>
               </div>
 
-              <p className="text-sm leading-relaxed text-[var(--text-muted)] max-w-sm">
+              <p className="text-sm leading-relaxed text-stone-600 dark:text-stone-400 max-w-sm">
                  Türkiye'nin en kapsamlı spiritüel yapay zeka platformu. 
                  Geleneksel bilgeliği modern teknolojiyle birleştirerek bilinçaltınızın şifrelerini çözüyoruz.
               </p>
@@ -51,7 +52,7 @@ export default function Footer() {
 
            {/* --- 2. HİZMETLER --- */}
            <div className="lg:col-span-3">
-              <h4 className="text-[var(--text-main)] font-serif font-bold text-lg mb-6">Hizmetler</h4>
+              <h4 className="text-stone-900 dark:text-stone-100 font-serif font-bold text-lg mb-6">Hizmetler</h4>
               <ul className="space-y-3 text-sm">
                  <FooterLink href="/ruya-tabiri">Rüya Analizi</FooterLink>
                  <FooterLink href="/astroloji">Doğum Haritası</FooterLink>
@@ -64,7 +65,7 @@ export default function Footer() {
 
            {/* --- 3. POPÜLER SÖZLÜK --- */}
            <div className="lg:col-span-2">
-              <h4 className="text-[var(--text-main)] font-serif font-bold text-lg mb-6">Sözlük</h4>
+              <h4 className="text-stone-900 dark:text-stone-100 font-serif font-bold text-lg mb-6">Sözlük</h4>
               <ul className="space-y-3 text-sm">
                  <FooterLink href="/sozluk/ruyada-yilan-gormek">Rüyada Yılan</FooterLink>
                  <FooterLink href="/sozluk/ruyada-altin-gormek">Rüyada Altın</FooterLink>
@@ -76,7 +77,7 @@ export default function Footer() {
 
            {/* --- 4. KURUMSAL & YASAL --- */}
            <div className="lg:col-span-2">
-              <h4 className="text-[var(--text-main)] font-serif font-bold text-lg mb-6">Kurumsal</h4>
+              <h4 className="text-stone-900 dark:text-stone-100 font-serif font-bold text-lg mb-6">Kurumsal</h4>
               <ul className="space-y-3 text-sm">
                  <FooterLink href="/blog">Blog</FooterLink>
                  <FooterLink href="/iletisim">İletişim</FooterLink>
@@ -90,19 +91,19 @@ export default function Footer() {
         </div>
 
         {/* --- ALT KISIM --- */}
-        <div className="border-t border-[var(--border-color)] pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-           <p className="text-xs text-[var(--text-muted)] text-center md:text-left">
+        <div className="border-t border-stone-200 dark:border-stone-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+           <p className="text-xs text-stone-500 dark:text-stone-400 text-center md:text-left">
               © {currentYear} Rüya Yorumcum AI. Tüm Hakları Saklıdır.
            </p>
            
            <div className="flex items-center gap-4 opacity-70 hover:opacity-100 transition-opacity duration-300">
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-black/5 dark:bg-white/5 border border-slate-200 dark:border-white/10 cursor-default">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 cursor-default">
                  <LockIcon className="w-3 h-3 text-emerald-600 dark:text-emerald-500" />
-                 <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-widest">SSL SECURE</span>
+                 <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 tracking-widest">SSL SECURE</span>
               </div>
               <div className="flex gap-2">
-                 <div className="h-6 w-10 bg-slate-200 dark:bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-slate-800 dark:text-white">VISA</div>
-                 <div className="h-6 w-10 bg-slate-200 dark:bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-slate-800 dark:text-white">MASTER</div>
+                 <div className="h-6 w-10 bg-stone-200 dark:bg-stone-800 rounded flex items-center justify-center text-[8px] font-bold text-stone-800 dark:text-stone-300">VISA</div>
+                 <div className="h-6 w-10 bg-stone-200 dark:bg-stone-800 rounded flex items-center justify-center text-[8px] font-bold text-stone-800 dark:text-stone-300">MASTER</div>
               </div>
            </div>
         </div>
@@ -121,7 +122,7 @@ function SocialLink({ href, icon, label }: { href: string, icon: React.ReactNode
         target="_blank" 
         rel="noopener noreferrer"
         aria-label={label}
-        className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/5 text-[var(--text-muted)] hover:bg-amber-500 hover:text-white border border-[var(--border-color)] hover:border-amber-500 flex items-center justify-center transition-all duration-300 group shadow-sm"
+        className="w-10 h-10 rounded-full bg-white dark:bg-stone-900 text-stone-500 dark:text-stone-400 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-stone-950 border border-stone-200 dark:border-stone-800 hover:border-amber-500 dark:hover:border-amber-500 flex items-center justify-center transition-all duration-300 group shadow-sm"
       >
          {icon}
       </a>
@@ -131,7 +132,7 @@ function SocialLink({ href, icon, label }: { href: string, icon: React.ReactNode
 function FooterLink({ href, children }: { href: string, children: React.ReactNode }) {
    return (
       <li>
-         <Link href={href} className="text-[var(--text-muted)] hover:text-amber-600 dark:hover:text-amber-500 transition-colors flex items-center gap-2 group">
+         <Link href={href} className="text-stone-500 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors flex items-center gap-2 group">
             <span className="w-1 h-1 rounded-full bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></span>
             {children}
          </Link>

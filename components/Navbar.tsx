@@ -20,7 +20,7 @@ export default function Navbar() {
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
 
   // TEMA YÖNETİMİ
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   const supabase = createClient();
@@ -42,9 +42,11 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [supabase]);
 
-  // Tema Değiştirme Fonksiyonu
+  // Tema Değiştirme Fonksiyonu (Düzeltildi: resolvedTheme kullanıldı)
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    // Eğer tema 'system' ise o anki gerçek temayı (resolvedTheme) baz al.
+    const currentTheme = theme === 'system' ? resolvedTheme : theme;
+    setTheme(currentTheme === "dark" ? "light" : "dark");
   };
 
   const handleSignOut = async () => {
@@ -66,11 +68,12 @@ export default function Navbar() {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${
         isScrolled || mobileMenuOpen 
-          ? "py-3 bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 shadow-sm" 
+          // Sayfa alt yapısına uyumlu arka planlar (Açık: #faf9f6, Koyu: stone-950)
+          ? "py-3 bg-[#faf9f6]/90 dark:bg-stone-950/90 backdrop-blur-xl border-b border-stone-200 dark:border-stone-800 shadow-sm" 
           : "py-5 bg-transparent border-b border-transparent"
       }`}
     >
-      <nav className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <nav className="max-w-7xl mx-auto px-5 md:px-6 flex items-center justify-between">
         
         {/* --- 1. LOGO --- */}
         <Link href="/" className="flex items-center gap-2 group z-50">
@@ -78,7 +81,7 @@ export default function Navbar() {
               <Moon className="w-5 h-5 text-amber-500 fill-amber-500/20 -rotate-12" strokeWidth={1.5} />
            </div>
            <div className="flex flex-col">
-              <span className="font-serif font-bold text-lg text-slate-900 dark:text-white leading-none tracking-wide group-hover:text-amber-500 transition-colors">
+              <span className="font-serif font-bold text-lg md:text-xl text-stone-900 dark:text-stone-50 leading-none tracking-wide group-hover:text-stone-600 dark:group-hover:text-stone-300 transition-colors">
                 RüyaYorumcum
               </span>
            </div> 
@@ -86,7 +89,7 @@ export default function Navbar() {
 
         {/* --- 2. ORTA MENÜ --- */}
         <div className="hidden lg:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
-           <Link href="/" className={`text-sm font-medium transition-colors hover:text-amber-600 dark:hover:text-amber-500 ${pathname === '/' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+           <Link href="/" className={`text-sm font-medium transition-colors hover:text-stone-900 dark:hover:text-white ${pathname === '/' ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-stone-400'}`}>
               Anasayfa
            </Link>
 
@@ -96,7 +99,7 @@ export default function Navbar() {
              onMouseEnter={() => setServicesOpen(true)}
              onMouseLeave={() => setServicesOpen(false)}
            >
-              <button className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-amber-600 dark:hover:text-amber-500 py-4 ${servicesOpen ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+              <button className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-stone-900 dark:hover:text-white py-4 ${servicesOpen ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-stone-400'}`}>
                  Hizmetler <ChevronDown className={`w-3 h-3 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
               </button>
 
@@ -107,20 +110,20 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 15 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 w-[340px] bg-white dark:bg-[#131722] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden p-2 grid grid-cols-1 gap-1"
+                    className="absolute top-full left-1/2 -translate-x-1/2 w-[340px] bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-xl overflow-hidden p-2 grid grid-cols-1 gap-1"
                   >
                      {services.map((service) => (
                         <Link 
                           key={service.name} 
                           href={service.href}
-                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group/item"
+                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors group/item"
                         >
-                           <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-black/40 flex items-center justify-center border border-slate-200 dark:border-white/5 group-hover/item:border-amber-500/30 transition-colors">
+                           <div className="w-10 h-10 rounded-lg bg-[#faf9f6] dark:bg-stone-950 flex items-center justify-center border border-stone-200 dark:border-stone-800 group-hover/item:border-stone-300 dark:group-hover/item:border-stone-700 transition-colors">
                               {service.icon}
                            </div>
                            <div>
-                              <div className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">{service.name}</div>
-                              <div className="text-[10px] text-slate-500 dark:text-slate-400">{service.desc}</div>
+                              <div className="text-sm font-bold text-stone-900 dark:text-stone-100 group-hover/item:text-stone-600 dark:group-hover/item:text-stone-300">{service.name}</div>
+                              <div className="text-[10px] text-stone-500 dark:text-stone-400">{service.desc}</div>
                            </div>
                         </Link>
                      ))}
@@ -129,10 +132,10 @@ export default function Navbar() {
               </AnimatePresence>
            </div>
 
-           <Link href="/sozluk" className={`text-sm font-medium transition-colors hover:text-amber-600 dark:hover:text-amber-500 ${pathname === '/sozluk' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+           <Link href="/sozluk" className={`text-sm font-medium transition-colors hover:text-stone-900 dark:hover:text-white ${pathname === '/sozluk' ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-stone-400'}`}>
               Sözlük
            </Link>
-           <Link href="/blog" className={`text-sm font-medium transition-colors hover:text-amber-600 dark:hover:text-amber-500 ${pathname === '/blog' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+           <Link href="/blog" className={`text-sm font-medium transition-colors hover:text-stone-900 dark:hover:text-white ${pathname === '/blog' ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-stone-400'}`}>
               Blog
            </Link>
         </div>
@@ -145,10 +148,10 @@ export default function Navbar() {
              {mounted && (
                <button 
                  onClick={toggleTheme} 
-                 className="w-full h-full flex items-center justify-center rounded-full border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                 className="w-full h-full flex items-center justify-center rounded-full border border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
                  aria-label="Temayı Değiştir"
                >
-                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                 {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                </button>
              )}
            </div>
@@ -156,17 +159,16 @@ export default function Navbar() {
            {/* KULLANICI PROFİLİ VEYA GİRİŞ BUTONLARI */}
            {user ? (
               <div className="flex items-center gap-3">
-                 {/* Profil Simgesi: Sabit Altın Rengi ve Tam Siyah Yazı ile her iki temada okunaklı */}
-                 <Link href="/dashboard" className="w-9 h-9 rounded-full bg-amber-500 hover:bg-amber-400 flex items-center justify-center transition-colors shadow-lg shadow-amber-500/20 text-[#020617] font-bold text-sm border-2 border-transparent hover:border-white/20">
+                 <Link href="/dashboard" className="w-9 h-9 rounded-full bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-white flex items-center justify-center transition-colors text-white dark:text-stone-900 font-bold text-sm border-2 border-transparent">
                     {user.user_metadata?.full_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || <User className="w-4 h-4" />}
                  </Link>
               </div>
            ) : (
               <div className="flex items-center gap-4">
-                 <Link href="/auth?mode=login" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-white transition-colors">
+                 <Link href="/auth?mode=login" className="text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white transition-colors">
                     Giriş
                  </Link>
-                 <Link href="/auth?mode=signup" className="px-6 py-2.5 rounded-full bg-[#fbbf24] text-[#020617] text-xs font-bold hover:bg-[#f59e0b] hover:shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all">
+                 <Link href="/auth?mode=signup" className="px-6 py-2.5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-bold hover:bg-stone-800 dark:hover:bg-white transition-all shadow-sm">
                     Kayıt Ol
                  </Link>
               </div>
@@ -180,16 +182,16 @@ export default function Navbar() {
             {mounted && (
                <button 
                  onClick={toggleTheme} 
-                 className="w-full h-full flex items-center justify-center text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5 rounded-full border border-slate-200 dark:border-white/10"
+                 className="w-full h-full flex items-center justify-center text-stone-600 dark:text-stone-300 bg-white dark:bg-stone-900 rounded-full border border-stone-200 dark:border-stone-800"
                >
-                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                 {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                </button>
             )}
           </div>
 
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-            className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5 rounded-full border border-slate-200 dark:border-white/10"
+            className="w-9 h-9 flex items-center justify-center text-stone-600 dark:text-stone-300 bg-white dark:bg-stone-900 rounded-full border border-stone-200 dark:border-stone-800"
           >
              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -204,20 +206,20 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 overflow-hidden shadow-xl"
+            className="lg:hidden bg-[#faf9f6]/95 dark:bg-stone-950/95 backdrop-blur-xl border-b border-stone-200 dark:border-stone-800 overflow-hidden shadow-xl"
           >
-             <div className="px-6 py-6 space-y-6">
+             <div className="px-5 py-6 space-y-6">
                 <div className="space-y-4">
-                   <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-900 dark:text-white hover:text-amber-500 transition-colors">Anasayfa</Link>
+                   <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-stone-900 dark:text-stone-100 hover:text-stone-500 transition-colors">Anasayfa</Link>
                    <div>
-                      <button onClick={() => setMobileServicesOpen(!mobileServicesOpen)} className="flex items-center justify-between w-full text-lg font-bold text-slate-900 dark:text-white hover:text-amber-500 transition-colors">
+                      <button onClick={() => setMobileServicesOpen(!mobileServicesOpen)} className="flex items-center justify-between w-full text-lg font-bold text-stone-900 dark:text-stone-100 hover:text-stone-500 transition-colors">
                          Hizmetler <ChevronDown className={`w-4 h-4 transition-transform ${mobileServicesOpen ? 'rotate-180' : ''}`} />
                       </button>
                       <AnimatePresence>
                          {mobileServicesOpen && (
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-4 pt-4 space-y-4">
                                {services.map((service) => (
-                                  <Link key={service.name} href={service.href} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 font-medium">
+                                  <Link key={service.name} href={service.href} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 font-medium">
                                      {service.icon} <span className="text-sm">{service.name}</span>
                                   </Link>
                                ))}
@@ -225,19 +227,19 @@ export default function Navbar() {
                          )}
                       </AnimatePresence>
                    </div>
-                   <Link href="/sozluk" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-900 dark:text-white hover:text-amber-500 transition-colors">Sözlük</Link>
-                   <Link href="/blog" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-900 dark:text-white hover:text-amber-500 transition-colors">Blog</Link>
+                   <Link href="/sozluk" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-stone-900 dark:text-stone-100 hover:text-stone-500 transition-colors">Sözlük</Link>
+                   <Link href="/blog" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-stone-900 dark:text-stone-100 hover:text-stone-500 transition-colors">Blog</Link>
                 </div>
                 
-                <div className="pt-6 border-t border-slate-200 dark:border-white/10 grid grid-cols-2 gap-4">
+                <div className="pt-6 border-t border-stone-200 dark:border-stone-800 grid grid-cols-2 gap-4">
                    {user ? (
-                      <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="col-span-2 py-3 bg-amber-500 rounded-xl text-center font-bold text-sm text-[#020617] flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20">
+                      <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="col-span-2 py-3 bg-stone-900 dark:bg-stone-100 rounded-xl text-center font-bold text-sm text-white dark:text-stone-900 flex items-center justify-center gap-2 shadow-sm transition-colors hover:bg-stone-800 dark:hover:bg-white">
                         <User className="w-4 h-4" /> Paneline Git
                       </Link>
                    ) : (
                       <>
-                        <Link href="/auth?mode=login" onClick={() => setMobileMenuOpen(false)} className="py-3 bg-slate-100 dark:bg-white/5 rounded-xl text-center font-bold text-sm text-slate-800 dark:text-white border border-slate-200 dark:border-transparent">Giriş Yap</Link>
-                        <Link href="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)} className="py-3 bg-[#fbbf24] text-[#020617] rounded-xl text-center font-bold text-sm shadow-lg shadow-amber-500/20">Kayıt Ol</Link>
+                        <Link href="/auth?mode=login" onClick={() => setMobileMenuOpen(false)} className="py-3 bg-white dark:bg-stone-900 rounded-xl text-center font-bold text-sm text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-800">Giriş Yap</Link>
+                        <Link href="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)} className="py-3 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-xl text-center font-bold text-sm shadow-sm transition-colors hover:bg-stone-800 dark:hover:bg-white">Kayıt Ol</Link>
                       </>
                    )}
                 </div>
