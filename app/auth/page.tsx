@@ -4,10 +4,9 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
-import { ArrowRight, Mail, User, Eye, EyeOff, Loader2, ArrowLeft, Lock } from "lucide-react";
+import { ArrowRight, Mail, User, Eye, EyeOff, Loader2, ArrowLeft, Lock, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- FORM BİLEŞENİ ---
 function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -15,6 +14,9 @@ function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Yönlendirme rotasını al (Örn: /dashboard/tarot)
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
 
   useEffect(() => {
     const mode = searchParams.get('mode');
@@ -35,7 +37,7 @@ function AuthForm() {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.push("/dashboard"); 
+        router.push(redirectTo); // Kaldığı yere gönder
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -60,7 +62,8 @@ function AuthForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          // Google'dan dönünce de kaldığı yere gitmesi için next parametresini ekliyoruz
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
           queryParams: { access_type: 'offline', prompt: 'consent' },
         },
       });
@@ -76,36 +79,39 @@ function AuthForm() {
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4 }}
-      className="relative z-10 w-full max-w-[360px] bg-[#131722] border border-white/5 rounded-3xl shadow-2xl p-8"
+      className="relative z-10 w-full max-w-[380px] bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl shadow-2xl p-8 md:p-10"
     >
       {/* Kart Başlığı */}
-      <div className="text-center mb-6">
-        <h1 className="font-serif text-2xl font-bold text-white mb-1 tracking-tight">
-          {isLogin ? "Hoş Geldiniz" : "Üyelik Oluştur"}
+      <div className="text-center mb-8">
+        <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+           <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+        </div>
+        <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-stone-50 mb-2 tracking-tight">
+          {isLogin ? "Hoş Geldiniz" : "Kayıt Olun"}
         </h1>
-        <p className="text-slate-400 text-[11px]">
-          {isLogin ? "Yolculuğunuza devam edin." : "Sessizliği dinlemeye başlayın."}
+        <p className="text-stone-500 dark:text-stone-400 text-xs font-serif italic">
+          {isLogin ? "Kozmik yolculuğunuza devam edin." : "Sessizliği dinlemeye başlayın."}
         </p>
       </div>
 
-      {/* Google Butonu - Kompakt */}
+      {/* Google Butonu */}
       <button 
         onClick={handleGoogleLogin}
-        className="w-full bg-white text-[#0B0F19] hover:bg-slate-200 font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all mb-5 text-sm shadow-md"
+        className="w-full bg-[#faf9f6] dark:bg-stone-950 border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold py-3 rounded-xl flex items-center justify-center gap-3 transition-all mb-6 text-sm shadow-sm"
       >
         <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-4 h-4" alt="Google" />
         <span>Google ile Devam Et</span>
       </button>
 
       {/* Ayırıcı */}
-      <div className="flex items-center gap-3 mb-5 opacity-20">
-         <div className="h-[1px] flex-1 bg-white"></div>
-         <span className="text-white text-[9px] uppercase tracking-widest">veya</span>
-         <div className="h-[1px] flex-1 bg-white"></div>
+      <div className="flex items-center gap-3 mb-6 opacity-40">
+         <div className="h-px flex-1 bg-stone-400 dark:bg-stone-600"></div>
+         <span className="text-stone-500 dark:text-stone-400 text-[10px] uppercase tracking-widest font-bold">veya</span>
+         <div className="h-px flex-1 bg-stone-400 dark:bg-stone-600"></div>
       </div>
 
       {/* Form Alanı */}
-      <form onSubmit={handleAuth} className="space-y-3">
+      <form onSubmit={handleAuth} className="space-y-4">
         
         {/* İsim Alanı (Sadece Kayıt) */}
         <AnimatePresence>
@@ -116,14 +122,14 @@ function AuthForm() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="relative group">
-                <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+              <div className="relative group pt-1">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500 group-focus-within:text-amber-600 transition-colors" />
                 <input 
                   name="fullName" 
                   type="text" 
                   placeholder="İsim Soyisim" 
                   required={!isLogin}
-                  className="w-full bg-[#0B0F19] border border-white/5 focus:border-[#fbbf24]/50 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-600 text-sm focus:outline-none transition-all"
+                  className="w-full bg-[#faf9f6] dark:bg-stone-950 border border-stone-200 dark:border-stone-800 focus:border-amber-500/50 rounded-xl py-3 pl-11 pr-4 text-stone-900 dark:text-stone-100 placeholder-stone-400 text-sm focus:outline-none transition-all shadow-inner"
                 />
               </div>
             </motion.div>
@@ -132,41 +138,41 @@ function AuthForm() {
 
         {/* Email */}
         <div className="relative group">
-          <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500 group-focus-within:text-amber-600 transition-colors" />
           <input 
             name="email" 
             type="email" 
             placeholder="E-posta" 
             required
-            className="w-full bg-[#0B0F19] border border-white/5 focus:border-[#fbbf24]/50 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-600 text-sm focus:outline-none transition-all"
+            className="w-full bg-[#faf9f6] dark:bg-stone-950 border border-stone-200 dark:border-stone-800 focus:border-amber-500/50 rounded-xl py-3 pl-11 pr-4 text-stone-900 dark:text-stone-100 placeholder-stone-400 text-sm focus:outline-none transition-all shadow-inner"
           />
         </div>
 
         {/* Şifre */}
         <div className="relative group">
-          <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500 group-focus-within:text-amber-600 transition-colors" />
           <input 
             name="password" 
             type={showPassword ? "text" : "password"} 
             placeholder="Şifre" 
             required
             minLength={6}
-            className="w-full bg-[#0B0F19] border border-white/5 focus:border-[#fbbf24]/50 rounded-xl py-2.5 pl-10 pr-10 text-white placeholder-slate-600 text-sm focus:outline-none transition-all"
+            className="w-full bg-[#faf9f6] dark:bg-stone-950 border border-stone-200 dark:border-stone-800 focus:border-amber-500/50 rounded-xl py-3 pl-11 pr-11 text-stone-900 dark:text-stone-100 placeholder-stone-400 text-sm focus:outline-none transition-all shadow-inner"
           />
           <button 
             type="button" 
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-3 text-slate-500 hover:text-white transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
 
-        {/* Buton - Altın Rengi */}
+        {/* Buton - Editoryal Siyah/Beyaz */}
         <button 
           type="submit" 
           disabled={loading}
-          className="w-full py-3 rounded-xl bg-[#fbbf24] hover:bg-[#f59e0b] text-[#0B0F19] font-bold text-sm tracking-wide shadow-lg hover:shadow-[#fbbf24]/20 transition-all flex items-center justify-center gap-2 mt-2"
+          className="w-full py-3.5 rounded-xl bg-stone-900 hover:bg-stone-800 dark:bg-stone-100 dark:hover:bg-white text-white dark:text-stone-900 font-bold text-sm tracking-wide shadow-md transition-all flex items-center justify-center gap-2 mt-4"
         >
           {loading ? <Loader2 className="animate-spin w-4 h-4" /> : (
             <>
@@ -177,18 +183,26 @@ function AuthForm() {
         </button>
       </form>
 
-      {/* Alt Link */}
-      <div className="mt-6 text-center">
+      {/* Alt Linkler */}
+      <div className="mt-8 flex flex-col gap-4 text-center">
         <button 
           onClick={() => setIsLogin(!isLogin)} 
-          className="text-slate-500 text-xs hover:text-[#fbbf24] transition-colors"
+          className="text-stone-500 text-xs hover:text-stone-800 dark:hover:text-stone-200 transition-colors"
         >
           {isLogin ? (
-             <>Hesabın yok mu? <span className="text-slate-300 font-semibold ml-1">Kayıt Ol</span></>
+             <>Hesabın yok mu? <span className="font-bold underline underline-offset-2 ml-1">Kayıt Ol</span></>
           ) : (
-             <>Zaten üye misin? <span className="text-slate-300 font-semibold ml-1">Giriş Yap</span></>
+             <>Zaten üye misin? <span className="font-bold underline underline-offset-2 ml-1">Giriş Yap</span></>
           )}
         </button>
+        
+        {/* MİSAFİR GİRİŞ BUTONU */}
+        <Link 
+           href="/dashboard" 
+           className="text-stone-400 dark:text-stone-500 text-[10px] uppercase tracking-widest font-bold hover:text-amber-600 dark:hover:text-amber-500 transition-colors flex items-center justify-center gap-1"
+        >
+           <User className="w-3 h-3" /> Misafir Olarak Keşfet
+        </Link>
       </div>
     </motion.div>
   );
@@ -197,28 +211,24 @@ function AuthForm() {
 // Ana Sayfa Bileşeni
 export default function AuthPage() {
   return (
-    // ZEMİN: Ana sayfa ile aynı Mat Lacivert (#0B0F19) + Noise Dokusu
-    <div className="min-h-[100dvh] bg-[#0B0F19] flex items-center justify-center relative overflow-hidden font-sans p-4 selection:bg-[#fbbf24]/30">
+    <div className="min-h-[100dvh] bg-[#faf9f6] dark:bg-stone-950 flex items-center justify-center relative overflow-hidden font-sans p-4 selection:bg-amber-500/20 transition-colors duration-300">
       
-      {/* NOISE DOKUSU (Ana Sayfa ile aynı) */}
-      <div className="fixed inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
-
       {/* GERİ GİT BUTONU */}
-      <Link href="/" className="absolute top-6 left-6 z-50 flex items-center gap-2 text-slate-500 hover:text-[#fbbf24] transition-colors group px-3 py-1.5 rounded-lg hover:bg-white/5">
+      <Link href="/" className="absolute top-6 left-6 z-50 flex items-center gap-2 text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors group px-3 py-1.5 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-800">
          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
          <span className="text-xs font-bold uppercase tracking-wider">Ana Sayfa</span>
       </Link>
 
-      {/* ARKAPLAN IŞIĞI (Ana Sayfa Hero'su gibi Amber) */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#fbbf24]/5 rounded-full blur-[120px] pointer-events-none"></div>
+      {/* ARKAPLAN IŞIĞI */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/10 dark:bg-amber-500/5 rounded-full blur-[120px] pointer-events-none"></div>
 
       {/* FORM */}
-      <Suspense fallback={<div className="w-10 h-10 rounded-full border-2 border-[#fbbf24] border-t-transparent animate-spin"></div>}>
+      <Suspense fallback={<Loader2 className="w-8 h-8 text-amber-600 animate-spin" />}>
          <AuthForm />
       </Suspense>
 
       {/* Footer */}
-      <div className="absolute bottom-6 text-center text-[10px] text-slate-600 font-medium tracking-widest uppercase">
+      <div className="absolute bottom-6 text-center text-[10px] text-stone-400 dark:text-stone-600 font-medium tracking-widest uppercase">
         © 2026 Rüya Yorumcum AI
       </div>
     </div>

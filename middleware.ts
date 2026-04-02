@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           response = NextResponse.next({
@@ -53,15 +53,31 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Dashboard Koruması
+  // --- FREEMIUM GÜVENLİK DUVARI (DASHBOARD KORUMASI) ---
   if (!user && path.startsWith("/dashboard")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+    
+    // MİSAFİRLERE İZİN VERİLEN ROTASLAR (Whitelist)
+    // Sadece bu sayfalara üye olmadan girilebilir.
+    const allowedGuestPaths = [
+      "/dashboard", 
+      "/dashboard/ruya-analizi", 
+      "/dashboard/tarot"
+    ];
+
+    // Eğer kullanıcının gitmek istediği yol beyaz listede YOKSA:
+    if (!allowedGuestPaths.includes(path)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth";
+      // Kayıt olduktan sonra kaldığı yere dönebilmesi için gitmek istediği adresi hafızaya alıyoruz
+      url.searchParams.set("redirect", path); 
+      return NextResponse.redirect(url);
+    }
   }
 
-  // Auth Sayfası Koruması
-  if (user && path.startsWith("/auth")) {
+  // --- AUTH SAYFASI KORUMASI ---
+  // Eğer kullanıcı zaten giriş yapmışsa ve /auth sayfasına gitmeye çalışıyorsa,
+  // (Ancak /auth/callback sayfasına Google girişi için izin vermeliyiz)
+  if (user && path.startsWith("/auth") && !path.startsWith("/auth/callback")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -71,7 +87,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Matcher ayarın gayet iyi, aynen kalabilir.
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|ads.txt|robots.txt|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

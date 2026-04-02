@@ -13,7 +13,7 @@ import DreamInputSection from "./DreamInputSection";
 import AnalysisResults from "./AnalysisResults";
 import RewardAdModal from "@/components/RewardAdModal";
 
-// 1. ASIL İÇERİK BİLEŞENİ (useSearchParams burada kullanılır)
+// 1. ASIL İÇERİK BİLEŞENİ
 function RuyaAnaliziContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,6 +21,7 @@ function RuyaAnaliziContent() {
   const resultRef = useRef<HTMLDivElement>(null); 
 
   // State
+  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [dreamText, setDreamText] = useState("");
   const [status, setStatus] = useState<'IDLE' | 'LOADING' | 'COMPLETED'>('IDLE');
@@ -32,12 +33,13 @@ function RuyaAnaliziContent() {
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/auth'); return; }
+      setUser(user);
       
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      if (prof) setProfile(prof);
+      if (user) {
+         const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+         if (prof) setProfile(prof);
+      }
 
-      // Yarım kalan rüya kontrolü
       const isPending = searchParams.get('pending');
       if (isPending === 'true') {
           const savedDream = localStorage.getItem("pending_dream");
@@ -57,7 +59,7 @@ function RuyaAnaliziContent() {
       }
     };
     init();
-  }, [supabase, searchParams, router]);
+  }, [supabase, searchParams]);
 
   // --- ANALİZ FONKSİYONU ---
   const handleAnalyze = async () => {
@@ -65,6 +67,7 @@ function RuyaAnaliziContent() {
         toast.error("Lütfen rüyanızı kısaca anlatın.");
         return;
     }
+    
     setStatus('LOADING');
     
     try {
@@ -78,9 +81,13 @@ function RuyaAnaliziContent() {
           localStorage.removeItem("pending_dream");
           setGeneratedImage(null); 
           
-          if (profile) setProfile({ ...profile, credits: profile.credits - 1 });
+          if (profile) {
+              setProfile({ ...profile, credits: profile.credits - 1 });
+              toast.success("Rüyanız başarıyla yorumlandı! (1 Kredi düştü)");
+          } else {
+              toast.success("Rüyanızın genel analizi tamamlandı!");
+          }
 
-          toast.success("Rüyanız başarıyla yorumlandı! (1 Kredi düştü)");
           setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
         } else {
           const errorCode = (result as any).code;
@@ -108,56 +115,50 @@ function RuyaAnaliziContent() {
     localStorage.removeItem('saved_dream_id');
   };
 
-  const showAds = profile !== null && profile.credits < 1;
+  const showAds = user && profile !== null && profile.credits < 1;
 
   return (
-    // Dış kapsayıcı layout.tsx'e tam uyum sağlar (relative, pb-20)
-    <div className="relative w-full flex flex-col items-center min-h-[calc(100vh-6rem)] z-10 pb-20 font-sans selection:bg-amber-500/30">
+    // dark:bg-transparent ile layout'un siyah rengini devralıyor
+    <div className="relative w-full flex flex-col items-center min-h-[calc(100vh-6rem)] z-10 pb-20 font-sans selection:bg-stone-200 dark:selection:bg-emerald-500/30 antialiased bg-[#faf9f6] dark:bg-transparent transition-colors duration-500">
       
-      {/* LOKAL ARKAPLAN EFEKTLERİ (Performans dostu transform-gpu) */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent pointer-events-none -z-10 transform-gpu"></div>
-
       {/* HEADER & NAV */}
       <nav className="w-full max-w-[1200px] px-4 md:px-0 py-6 flex items-center justify-between mt-2 md:mt-4">
         <button 
            onClick={() => router.push('/dashboard')} 
-           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-bold text-slate-300 hover:text-white uppercase tracking-widest backdrop-blur-md transform-gpu"
+           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-[#131722]/80 dark:backdrop-blur-md border border-stone-200 dark:border-white/10 hover:bg-stone-50 dark:hover:bg-white/5 transition-colors text-xs font-bold text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 uppercase tracking-widest shadow-sm"
         >
           <ArrowLeft className="w-4 h-4" /> <span className="hidden md:inline">Ana Menü</span>
         </button>
         
-        <div className="flex items-center gap-2 px-5 py-2.5 bg-[#131722]/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm transform-gpu">
-           <Moon className="w-4 h-4 text-amber-500" />
-           <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-white">Rüya Laboratuvarı</span>
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-[#131722]/80 dark:backdrop-blur-md rounded-xl border border-stone-200 dark:border-white/10 shadow-sm transition-colors">
+           <Moon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+           <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-stone-900 dark:text-slate-200">Rüya Laboratuvarı</span>
         </div>
       </nav>
 
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-0 pt-6 relative z-10 flex flex-col items-center">
         
-        {/* HEADER TEXT */}
         <header className="text-center mb-12 md:mb-16">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-4xl md:text-6xl font-serif text-white mb-4">
-                Rüyaların Gizli <span className="text-amber-500">Dilini Çöz</span>
+            <h1 className="text-4xl md:text-6xl font-serif text-stone-900 dark:text-white mb-4 font-bold tracking-tight transition-colors">
+                Rüyaların Gizli <span className="text-emerald-600 dark:text-emerald-400">Dilini Çöz</span>
             </h1>
-            <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto leading-relaxed font-light">
+            <p className="text-stone-500 dark:text-slate-400 text-sm md:text-base max-w-2xl mx-auto leading-relaxed font-light transition-colors">
                 Sembolleri ve duyguları kelimelere dökün. Kadim rüya ilmi ve modern psikoloji senteziyle bilinçaltınızın kapılarını aralayalım.
             </p>
           </motion.div>
         </header>
 
-        {/* REKLAM BANNER (SADECE KREDİ BİTİNCE) */}
         {showAds && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-10 w-full relative group transform-gpu">
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-indigo-500/10 rounded-[2.5rem] blur-xl opacity-50"></div>
-              <div className="relative bg-[#131722]/80 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl overflow-hidden">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-10 w-full relative group">
+              <div className="relative bg-white dark:bg-[#1A1B2E]/90 dark:backdrop-blur-xl border border-stone-200 dark:border-purple-500/30 rounded-[2.5rem] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm dark:shadow-2xl overflow-hidden hover:shadow-md transition-all">
                   <div className="flex items-center gap-5 relative z-10 w-full md:w-auto">
-                      <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 shadow-inner transition-transform group-hover:scale-110">
-                          <PlayCircle className="w-7 h-7 text-amber-400" />
+                      <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-gradient-to-br dark:from-purple-500/30 dark:to-indigo-500/10 border border-indigo-100 dark:border-purple-500/40 flex items-center justify-center shrink-0 transition-colors">
+                          <PlayCircle className="w-7 h-7 text-indigo-500 dark:text-purple-300" />
                       </div>
                       <div>
-                          <h3 className="text-slate-100 font-bold text-lg mb-1 font-serif">Krediniz mi bitti?</h3>
-                          <p className="text-slate-400 text-xs font-light">Kısa bir video izleyerek anında yorum hakkı kazan.</p>
+                          <h3 className="text-stone-900 dark:text-slate-100 font-bold text-lg mb-1 font-serif transition-colors">Krediniz mi bitti?</h3>
+                          <p className="text-stone-500 dark:text-slate-400 text-xs font-medium transition-colors">Kısa bir video izleyerek anında yorum hakkı kazan.</p>
                       </div>
                   </div>
                   <div className="w-full md:w-auto relative z-10">
@@ -167,7 +168,6 @@ function RuyaAnaliziContent() {
           </motion.div>
         )}
 
-        {/* RÜYA GİRİŞ (INPUT) */}
         <div className="w-full">
             <DreamInputSection 
               dreamText={dreamText} setDreamText={setDreamText} 
@@ -176,8 +176,7 @@ function RuyaAnaliziContent() {
             />
         </div>
 
-        {/* SONUÇLAR */}
-        <div ref={resultRef} className="w-full mt-12">
+        <div ref={resultRef} className="w-full mt-12 md:mt-16">
           <AnimatePresence mode="wait">
             {status === 'COMPLETED' && analysisResult && (
               <AnalysisResults 
@@ -195,12 +194,11 @@ function RuyaAnaliziContent() {
   );
 }
 
-// 2. ANA EXPORT (Suspense ile sarmalanmış)
 export default function RuyaAnaliziPage() {
   return (
     <Suspense fallback={
-       <div className="w-full flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+       <div className="w-full flex items-center justify-center min-h-[60vh] bg-[#faf9f6] dark:bg-transparent transition-colors duration-500">
+          <Loader2 className="w-8 h-8 text-stone-400 dark:text-slate-600 animate-spin" />
        </div>
     }>
        <RuyaAnaliziContent />

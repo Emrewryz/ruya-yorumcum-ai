@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { SERVICE_COSTS } from "@/utils/costs";
 import { getMoonPhase } from "@/utils/moon";
 import OpenAI from "openai";
+import { cookies } from "next/headers"; // Çerez (Cookie) yönetimi için eklendi
 
 const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
@@ -31,39 +32,54 @@ export async function analyzeDream(dreamText: string) {
 
   // 1. Auth Kontrolü
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Giriş yapmalısınız." };
 
-  // 2. Profil Verisini Çek
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, age, gender, marital_status, interest_area, bio')
-    .eq('id', user.id)
-    .single();
+  // 2. MİSAFİR KONTROLÜ (Ücretsiz Hak Sınırı)
+  if (!user) {
+      const cookieStore = cookies();
+      const hasUsedFree = cookieStore.get('has_used_free_dream');
+      
+      // Eğer çerez varsa (daha önce kullanmışsa) engelle
+      if (hasUsedFree) {
+          return { success: false, error: "Ücretsiz deneme hakkınızı kullandınız. Analizlere devam etmek için lütfen kayıt olun." };
+      }
+  }
 
-  // 3. ÖDEME AL
-  const { data: txResult, error: txError } = await supabase.rpc('handle_credit_transaction', {
-      p_user_id: user.id,
-      p_amount: -COST,
-      p_process_type: 'spend',
-      p_description: 'Rüya Analizi',
-      p_metadata: { text_length: dreamText.length }
-  });
+  // 3. ÜYELER İÇİN KREDİ KONTROLÜ VE PROFİL ÇEKİMİ
+  let profile = null;
+  if (user) {
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('full_name, age, gender, marital_status, interest_area, bio')
+        .eq('id', user.id)
+        .single();
+      
+      profile = prof;
 
-  if (txError || !txResult.success) {
-      return { code: "NO_CREDIT", error: "Yetersiz bakiye." };
+      // ÖDEME AL (Sadece üyelerden)
+      const { data: txResult, error: txError } = await supabase.rpc('handle_credit_transaction', {
+          p_user_id: user.id,
+          p_amount: -COST,
+          p_process_type: 'spend',
+          p_description: 'Rüya Analizi',
+          p_metadata: { text_length: dreamText.length }
+      });
+
+      if (txError || !txResult.success) {
+          return { success: false, code: "NO_CREDIT", error: "Yetersiz bakiye." };
+      }
   }
 
   const currentMoon = getMoonPhase(); 
 
   try {
     // 4. AI Analizi - GELİŞMİŞ PROMPT
-    const userContext = `
+    const userContext = user ? `
       Kullanıcı Bilgileri:
       İsim: ${profile?.full_name || "Bilinmiyor"}
       Yaş: ${profile?.age || "Bilinmiyor"}
       İlgi Alanları: ${profile?.interest_area || "Genel"}
       Biyografi: ${profile?.bio || "Yok"}
-    `;
+    ` : "Kullanıcı Bilgileri: Anonim/Misafir Kullanıcı";
     
     const prompt = `
         Sen dünyanın en yetenekli rüya yorumcususun. Hem kadim İslami kaynaklara (İbn-i Sirin, İmam Nablusi) hakimsin hem de modern psikoloji (Carl Jung, Freud) analizi yapabiliyorsun.
@@ -99,21 +115,20 @@ export async function analyzeDream(dreamText: string) {
         { role: "user", content: prompt }
       ],
       model: "google/gemini-2.0-flash-lite-001", 
-      temperature: 0.7, // Biraz daha tutarlı olması için düşürdüm
+      temperature: 0.7, 
       response_format: { type: "json_object" } 
     });
 
     const resultText = completion.choices[0].message.content;
     if (!resultText) throw new Error("Boş cevap.");
     
-    // Temizlenmiş JSON parse işlemi
     const aiData = JSON.parse(cleanJson(resultText));
 
-    // 5. Kayıt
+    // 5. Veritabanına Kayıt (Üyeler kimliğiyle, Misafirler Anonim olarak)
     const { data: dreamData, error: dbError } = await supabase
       .from("dreams")
       .insert({
-        user_id: user.id,
+        user_id: user ? user.id : null, // Misafirse null yazar
         dream_text: dreamText,
         dream_title: aiData.title,
         ai_response: aiData,
@@ -126,19 +141,34 @@ export async function analyzeDream(dreamText: string) {
 
     if (dbError) throw dbError;
 
+    // 6. MİSAFİRSE ÇEREZ (COOKIE) BIRAK Kİ BİR DAHA YAPAMASIN
+    if (!user) {
+        cookies().set('has_used_free_dream', 'true', { 
+            maxAge: 60 * 60 * 24 * 365, // 1 yıl boyunca tarayıcıda kalır
+            httpOnly: true, // Güvenlik için JavaScript ile silinmesini engeller
+            path: '/' 
+        });
+    }
+
     return { success: true, data: dreamData };
 
-  } catch (err: any) {
-    console.error("Hata:", err);
+  }  catch (err: any) {
+    console.error("🔥 PATLAYAN HATA DETAYI:", err);
 
-    // İADE İŞLEMİ
-    await supabase.rpc('handle_credit_transaction', {
-        p_user_id: user.id,
-        p_amount: COST,
-        p_process_type: 'refund',
-        p_description: 'İade: Rüya Analiz Hatası'
-    });
+    // İADE İŞLEMİ (Sadece kredi düşülen üyeler için)
+    if (user) {
+        await supabase.rpc('handle_credit_transaction', {
+            p_user_id: user.id,
+            p_amount: COST,
+            p_process_type: 'refund',
+            p_description: 'İade: Rüya Analiz Hatası'
+        });
+    }
 
-    return { error: "Analiz sırasında bir hata oluştu, krediniz iade edildi." };
+    // HATAYI GİZLEMEK YERİNE EKRANA BASTIRIYORUZ Kİ NE OLDUĞUNU GÖRELİM:
+    return { 
+      success: false, 
+      error: `Sistem Hatası: ${err.message || JSON.stringify(err)}` 
+    };
   }
 }
