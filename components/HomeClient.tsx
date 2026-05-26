@@ -10,6 +10,7 @@ import { analyzeDream, type DreamAnalysis } from "@/app/actions/analyze-dream";
 import { getDreamSession, type DreamSession, type ChatMessage } from "@/app/actions/chat-actions";
 import { sendFollowUp } from "@/app/actions/follow-up-actions";
 import { generateShareToken } from "@/app/actions/share-actions";
+import { refreshDailyCredits } from "@/app/actions/refresh-credits";
 import PaywallCard from "@/components/PaywallCard";
 import AppSidebar from "@/components/AppSidebar";
 import CreditModal from "@/components/CreditModal";
@@ -197,6 +198,17 @@ function HomeInner() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // Günlük kredi yenileme — sayfa açılınca sessizce kontrol et
+  useEffect(() => {
+    refreshDailyCredits().then((result) => {
+      if (result.refreshed) {
+        console.log(`[DailyRefresh] Kredi yenilendi → ${result.newCredits}`);
+        // AppSidebar Supabase realtime ile otomatik güncellenir
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Loading adımları
   useEffect(() => {
