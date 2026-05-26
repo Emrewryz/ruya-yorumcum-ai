@@ -1,43 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
-// ─── Service Role Client (RLS bypass) ────────────────────────────────────────
-// Webhook'ta aktif session olmaz — service_role gerekli
+// ─── Service Role Client ──────────────────────────────────────────────────────
 
 function getServiceClient() {
   const url    = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-  if (!url || !secret) {
-    throw new Error("Supabase service role env değişkenleri eksik.");
-  }
-
-  return createServiceClient(url, secret, {
+  if (!url || !secret) throw new Error("Supabase env eksik.");
+  return createClient(url, secret, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
 
-// ─── Shopier Webhook Signature Doğrulama ─────────────────────────────────────
-// Shopier callback imzası: HMAC-SHA256(apiKey + randomNr + installmentCount + status, apiSecret)
+// ─── Fiyat → Kredi Eşleşmesi ─────────────────────────────────────────────────
 
-function verifyShopierSignature(
+function priceToCredits(amount: number): number {
+  if (amount >= 160) return 10; // Laboratuvar (169 TL)
+  if (amount >= 80)  return 3;  // Kâşif (89 TL)
+  if (amount >= 1)  return 10;  // Tekli (39 TL)
+  return 0;
+}
+
+// ─── İmza Doğrulama ──────────────────────────────────────────────────────────
+// Shopier: HMAC-SHA256(apiKey + randomNr + installmentCount + status, apiSecret)
+
+function verifySignature(
   apiKey: string,
   apiSecret: string,
   randomNr: string,
   installmentCount: string,
   status: string,
-  receivedSignature: string
+  received: string
 ): boolean {
-  const data     = apiKey + randomNr + installmentCount + status;
-  const expected = createHmac("sha256", apiSecret).update(data).digest("base64");
+  const expected = createHmac("sha256", apiSecret)
+    .update(apiKey + randomNr + installmentCount + status)
+    .digest("base64");
 
-  // Timing-safe karşılaştırma
-  if (expected.length !== receivedSignature.length) return false;
-
+  if (expected.length !== received.length) return false;
   let diff = 0;
   for (let i = 0; i < expected.length; i++) {
-    diff |= expected.charCodeAt(i) ^ receivedSignature.charCodeAt(i);
+    diff |= expected.charCodeAt(i) ^ received.charCodeAt(i);
   }
   return diff === 0;
 }
@@ -45,20 +48,14 @@ function verifyShopierSignature(
 // ─── Route Handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // ── Body'yi parse et ──
   let body: Record<string, string> = {};
-
   try {
-    const contentType = request.headers.get("content-type") ?? "";
-
-    // Shopier form-urlencoded POST gönderir
-    if (contentType.includes("application/x-www-form-urlencoded")) {
-      const text = await request.text();
-      body = Object.fromEntries(new URLSearchParams(text));
-    } else {
-      body = await request.json();
-    }
-  } catch (e) {
-    console.error("[shopier/webhook] Body parse hatası:", e);
+    const ct = request.headers.get("content-type") ?? "";
+    body = ct.includes("application/x-www-form-urlencoded")
+      ? Object.fromEntries(new URLSearchParams(await request.text()))
+      : await request.json();
+  } catch {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
@@ -66,128 +63,92 @@ export async function POST(request: NextRequest) {
   const apiSecret = process.env.SHOPIER_API_SECRET!;
 
   if (!apiKey || !apiSecret) {
-    console.error("[shopier/webhook] Shopier env değişkenleri eksik.");
-    return NextResponse.json({ error: "Config error" }, { status: 500 });
+    console.error("[webhook] Shopier env eksik.");
+    return NextResponse.json({ ok: true }, { status: 200 });
   }
 
-  // ── Gelen alanları çıkar ──
   const {
     status,
-    random_nr:         randomNr,
+    random_nr:         randomNr         = "",
     installment_count: installmentCount = "0",
-    signature:         receivedSignature,
-    buyer_id_nr:       buyerIdNr,
-    order_key:         shopierOrderKey,
-    platform_order_id: platformOrderId,
+    signature:         receivedSig      = "",
+    platform_order_id: platformOrderId  = "",
+    total_order_value: totalOrderValue  = "0",
   } = body;
 
-  // ── 1. Signature doğrulama (KRİTİK güvenlik adımı) ──
-  if (!receivedSignature || !randomNr) {
-    console.warn("[shopier/webhook] İmza veya random_nr eksik.");
-    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
-  }
-
-  const isValid = verifyShopierSignature(
-    apiKey, apiSecret, randomNr, installmentCount, status, receivedSignature
-  );
-
-  if (!isValid) {
-    console.warn("[shopier/webhook] Geçersiz imza. Sahte istek olabilir.");
-    // Shopier 200 bekler, hata fırlatma — sadece logla ve çık
-    return NextResponse.json({ received: true }, { status: 200 });
+  // ── 1. İmza doğrula ──
+  if (!verifySignature(apiKey, apiSecret, randomNr, installmentCount, status, receivedSig)) {
+    console.warn("[webhook] Geçersiz imza — istek reddedildi.");
+    return NextResponse.json({ ok: true }, { status: 200 }); // Shopier 200 bekler
   }
 
   // ── 2. Sadece başarılı ödemeleri işle ──
   if (status !== "success") {
-    console.log(`[shopier/webhook] Ödeme başarısız: status=${status}`);
-
-    // Payments tablosunu güncelle
-    try {
-      const supabase = getServiceClient();
-      await supabase
-        .from("payments")
-        .update({ status: "failed" })
-        .eq("order_id", randomNr);
-    } catch {}
-
-    return NextResponse.json({ received: true }, { status: 200 });
+    console.log(`[webhook] Başarısız ödeme: status=${status}`);
+    return NextResponse.json({ ok: true }, { status: 200 });
   }
 
-  // ── 3. buyer_id_nr'dan userId ve credits ayıkla ──
-  // Format: "userId|credits" (checkout'ta böyle gömdük)
-  if (!buyerIdNr) {
-    console.error("[shopier/webhook] buyer_id_nr eksik.");
-    return NextResponse.json({ received: true }, { status: 200 });
+  // ── 3. Kredi miktarını hesapla ──
+  const amount  = parseFloat(totalOrderValue) || 0;
+  const credits = priceToCredits(amount);
+
+  if (credits === 0) {
+    console.warn(`[webhook] Tanımsız tutar: ${amount} TL`);
+    // Bilinmeyen tutarı 1 kredi olarak kaydet, admin manuel düzeltir
   }
 
-  const parts   = buyerIdNr.split("|");
-  const userId  = parts[0]?.trim();
-  const credits = parseInt(parts[1]?.trim() ?? "0", 10);
+  const orderId = platformOrderId || randomNr;
 
-  if (!userId || !credits || credits <= 0) {
-    console.error("[shopier/webhook] buyer_id_nr parse hatası:", buyerIdNr);
-    return NextResponse.json({ received: true }, { status: 200 });
+  if (!orderId) {
+    console.error("[webhook] order_id yok.");
+    return NextResponse.json({ ok: true }, { status: 200 });
   }
 
-  // ── 4. Duplicate webhook koruması ──
-  // Aynı random_nr ile ikinci kez işlem yapılmasın
+  // ── 4. Duplicate koruma ──
   const supabase = getServiceClient();
 
   const { data: existing } = await supabase
     .from("payments")
-    .select("status")
-    .eq("order_id", randomNr)
-    .single();
+    .select("id")
+    .eq("order_id", orderId)
+    .maybeSingle();
 
-  if (existing?.status === "completed") {
-    console.warn(`[shopier/webhook] Duplicate webhook: order_id=${randomNr}`);
-    return NextResponse.json({ received: true }, { status: 200 });
+  if (existing) {
+    console.warn(`[webhook] Duplicate: order_id=${orderId}`);
+    return NextResponse.json({ ok: true }, { status: 200 });
   }
 
-  // ── 5. Krediyi ekle (RPC ile atomic) ──
-  const { data: txResult, error: txError } = await supabase.rpc(
-    "handle_credit_transaction",
-    {
-      p_user_id:     userId,
-      p_amount:      credits,
-      p_process_type: "purchase",
-      p_description: `Shopier Satın Alma — ${credits} Kredi`,
-      p_metadata: {
-        shopier_order_key:    shopierOrderKey   ?? null,
-        platform_order_id:    platformOrderId   ?? null,
-        random_nr:            randomNr,
-      },
-    }
-  );
-
-  if (txError || !txResult?.success) {
-    console.error("[shopier/webhook] Kredi ekleme hatası:", txError?.message ?? txResult);
-
-    // Webhook log'a yaz — manuel çözüm için
-    await supabase.from("webhook_logs").insert({
-      shopier_email:    "",
-      shopier_order_id: randomNr,
-      plan_type:        `${credits}_credits`,
-      amount:           null,
-      error_message:    txError?.message ?? "RPC başarısız",
-      is_resolved:      false,
+  // ── 5. Unclaimed sipariş kaydı oluştur ──
+  const { error } = await supabase
+    .from("payments")
+    .insert({
+      user_id:       null,           // Henüz bilinmiyor — claimOrder'da doldurulacak
+      order_id:      orderId,
+      amount:        amount,
+      currency:      "TRY",
+      plan_type:     `${credits}_credits`,
+      credit_amount: credits || 1,   // 0 gelirse güvenlik için 1 yaz
+      status:        "unclaimed",
     });
 
-    // Shopier 200 bekler — hata verse de 200 dön
-    return NextResponse.json({ received: true }, { status: 200 });
+  if (error) {
+    console.error("[webhook] DB insert hatası:", error.message);
+    // Webhook log'a yaz
+    await supabase.from("webhook_logs").insert({
+      shopier_email:    "",
+      shopier_order_id: orderId,
+      plan_type:        `${credits}_credits`,
+      amount:           amount,
+      error_message:    error.message,
+      is_resolved:      false,
+    });
+  } else {
+    console.log(`[webhook] ✅ Unclaimed kayıt oluştu: order=${orderId}, credits=${credits}`);
   }
 
-  // ── 6. Payment kaydını tamamlandı olarak işaretle ──
-  await supabase
-    .from("payments")
-    .update({ status: "completed" })
-    .eq("order_id", randomNr);
-
-  console.log(`[shopier/webhook] ✅ ${credits} kredi eklendi — userId: ${userId}`);
-  return NextResponse.json({ received: true }, { status: 200 });
+  return NextResponse.json({ ok: true }, { status: 200 });
 }
 
-// Shopier bazen GET ile sağlık kontrolü yapar
 export async function GET() {
   return NextResponse.json({ status: "ok" }, { status: 200 });
 }
