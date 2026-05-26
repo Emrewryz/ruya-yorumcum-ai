@@ -13,140 +13,144 @@ function getServiceClient() {
   });
 }
 
-// ─── Fiyat → Kredi Eşleşmesi ─────────────────────────────────────────────────
+// ─── Shopier OSB Veri Tipi ────────────────────────────────────────────────────
 
-function priceToCredits(amount: number): number {
-  if (amount >= 160) return 10; // Laboratuvar (169 TL)
-  if (amount >= 80)  return 3;  // Kâşif (89 TL)
-  if (amount >= 1)  return 10;  // Tekli (39 TL)
-  return 0;
+interface ShopierPayload {
+  email:         string;
+  orderid:       string;
+  currency:      string; // "0"=TL, "1"=USD, "2"=EUR
+  price:         string;
+  buyername:     string;
+  buyersurname:  string;
+  productcount:  string;
+  productid:     string;
+  productlist:   string;
+  istest:        string; // "0"=canlı, "1"=test
+  customernote?: string;
 }
 
-// ─── İmza Doğrulama ──────────────────────────────────────────────────────────
-// Shopier: HMAC-SHA256(apiKey + randomNr + installmentCount + status, apiSecret)
+// ─── Fiyat → Kredi ───────────────────────────────────────────────────────────
 
-function verifySignature(
-  apiKey: string,
-  apiSecret: string,
-  randomNr: string,
-  installmentCount: string,
-  status: string,
-  received: string
-): boolean {
-  const expected = createHmac("sha256", apiSecret)
-    .update(apiKey + randomNr + installmentCount + status)
-    .digest("base64");
-
-  if (expected.length !== received.length) return false;
-  let diff = 0;
-  for (let i = 0; i < expected.length; i++) {
-    diff |= expected.charCodeAt(i) ^ received.charCodeAt(i);
-  }
-  return diff === 0;
+function priceToCredits(amount: number): number {
+  if (amount >= 160) return 10; // Laboratuvar 169 TL
+  if (amount >= 80)  return 3;  // Kâşif 89 TL
+  if (amount >= 1)  return 1;  // Tekli 39 TL
+  return 1;
 }
 
 // ─── Route Handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  // ── Body'yi parse et ──
   let body: Record<string, string> = {};
+
   try {
-    const ct = request.headers.get("content-type") ?? "";
-    body = ct.includes("application/x-www-form-urlencoded")
-      ? Object.fromEntries(new URLSearchParams(await request.text()))
-      : await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    const rawText = await request.text();
+    console.log("[webhook] RAW:", rawText);
+    body = Object.fromEntries(new URLSearchParams(rawText));
+  } catch (e) {
+    console.error("[webhook] Parse hatası:", e);
+    return new NextResponse("error", { status: 200 });
   }
 
-  const apiKey    = process.env.SHOPIER_API_KEY!;
-  const apiSecret = process.env.SHOPIER_API_SECRET!;
+  const { res, hash } = body;
 
-  if (!apiKey || !apiSecret) {
-    console.error("[webhook] Shopier env eksik.");
-    return NextResponse.json({ ok: true }, { status: 200 });
+  // ── 1. Zorunlu alanlar ──
+  if (!res || !hash) {
+    console.warn("[webhook] res veya hash eksik.");
+    return new NextResponse("missing parameter", { status: 200 });
   }
 
-  const {
-    status,
-    random_nr:         randomNr         = "",
-    installment_count: installmentCount = "0",
-    signature:         receivedSig      = "",
-    platform_order_id: platformOrderId  = "",
-    total_order_value: totalOrderValue  = "0",
-  } = body;
+  // ── 2. İmza doğrulama ──
+  // Shopier: HMAC-SHA256(res + username, key) — hex formatında
+  const username  = process.env.SHOPIER_API_KEY!;    // username (6530c...)
+  const secretKey = process.env.SHOPIER_API_SECRET!; // key (b1b678...)
 
-  // ── 1. İmza doğrula ──
-  if (!verifySignature(apiKey, apiSecret, randomNr, installmentCount, status, receivedSig)) {
+  const expectedHash = createHmac("sha256", secretKey)
+    .update(res + username)
+    .digest("hex");
+
+  console.log("[webhook] Beklenen hash:", expectedHash);
+  console.log("[webhook] Gelen hash:   ", hash);
+
+  if (expectedHash !== hash) {
     console.warn("[webhook] Geçersiz imza — istek reddedildi.");
-    return NextResponse.json({ ok: true }, { status: 200 }); // Shopier 200 bekler
+    return new NextResponse("invalid hash", { status: 200 });
   }
 
-  // ── 2. Sadece başarılı ödemeleri işle ──
-  if (status !== "success") {
-    console.log(`[webhook] Başarısız ödeme: status=${status}`);
-    return NextResponse.json({ ok: true }, { status: 200 });
+  // ── 3. Base64 JSON çöz ──
+  let payload: ShopierPayload;
+  try {
+    const decoded = Buffer.from(res, "base64").toString("utf-8");
+    console.log("[webhook] Decoded payload:", decoded);
+    payload = JSON.parse(decoded);
+  } catch (e) {
+    console.error("[webhook] JSON parse hatası:", e);
+    return new NextResponse("parse error", { status: 200 });
   }
 
-  // ── 3. Kredi miktarını hesapla ──
-  const amount  = parseFloat(totalOrderValue) || 0;
+  const { orderid, price, istest, email } = payload;
+
+  console.log(`[webhook] orderid=${orderid} price=${price} istest=${istest} email=${email}`);
+
+  // ── 4. Test siparişlerini kaydetme (isteğe bağlı) ──
+  if (istest === "1") {
+    console.log("[webhook] Test siparişi — atlandı.");
+    return new NextResponse("success", { status: 200 });
+  }
+
+  // ── 5. Kredi hesapla ──
+  const amount  = parseFloat(price) || 0;
   const credits = priceToCredits(amount);
 
-  if (credits === 0) {
-    console.warn(`[webhook] Tanımsız tutar: ${amount} TL`);
-    // Bilinmeyen tutarı 1 kredi olarak kaydet, admin manuel düzeltir
+  if (!orderid) {
+    console.error("[webhook] orderid yok.");
+    return new NextResponse("success", { status: 200 });
   }
 
-  const orderId = platformOrderId || randomNr;
-
-  if (!orderId) {
-    console.error("[webhook] order_id yok.");
-    return NextResponse.json({ ok: true }, { status: 200 });
-  }
-
-  // ── 4. Duplicate koruma ──
   const supabase = getServiceClient();
 
+  // ── 6. Duplicate kontrol ──
   const { data: existing } = await supabase
     .from("payments")
-    .select("id")
-    .eq("order_id", orderId)
+    .select("id, status")
+    .eq("order_id", orderid)
     .maybeSingle();
 
   if (existing) {
-    console.warn(`[webhook] Duplicate: order_id=${orderId}`);
-    return NextResponse.json({ ok: true }, { status: 200 });
+    console.warn(`[webhook] Duplicate: ${orderid} — atlandı.`);
+    return new NextResponse("success", { status: 200 });
   }
 
-  // ── 5. Unclaimed sipariş kaydı oluştur ──
+  // ── 7. Unclaimed kayıt oluştur ──
   const { error } = await supabase
     .from("payments")
     .insert({
-      user_id:       null,           // Henüz bilinmiyor — claimOrder'da doldurulacak
-      order_id:      orderId,
+      user_id:       null,
+      order_id:      orderid,
       amount:        amount,
       currency:      "TRY",
       plan_type:     `${credits}_credits`,
-      credit_amount: credits || 1,   // 0 gelirse güvenlik için 1 yaz
+      credit_amount: credits,
       status:        "unclaimed",
     });
 
   if (error) {
     console.error("[webhook] DB insert hatası:", error.message);
-    // Webhook log'a yaz
+
     await supabase.from("webhook_logs").insert({
-      shopier_email:    "",
-      shopier_order_id: orderId,
+      shopier_email:    email ?? "",
+      shopier_order_id: orderid,
       plan_type:        `${credits}_credits`,
       amount:           amount,
       error_message:    error.message,
       is_resolved:      false,
     });
   } else {
-    console.log(`[webhook] ✅ Unclaimed kayıt oluştu: order=${orderId}, credits=${credits}`);
+    console.log(`[webhook] ✅ Kaydedildi: order=${orderid} credits=${credits}`);
   }
 
-  return NextResponse.json({ ok: true }, { status: 200 });
+  // Shopier "success" yanıtı beklediğini belirtiyor
+  return new NextResponse("success", { status: 200 });
 }
 
 export async function GET() {
