@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Moon } from "lucide-react";
+import MobileNavWrapper from "@/components/MobileNavWrapper";
 
 const LEGAL_LINKS = [
   { href: "/gizlilik",       label: "Gizlilik Politikası" },
@@ -21,8 +22,6 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
       {/* Header */}
       <header className="border-b border-zinc-100">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <Moon className="h-4 w-4 text-zinc-900" strokeWidth={1.5} />
             <span className="text-sm font-semibold text-zinc-900 group-hover:text-zinc-600 transition-colors">
@@ -30,7 +29,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          {/* Masaüstü Nav */}
+          {/* Masaüstü nav */}
           <nav className="hidden sm:flex items-center gap-5">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
@@ -43,7 +42,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          {/* Mobil — Ana Sayfa linki */}
+          {/* Mobil — geri linki */}
           <Link
             href="/"
             className="sm:hidden text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
@@ -53,8 +52,8 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* İçerik */}
-      <main className="flex-1">
+      {/* İçerik — mobilde alt nav için padding */}
+      <main className="flex-1 pb-20 md:pb-0">
         {children}
       </main>
 
@@ -78,6 +77,8 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
         </div>
       </footer>
 
+      {/* Mobil Bottom Nav */}
+      <MobileNavWrapper />
     </div>
   );
 }

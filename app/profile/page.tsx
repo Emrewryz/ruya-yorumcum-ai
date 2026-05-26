@@ -12,6 +12,7 @@ import {
 } from "@/app/actions/profile-actions";
 import CreditModal from "@/components/CreditModal";
 import AppSidebar from "@/components/AppSidebar";
+import MobileNavWrapper from "@/components/MobileNavWrapper";
 
 // ─── Soru meta verisi (onboarding ile aynı) ───────────────────────────────────
 
@@ -92,7 +93,6 @@ function AccountSection({
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-6">
       <div className="flex items-start justify-between gap-4">
-        {/* Avatar + bilgi */}
         <div className="flex items-center gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-base font-bold text-white">
             {(profile.full_name?.charAt(0) || profile.email?.charAt(0) || "U").toUpperCase()}
@@ -147,7 +147,6 @@ function AccountSection({
           </div>
         </div>
 
-        {/* Kredi kutusu */}
         <div className="flex shrink-0 flex-col items-end gap-2">
           <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5">
             <Coins className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.5} />
@@ -166,7 +165,7 @@ function AccountSection({
   );
 }
 
-// ─── Algoritma Ayarları (Personalization) ─────────────────────────────────────
+// ─── Algoritma Ayarları ───────────────────────────────────────────────────────
 
 function AlgorithmSection({ profile }: { profile: UserProfile }) {
   const router = useRouter();
@@ -255,17 +254,14 @@ function AlgorithmSection({ profile }: { profile: UserProfile }) {
         })}
       </div>
 
-      {error && (
-        <p className="mt-4 text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
 
-      {/* Kaydet */}
       {hasChanges && (
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             onClick={handleSave}
             disabled={isPending}
-            className="flex items-center gap-2 rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-zinc-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2"
+            className="flex items-center gap-2 rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-zinc-700 disabled:opacity-50"
           >
             {isPending
               ? <><Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} /> Kaydediliyor...</>
@@ -285,7 +281,7 @@ function AlgorithmSection({ profile }: { profile: UserProfile }) {
   );
 }
 
-// ─── Ana Sayfa ────────────────────────────────────────────────────────────────
+// ─── Ana İçerik ───────────────────────────────────────────────────────────────
 
 function ProfileContent() {
   const router = useRouter();
@@ -323,8 +319,9 @@ function ProfileContent() {
         className="flex-1 overflow-y-auto"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <div className="mx-auto max-w-2xl px-6 py-8">
-          {/* Geri dön */}
+        {/* Mobilde bottom nav için padding */}
+        <div className="mx-auto max-w-2xl px-6 py-8 pb-28 md:pb-10">
+
           <button
             onClick={() => router.push("/")}
             className="group mb-7 flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-700 transition-colors"
@@ -333,7 +330,6 @@ function ProfileContent() {
             Ana sayfaya dön
           </button>
 
-          {/* Sayfa başlığı */}
           <div className="mb-8">
             <h1 className="text-xl font-semibold text-zinc-900">Profil</h1>
             <p className="mt-0.5 text-sm text-zinc-400">
@@ -354,17 +350,25 @@ function ProfileContent() {
   );
 }
 
+// ─── Sayfa ────────────────────────────────────────────────────────────────────
+
 export default function ProfilePage() {
-      const router = useRouter(); // ← ekle
+  const router = useRouter();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex overflow-hidden bg-white" style={{ height: "100dvh" }}>
+
+      {/* Masaüstü Sidebar */}
       <AppSidebar
-  activeChatId={null}
-  onSelectChat={(id) => router.push(`/?chat=${id}`)}
-  onNewChat={() => router.push("/")}
-  refreshTrigger={0}
-/>
+        activeChatId={null}
+        onSelectChat={(id) => router.push(`/?chat=${id}`)}
+        onNewChat={() => router.push("/")}
+        refreshTrigger={0}
+      />
+
+      {/* Mobil Bottom Nav */}
+      <MobileNavWrapper />
+
       <main className="flex flex-1 flex-col overflow-hidden bg-white">
         <Suspense fallback={
           <div className="flex h-full items-center justify-center">
