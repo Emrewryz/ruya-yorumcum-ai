@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 
 function getServiceClient() {
@@ -11,6 +10,21 @@ function getServiceClient() {
   });
 }
 
+// Shopier'in bilinen sunucu IP aralıkları
+const SHOPIER_IPS = [
+  "212.58.136.",
+  "212.58.137.",
+  "212.58.138.",
+  "212.58.139.",
+  "185.8.177.",
+];
+
+function isShopierIP(ip: string): boolean {
+  // Geliştirme ortamında veya IP alınamazsa geç
+  if (!ip || ip === "::1" || ip === "127.0.0.1") return true;
+  return SHOPIER_IPS.some((range) => ip.startsWith(range));
+}
+
 interface ShopierPayload {
   email:        string;
   orderid:      string;
@@ -18,9 +32,8 @@ interface ShopierPayload {
   price:        string;
   buyername:    string;
   buyersurname: string;
-  productcount: string | number;
   productid:    string | number;
-  productlist:  string;
+  productcount: string | number;
   istest:       string | number;
   customernote?: string;
 }
@@ -32,88 +45,69 @@ function priceToCredits(amount: number): number {
   return 1;
 }
 
-// ─── Multipart form-data parser ──────────────────────────────────────────────
-
 function parseMultipart(rawText: string, boundary: string): Record<string, string> {
   const result: Record<string, string> = {};
   const parts = rawText.split(`--${boundary}`);
-
   for (const part of parts) {
-    // name="fieldname" satırını bul
-    const nameMatch = part.match(/Content-Disposition:[^\r\n]*name="([^"]+)"/i);
-    if (!nameMatch) continue;
-
-    const fieldName = nameMatch[1];
-    // Header bloğu ile değer arasında çift CRLF veya LF var
+    const nameMatch  = part.match(/Content-Disposition:[^\r\n]*name="([^"]+)"/i);
     const valueMatch = part.match(/\r?\n\r?\n([\s\S]*?)(\r?\n)?$/);
-    if (!valueMatch) continue;
-
-    result[fieldName] = valueMatch[1].trim();
+    if (nameMatch && valueMatch) {
+      result[nameMatch[1]] = valueMatch[1].trim();
+    }
   }
-
   return result;
 }
 
-// ─── Route Handler ────────────────────────────────────────────────────────────
-
 export async function POST(request: NextRequest) {
-  let body: Record<string, string> = {};
+  // ── IP kontrolü ──
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? request.headers.get("x-real-ip")
+    ?? "";
 
+  console.log("[webhook] Gelen IP:", ip);
+
+  if (!isShopierIP(ip)) {
+    console.warn("[webhook] Bilinmeyen IP, reddedildi:", ip);
+    return new NextResponse("forbidden", { status: 200 }); // Shopier 200 bekler
+  }
+
+  // ── Body parse ──
+  let body: Record<string, string> = {};
   try {
     const ct      = request.headers.get("content-type") ?? "";
     const rawText = await request.text();
 
     if (ct.includes("multipart/form-data")) {
-      const boundaryMatch = ct.match(/boundary=([^\s;]+)/);
-      const boundary      = boundaryMatch?.[1];
-      if (!boundary) throw new Error("Boundary bulunamadı");
+      const boundary = ct.match(/boundary=([^\s;]+)/)?.[1];
+      if (!boundary) throw new Error("Boundary yok");
       body = parseMultipart(rawText, boundary);
     } else {
       body = Object.fromEntries(new URLSearchParams(rawText));
     }
-
-    console.log("[webhook] res mevcut:", !!body.res);
-    console.log("[webhook] hash mevcut:", !!body.hash);
   } catch (e) {
     console.error("[webhook] Parse hatası:", e);
     return new NextResponse("error", { status: 200 });
   }
 
-  const { res, hash } = body;
-
-  if (!res || !hash) {
-    console.warn("[webhook] res veya hash eksik.");
+  const { res } = body;
+  if (!res) {
+    console.warn("[webhook] res alanı eksik.");
     return new NextResponse("missing parameter", { status: 200 });
-  }
-
-  // ── İmza doğrulama ──
-  const username  = process.env.SHOPIER_API_KEY!;
-  const secretKey = process.env.SHOPIER_API_SECRET!;
-
-  const expectedHash = createHmac("sha256", secretKey)
-    .update(res + username)
-    .digest("hex");
-
-  if (expectedHash !== hash) {
-    console.warn("[webhook] Geçersiz imza.");
-    return new NextResponse("invalid hash", { status: 200 });
   }
 
   // ── Base64 çöz ──
   let payload: ShopierPayload;
   try {
-    const decoded = Buffer.from(res, "base64").toString("utf-8");
-    console.log("[webhook] Decoded:", decoded);
-    payload = JSON.parse(decoded);
+    payload = JSON.parse(Buffer.from(res, "base64").toString("utf-8"));
+    console.log("[webhook] orderid:", payload.orderid, "price:", payload.price, "istest:", payload.istest);
   } catch (e) {
     console.error("[webhook] JSON parse hatası:", e);
     return new NextResponse("parse error", { status: 200 });
   }
 
   const { orderid, price, istest, email } = payload;
-  console.log(`[webhook] orderid=${orderid} price=${price} istest=${istest}`);
 
-  // Test siparişini kaydetme
+  // Test siparişlerini kaydetme
   if (String(istest) === "1") {
     console.log("[webhook] Test siparişi — atlandı.");
     return new NextResponse("success", { status: 200 });
@@ -122,11 +116,6 @@ export async function POST(request: NextRequest) {
   const amount  = parseFloat(String(price)) || 0;
   const credits = priceToCredits(amount);
   const orderId = String(orderid);
-
-  if (!orderId) {
-    console.error("[webhook] orderid yok.");
-    return new NextResponse("success", { status: 200 });
-  }
 
   const supabase = getServiceClient();
 
@@ -138,7 +127,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (existing) {
-    console.warn(`[webhook] Duplicate: ${orderId}`);
+    console.warn("[webhook] Duplicate:", orderId);
     return new NextResponse("success", { status: 200 });
   }
 
@@ -165,7 +154,7 @@ export async function POST(request: NextRequest) {
       is_resolved:      false,
     });
   } else {
-    console.log(`[webhook] ✅ order=${orderId} credits=${credits}`);
+    console.log(`[webhook] ✅ Kaydedildi: order=${orderId} credits=${credits}`);
   }
 
   return new NextResponse("success", { status: 200 });
