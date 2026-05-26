@@ -1,141 +1,85 @@
-import { MetadataRoute } from 'next'
-import { createClient } from '@/utils/supabase/server'
+import { MetadataRoute } from "next";
+import { createClient } from "@/utils/supabase/server";
+
+const SITE_URL = "https://www.ruyayorumcum.com.tr";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://www.ruyayorumcum.com.tr'
-  
-  // 1. Supabase istemcisini oluştur
-  const supabase = createClient()
+  const supabase = createClient();
 
-  // --- VERİ ÇEKME İŞLEMLERİ ---
+  // Blog yazıları
+  const { data: posts } = await supabase
+    .from("blog_posts")
+    .select("slug, created_at")
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
 
-  // A) Rüyaları Çek
-  const { data: terms, error: dreamsError } = await supabase
-    .from('dream_dictionary')
-    .select('slug, created_at')
+  // Rüya tabirleri
+  const { data: entries } = await supabase
+    .from("dream_dictionary")
+    .select("slug, created_at")
+    .order("term", { ascending: true });
 
-  if (dreamsError) {
-    console.error('Sitemap (Rüyalar) çekilirken hata:', dreamsError)
-  }
-
-  // B) Blog Yazılarını Çek
-  const { data: posts, error: blogError } = await supabase
-    .from('blog_posts')
-    .select('slug, created_at')
-    .eq('is_published', true)
-
-  if (blogError) {
-    console.error('Sitemap (Blog) çekilirken hata:', blogError)
-  }
-
-  // --- SAYFA LİSTELERİ OLUŞTURMA ---
-
-  // 2. Statik (Sabit) Sayfalar
+  // Statik sayfalar
   const staticPages: MetadataRoute.Sitemap = [
     {
-      url: `${baseUrl}`,
+      url: SITE_URL,
       lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
+      changeFrequency: "daily",
+      priority: 1.0,
     },
     {
-      url: `${baseUrl}/sozluk`,
+      url: `${SITE_URL}/blog`,
       lastModified: new Date(),
-      changeFrequency: 'daily',
+      changeFrequency: "daily",
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/blog`,
+      url: `${SITE_URL}/ruya-tabirleri`,
       lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    // --- LANDING PAGES (Hizmet Sayfaları) ---
-    {
-      url: `${baseUrl}/astroloji`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
+      changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/ruya-tabiri`,
+      url: `${SITE_URL}/auth`,
       lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
+      changeFrequency: "monthly",
+      priority: 0.5,
     },
     {
-      url: `${baseUrl}/ruya-gorsellestirme`,
+      url: `${SITE_URL}/gizlilik`,
       lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
+      changeFrequency: "yearly",
+      priority: 0.3,
     },
     {
-      url: `${baseUrl}/numeroloji`,
+      url: `${SITE_URL}/mesafeli-satis`,
       lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
+      changeFrequency: "yearly",
+      priority: 0.3,
     },
     {
-      url: `${baseUrl}/duygu-analizi`,
+      url: `${SITE_URL}/iptal-iade`,
       lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
+      changeFrequency: "yearly",
+      priority: 0.3,
     },
-    {
-      url: `${baseUrl}/tarot`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    // --- DİĞER SAYFALAR ---
-    {
-  url: `${baseUrl}/dashboard/pricing`, // Başına dashboard eklendi
-  lastModified: new Date(),
-  changeFrequency: 'weekly',
-  priority: 0.8,
-},
-    // NOT: Dashboard robots.txt'de engelli olduğu için buradan kaldırıldı.
-    // Google botlarının kafasını karıştırmamak için sitemap'te olmamalıdır.
+  ];
 
-    // --- YASAL SAYFALAR ---
-    {
-      url: `${baseUrl}/yasal/gizlilik-politikasi`,
-      lastModified: new Date(),
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/yasal/kullanim-kosullari`,
-      lastModified: new Date(),
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/yasal/mesafeli-satis-sozlesmesi`,
-      lastModified: new Date(),
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/yasal/iptal-ve-iade-kosullari`,
-      lastModified: new Date(),
-      priority: 0.5,
-    },
-  ]
-
-  // 3. Dinamik Rüya Sayfaları
-  const dictionaryPages: MetadataRoute.Sitemap = (terms || []).map((term) => ({
-    url: `${baseUrl}/sozluk/${term.slug}`,
-    lastModified: term.created_at ? new Date(term.created_at) : new Date(),
-    changeFrequency: 'monthly',
-    priority: 0.7,
-  }))
-
-  // 4. Dinamik Blog Sayfaları
-  const blogPages: MetadataRoute.Sitemap = (posts || []).map((post) => ({
-    url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: post.created_at ? new Date(post.created_at) : new Date(),
-    changeFrequency: 'weekly',
+  // Blog yazıları — yüksek öncelik
+  const blogPages: MetadataRoute.Sitemap = (posts ?? []).map((post) => ({
+    url: `${SITE_URL}/blog/${post.slug}`,
+    lastModified: new Date(post.created_at),
+    changeFrequency: "monthly" as const,
     priority: 0.8,
-  }))
+  }));
 
-  // 5. Hepsini birleştirip döndür
-  return [...staticPages, ...dictionaryPages, ...blogPages]
+  // Rüya tabirleri — uzun kuyruk SEO trafiğinin kaynağı
+  const dictionaryPages: MetadataRoute.Sitemap = (entries ?? []).map((entry) => ({
+    url: `${SITE_URL}/ruya-tabirleri/${entry.slug}`,
+    lastModified: new Date(entry.created_at),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...blogPages, ...dictionaryPages];
 }

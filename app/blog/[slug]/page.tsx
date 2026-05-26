@@ -1,207 +1,279 @@
-import { createClient } from "@/utils/supabase/server";
-import Link from "next/link";
-import { ArrowLeft, Calendar, Quote, Clock, ChevronRight, ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Script from "next/script";
-import BlogSidebarCTA from "@/components/BlogSidebarCTA"; 
+import Link from "next/link";
+import Image from "next/image";
+import { createClient } from "@/utils/supabase/server";
+import { Calendar } from "lucide-react";
 
-// --- TİP TANIMLAMALARI ---
-type ContentBlock = 
-  | { type: 'heading'; text: string }
-  | { type: 'paragraph'; text: string }
-  | { type: 'quote'; title?: string; text: string }
-  | { type: 'list'; items: string[] };
+const SITE_URL = "https://www.ruyayorumcum.com.tr";
 
-// --- METADATA (SEO) ---
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+// ─── Metadata ─────────────────────────────────────────────────────────────────
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
   const supabase = createClient();
-  const { data: post } = await supabase.from('blog_posts').select('*').eq('slug', params.slug).single();
-  
-  if (!post) return { title: 'Yazı Bulunamadı' };
+  const { data: post } = await supabase
+    .from("blog_posts")
+    .select("title, excerpt, image_url, created_at")
+    .eq("slug", params.slug)
+    .eq("is_published", true)
+    .single();
+
+  if (!post) return { title: "Yazı Bulunamadı" };
+
+  const url   = `${SITE_URL}/blog/${params.slug}`;
+  const title = `${post.title} — Rüya Yorumcum`;
+  const desc  = post.excerpt?.slice(0, 160) ?? undefined;
 
   return {
-    title: `${post.title} | Rüya Yorumcum AI`,
-    description: post.excerpt,
+    title,
+    description: desc,
+    alternates: { canonical: url },
+    robots: { index: true, follow: true },
     openGraph: {
       title: post.title,
-      description: post.excerpt,
-      type: 'article',
-      url: `https://www.ruyayorumcum.com.tr/blog/${post.slug}`,
-      images: post.image_url ? [{ url: post.image_url, width: 1200, height: 630, alt: post.title }] : [],
-    }
+      description: desc,
+      url,
+      type: "article",
+      publishedTime: post.created_at,
+      siteName: "Rüya Yorumcum",
+      images: post.image_url
+        ? [{ url: post.image_url, width: 1200, height: 630, alt: post.title }]
+        : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: desc,
+      images: post.image_url ? [post.image_url] : [],
+    },
   };
 }
 
-// --- YARDIMCI: İçerik Ayrıştırıcı ---
-const parseContent = (content: any): ContentBlock[] => {
-  try {
-    if (typeof content === 'string') {
-        return JSON.parse(content);
-    }
-    return content as ContentBlock[];
-  } catch (e) {
-    return [{ type: 'paragraph', text: 'İçerik yüklenirken bir sorun oluştu.' }];
-  }
-};
+// ─── İçerik Renderer ─────────────────────────────────────────────────────────
 
-// --- BİLEŞEN: İçerik Renderlayıcı ---
-const BlockRenderer = ({ block }: { block: ContentBlock }) => {
-  switch (block.type) {
-    case 'heading':
-      return (
-        <h2 className="text-xl md:text-2xl font-serif font-bold text-[var(--text-main)] pt-6 border-b border-[var(--border-color)] pb-3 mt-6 mb-5 tracking-tight flex items-center gap-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {block.text}
-        </h2>
-      );
-    case 'paragraph':
-      return (
-        <p 
-          className="text-sm md:text-base text-[var(--text-muted)] font-light leading-relaxed md:leading-[1.7] mb-5 antialiased"
-          dangerouslySetInnerHTML={{ __html: block.text }}
-        />
-      );
-    case 'quote':
-      return (
-        <div className="my-10 p-6 md:p-10 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-color)] relative overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-black/50">
-          <Quote className="absolute top-6 right-6 w-12 h-12 text-amber-500/10 rotate-180" />
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-500 to-amber-600 dark:to-amber-700"></div>
-          <div className="relative z-10 pl-2">
-            {block.title && (
-              <h3 className="text-amber-600 dark:text-amber-500 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">
-                 {block.title}
-              </h3>
+function renderContent(content: any): React.ReactNode {
+  if (!content) return null;
+  const blocks: any[] = Array.isArray(content) ? content : (content.blocks ?? []);
+
+  return blocks.map((block: any, i: number) => {
+    switch (block.type) {
+      case "heading":
+        return (
+          <h2 key={i} className="mt-8 mb-3 text-xl font-semibold text-zinc-900">
+            {block.content}
+          </h2>
+        );
+      case "subheading":
+        return (
+          <h3 key={i} className="mt-6 mb-2 text-lg font-semibold text-zinc-800">
+            {block.content}
+          </h3>
+        );
+      case "paragraph":
+        return (
+          <p key={i} className="mb-4 leading-loose text-zinc-700">
+            {block.content}
+          </p>
+        );
+      case "image":
+        return (
+          <figure key={i} className="my-6">
+            {/*
+              İçerik bloğu görselleri için standart <img> kullanılıyor.
+              Bu görsellerin kaynağı dinamik ve next.config'de
+              remotePatterns'a eklenmemiş olabilir.
+              loading="lazy" ve decoding="async" ile Core Web Vitals korunuyor.
+            */}
+            <img
+              src={block.url}
+              alt={block.alt ?? ""}
+              loading="lazy"
+              decoding="async"
+              className="w-full rounded-xl object-cover"
+            />
+            {block.caption && (
+              <figcaption className="mt-2 text-center text-xs text-zinc-400">
+                {block.caption}
+              </figcaption>
             )}
-            <p className="text-[var(--text-main)] text-lg md:text-xl font-serif italic leading-relaxed">
-              "{block.text}"
-            </p>
-          </div>
-        </div>
-      );
-    case 'list':
-      return (
-        <ul className="space-y-3 my-8 p-6 bg-black/5 dark:bg-white/[0.02] rounded-2xl border border-[var(--border-color)] shadow-sm dark:shadow-none">
-          {block.items.map((li, i) => (
-            <li key={i} className="flex items-start gap-3 text-[var(--text-muted)] text-sm md:text-base leading-relaxed group">
-              <div className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-500/50 shrink-0"></div>
-              <span dangerouslySetInnerHTML={{ __html: li }} />
-            </li>
-          ))}
-        </ul>
-      );
-    default:
-      return null;
-  }
-};
+          </figure>
+        );
+      case "quote":
+        return (
+          <blockquote
+            key={i}
+            className="my-6 border-l-2 border-zinc-300 pl-4 italic text-zinc-600"
+          >
+            {block.content}
+          </blockquote>
+        );
+      default:
+        return block.content ? (
+          <p key={i} className="mb-4 leading-loose text-zinc-700">
+            {block.content}
+          </p>
+        ) : null;
+    }
+  });
+}
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+// ─── Sayfa ────────────────────────────────────────────────────────────────────
+
+export default async function BlogDetailPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const supabase = createClient();
-  
-  const { data: post } = await supabase.from('blog_posts').select('*').eq('slug', params.slug).single();
-  if (!post) return notFound();
 
+  const { data: post, error } = await supabase
+    .from("blog_posts")
+    .select("id, title, slug, excerpt, content, image_url, created_at")
+    .eq("slug", params.slug)
+    .eq("is_published", true)
+    .single();
+
+  if (error || !post) notFound();
+
+  // İlgili blog yazıları
   const { data: relatedPosts } = await supabase
-    .from('blog_posts')
-    .select('title, slug, image_url, created_at, excerpt')
-    .eq('is_published', true)
-    .neq('id', post.id)
-    .order('created_at', { ascending: false })
+    .from("blog_posts")
+    .select("id, title, slug, excerpt, created_at")
+    .eq("is_published", true)
+    .neq("slug", params.slug)
+    .order("created_at", { ascending: false })
     .limit(3);
 
-  const contentBlocks = parseContent(post.content);
-  const wordCount = JSON.stringify(contentBlocks).split(' ').length;
-  const readTime = Math.ceil(wordCount / 200) || 1; 
+  const formattedDate = new Date(post.created_at).toLocaleDateString("tr-TR", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+
+  // Breadcrumb Schema
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_URL}/blog` },
+      { "@type": "ListItem", position: 3, name: post.title, item: `${SITE_URL}/blog/${post.slug}` },
+    ],
+  };
+
+  // Article Schema
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: post.created_at,
+    image: post.image_url,
+    url: `${SITE_URL}/blog/${post.slug}`,
+    publisher: {
+      "@type": "Organization",
+      name: "Rüya Yorumcum",
+      url: SITE_URL,
+    },
+  };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] font-sans pb-24 selection:bg-amber-500/30 overflow-x-hidden relative scroll-smooth">
-      <Script id="json-ld-article" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'BlogPosting',
-        headline: post.title,
-        description: post.excerpt,
-        datePublished: post.created_at,
-        author: { '@type': 'Organization', name: 'RüyaYorumcum AI' }
-      }) }} />
+    <article className="mx-auto max-w-2xl px-5 py-10">
 
-      {/* Arkaplan Işığı (Açık temada daha belirgin) */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-amber-500/5 rounded-full blur-[150px] pointer-events-none z-0 dark:opacity-100 opacity-70"></div>
+      {/* Breadcrumb UI */}
+      <nav
+        className="mb-6 flex items-center gap-1.5 text-xs text-zinc-400"
+        aria-label="Breadcrumb"
+      >
+        <Link href="/" className="hover:text-zinc-600 transition-colors">Ana Sayfa</Link>
+        <span>/</span>
+        <Link href="/blog" className="hover:text-zinc-600 transition-colors">Blog</Link>
+        <span>/</span>
+        <span className="truncate max-w-[200px] font-medium text-zinc-600">
+          {post.title}
+        </span>
+      </nav>
 
-      {/* Header Geri Dön */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-32 relative z-20">
-         <Link href="/blog" className="inline-flex items-center gap-2 text-[var(--text-muted)] hover:text-amber-500 transition-colors text-xs font-bold uppercase tracking-widest mb-8">
-            <ArrowLeft className="w-4 h-4" /> Geri Dön
-         </Link>
+      {/* ── Kapak Görseli — next/image ile CLS önlendi ── */}
+      {post.image_url && (
+        <div className="relative mb-8 aspect-[16/7] w-full overflow-hidden rounded-2xl">
+          <Image
+            src={post.image_url}
+            alt={post.title}
+            fill
+            priority          // LCP görseli — önce yükle
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 672px"
+          />
+        </div>
+      )}
+
+      {/* Başlık */}
+      <header className="mb-8">
+        <h1 className="mb-3 text-2xl font-bold leading-snug tracking-tight text-zinc-900">
+          {post.title}
+        </h1>
+        {post.excerpt && (
+          <p className="text-base leading-relaxed text-zinc-500">{post.excerpt}</p>
+        )}
+        <div className="mt-4 flex items-center gap-1.5 text-xs text-zinc-400">
+          <Calendar className="h-3 w-3" strokeWidth={1.5} />
+          {formattedDate}
+        </div>
+      </header>
+
+      <div className="border-t border-zinc-100 mb-8" />
+
+      {/* İçerik */}
+      <div className="text-[15px]">
+        {renderContent(post.content)}
       </div>
-      
-      <main className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative z-10">
-        
-        {/* ================= SOL SÜTUN (Yazı İçeriği) ================= */}
-        <article className="col-span-1 lg:col-span-8 order-1">
-            <header className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[2rem] p-8 md:p-12 shadow-2xl shadow-slate-200/50 dark:shadow-black/50 relative overflow-hidden mb-12">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none"></div>
-                <div className="relative z-10">
-                    <div className="flex flex-wrap items-center gap-4 mb-6">
-                        <span className="px-3 py-1 rounded-lg bg-amber-500 text-white dark:text-[#0B0F19] font-bold uppercase tracking-widest text-[10px] shadow-sm">Rehber</span>
-                        <span className="flex items-center gap-2 text-sm text-[var(--text-muted)] font-medium tracking-wide">
-                            <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-500" /> {new Date(post.created_at).toLocaleDateString('tr-TR')}
-                        </span>
-                        <span className="flex items-center gap-2 text-sm text-[var(--text-muted)] font-medium tracking-wide">
-                            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-500" /> {readTime} dk okuma
-                        </span>
-                    </div>
-                    <h1 className="font-serif text-3xl md:text-5xl font-bold text-[var(--text-main)] mb-8 leading-[1.1] tracking-tight">{post.title}</h1>
-                    <div className="border-l-4 border-amber-500/50 pl-6">
-                        <p className="text-lg md:text-xl text-[var(--text-muted)] font-light leading-relaxed italic">{post.excerpt}</p>
-                    </div>
-                </div>
-            </header>
 
-            {/* İçerik Blokları */}
-            <div className="space-y-2">
-                {contentBlocks.map((block, index) => (
-                    <div key={index}>
-                        <BlockRenderer block={block} />
-                    </div>
-                ))}
-            </div>
-            
-            {/* Yazı Sonu İçerik Bölümü (Benzer Yazılar) */}
-            {relatedPosts && relatedPosts.length > 0 && (
-              <section className="mt-16 pt-12 border-t border-[var(--border-color)]">
-                  <div className="flex items-center justify-between mb-8">
-                      <h3 className="font-serif text-2xl font-bold text-[var(--text-main)]">Okumaya Devam Et</h3>
-                      <Link href="/blog" className="text-amber-600 dark:text-amber-500 hover:text-amber-400 font-bold uppercase tracking-widest text-[10px] flex items-center gap-1.5 transition-all">
-                          Tüm Blog <ArrowRight className="w-4 h-4" />
-                      </Link>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                      {relatedPosts.map((rPost) => (
-                          <Link key={rPost.slug} href={`/blog/${rPost.slug}`} className="group block h-full">
-                              <article className="h-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[1.5rem] p-6 hover:border-amber-500/30 hover:bg-black/5 dark:hover:bg-[#1a1f2e] transition-all flex flex-col relative overflow-hidden shadow-lg shadow-slate-200/50 dark:shadow-none">
-                                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                  <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] mb-3 font-medium uppercase tracking-widest">
-                                      <Calendar className="w-3 h-3 text-amber-600 dark:text-amber-500" /> {new Date(rPost.created_at).toLocaleDateString('tr-TR')}
-                                  </div>
-                                  <h4 className="font-serif text-base font-bold text-[var(--text-main)] mb-3 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-snug line-clamp-2">{rPost.title}</h4>
-                                  <p className="text-[var(--text-muted)] text-[13px] font-light leading-relaxed line-clamp-2 mb-6">{rPost.excerpt}</p>
-                                  <div className="mt-auto pt-4 border-t border-[var(--border-color)]">
-                                      <span className="text-[10px] font-bold text-[var(--text-main)] group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors uppercase tracking-wider flex items-center gap-1">Okumaya Başla <ArrowRight className="w-3 h-3" /></span>
-                                  </div>
-                              </article>
-                          </Link>
-                      ))}
-                  </div>
-              </section>
-            )}
-        </article>
+      {/* İlgili Yazılar */}
+      {relatedPosts && relatedPosts.length > 0 && (
+        <div className="mt-14">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-zinc-100" />
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-400">
+              İlgili Yazılar
+            </h2>
+            <div className="h-px flex-1 bg-zinc-100" />
+          </div>
+          <div className="space-y-1">
+            {relatedPosts.map((rel) => (
+              <Link
+                key={rel.id}
+                href={`/blog/${rel.slug}`}
+                className="group flex flex-col gap-1 rounded-xl border border-transparent px-4 py-3.5 transition-all hover:border-zinc-200 hover:bg-zinc-50"
+              >
+                <p className="font-semibold text-zinc-900 group-hover:text-zinc-700 transition-colors">
+                  {rel.title}
+                </p>
+                {rel.excerpt && (
+                  <p className="line-clamp-1 text-xs text-zinc-400">{rel.excerpt}</p>
+                )}
+                <p className="text-xs text-zinc-300">
+                  {new Date(rel.created_at).toLocaleDateString("tr-TR", {
+                    day: "numeric", month: "long",
+                  })}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
-        {/* ================= SAĞ SÜTUN (Sidebar) ================= */}
-        <aside className="col-span-1 lg:col-span-4 order-2">
-            <div className="sticky top-24 space-y-6">
-               <BlogSidebarCTA />
-            </div>
-        </aside>
-      </main>
-    </div>
+      {/* JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+    </article>
   );
 }

@@ -54,7 +54,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "/blog", label: "Blog" },
-    { href: "/sozluk", label: "Sözlük" },
+    { href: "/ruya-tabirleri", label: "Rüya Tabirleri" },
   ];
 
   return (

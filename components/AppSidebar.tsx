@@ -138,7 +138,7 @@ export default function AppSidebar({
 
   const navLinks = [
     { href: "/blog", icon: BookOpen, label: "Blog" },
-    { href: "/sozluk", icon: Library, label: "Sözlük" },
+    { href: "/ruya-tabirleri", icon: Library, label: "Rüya Tabirleri" },
   ];
 
   return (
