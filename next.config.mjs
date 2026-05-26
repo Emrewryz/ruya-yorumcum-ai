@@ -7,9 +7,6 @@ const nextConfig = {
     return [
       { source: "/sozluk", destination: "/ruya-tabirleri", permanent: true },
       { source: "/sozluk/:slug*", destination: "/ruya-tabirleri/:slug*", permanent: true },
-      { source: "/tarot", destination: "/", permanent: true },
-      { source: "/astroloji", destination: "/", permanent: true },
-      { source: "/numeroloji", destination: "/", permanent: true },
       { source: "/dashboard", destination: "/", permanent: true },
       { source: "/dashboard/:path*", destination: "/", permanent: true },
       { source: "/yasal/:path*", destination: "/", permanent: true },

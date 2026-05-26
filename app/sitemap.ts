@@ -6,20 +6,21 @@ const SITE_URL = "https://www.ruyayorumcum.com.tr";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createClient();
 
-  // Blog yazıları
+  // Blog yazıları — updated_at yoksa created_at kullan
   const { data: posts } = await supabase
     .from("blog_posts")
     .select("slug, created_at")
     .eq("is_published", true)
     .order("created_at", { ascending: false });
 
-  // Rüya tabirleri
+  // Rüya tabirleri — yeni updated_at kolonu
   const { data: entries } = await supabase
     .from("dream_dictionary")
-    .select("slug, created_at")
-    .order("term", { ascending: true });
+    .select("slug, updated_at, created_at")
+    .order("updated_at", { ascending: false });
 
-  // Statik sayfalar
+  // ── Statik sayfalar ──────────────────────────────────────────────────────
+
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
@@ -43,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/auth`,
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.5,
+      priority: 0.4,
     },
     {
       url: `${SITE_URL}/gizlilik`,
@@ -65,7 +66,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Blog yazıları — yüksek öncelik
+  // ── Blog yazıları ────────────────────────────────────────────────────────
+
   const blogPages: MetadataRoute.Sitemap = (posts ?? []).map((post) => ({
     url: `${SITE_URL}/blog/${post.slug}`,
     lastModified: new Date(post.created_at),
@@ -73,10 +75,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Rüya tabirleri — uzun kuyruk SEO trafiğinin kaynağı
+  // ── Rüya tabirleri ───────────────────────────────────────────────────────
+  // updated_at varsa onu, yoksa created_at'i kullan
+
   const dictionaryPages: MetadataRoute.Sitemap = (entries ?? []).map((entry) => ({
     url: `${SITE_URL}/ruya-tabirleri/${entry.slug}`,
-    lastModified: new Date(entry.created_at),
+    lastModified: new Date(entry.updated_at ?? entry.created_at),
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
