@@ -25,9 +25,9 @@ interface ShopierPayload {
 }
 
 function priceToCredits(amount: number): number {
-  if (amount >= 160) return 10;
-  if (amount >= 80)  return 3;
-  if (amount >= 1)  return 1;
+  if (amount >= 249) return 100;
+  if (amount >= 89)  return 30;
+  if (amount >= 39)  return 10;
   return 1;
 }
 
