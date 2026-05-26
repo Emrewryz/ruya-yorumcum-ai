@@ -1,97 +1,122 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { SERVICE_COSTS } from "@/utils/costs";
-import OpenAI from "openai";
+import { cookies } from "next/headers";
 
-const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    "HTTP-Referer": "https://ruyayorumcum.com",
-    "X-Title": "Rüya Yorumcum",
-  },
-});
+// ─── Tipler ───────────────────────────────────────────────────────────────────
 
-export async function sendChatMessage(dreamId: string, message: string) {
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+  credits_spent: number;
+}
+
+export interface DreamSession {
+  id: string;
+  dream_title: string | null;
+  dream_text: string;
+  ai_response: {
+    kisa_ozet: string;
+    islami_analiz: string;
+    psikolojik_analiz: string;
+    semboller: string;
+  };
+  moon_phase: string | null;
+  created_at: string;
+  messages: ChatMessage[];
+}
+
+export interface SidebarChat {
+  id: string;
+  dream_title: string | null;
+  dream_text: string;
+  last_message_at: string;
+  message_count: number;
+}
+
+// ─── Sidebar için sohbet listesi ─────────────────────────────────────────────
+
+export async function getChatList(): Promise<SidebarChat[]> {
   const supabase = createClient();
-  const COST = SERVICE_COSTS.chat_message || 1;
+  const cookieStore = cookies();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Giriş yapmalısınız." };
+  const guestId = cookieStore.get("guest_session_id")?.value;
 
-  const { data: txResult, error: txError } = await supabase.rpc('handle_credit_transaction', {
-      p_user_id: user.id,
-      p_amount: -COST,
-      p_process_type: 'spend',
-      p_description: `Kahin Sohbet Mesajı (Rüya #${dreamId.slice(0,4)})`,
-      p_metadata: { dreamId }
-  });
+  if (!user && !guestId) return [];
 
-  if (txError || !txResult.success) {
-      return { error: "Yetersiz bakiye. Sohbet için kredi yükleyin." };
+  const query = supabase
+    .from("dreams")
+    .select(`
+      id,
+      dream_title,
+      dream_text,
+      last_message_at,
+      created_at
+    `)
+    .eq("status", "completed")
+    .order("last_message_at", { ascending: false, nullsFirst: false })
+    .limit(30);
+
+  if (user) {
+    query.eq("user_id", user.id);
+  } else {
+    query.eq("guest_session_id", guestId!);
   }
 
-  const { data: dream } = await supabase.from('dreams').select('*').eq('id', dreamId).single();
-  const { data: profile } = await supabase.from('profiles').select('full_name, bio').eq('id', user.id).single();
-  
-  if (!dream) {
-      await supabase.rpc('handle_credit_transaction', {
-          p_user_id: user.id, p_amount: COST, p_process_type: 'refund', p_description: 'İade: Rüya bulunamadı'
-      });
-      return { error: "Rüya bulunamadı." };
-  }
+  const { data, error } = await query;
+  if (error || !data) return [];
 
-  const { data: history } = await supabase
-    .from('dream_chat_messages')
-    .select('role, content')
-    .eq('dream_id', dreamId)
-    .order('created_at', { ascending: true }) 
-    .limit(10);
+  return data.map((d) => ({
+    id: d.id,
+    dream_title: d.dream_title,
+    dream_text: d.dream_text,
+    last_message_at: d.last_message_at ?? d.created_at,
+    message_count: 0,
+  }));
+}
 
-  // --- GÜNCELLENEN PROMPT VE SINIRLAMALAR ---
-  const systemInstruction = `
-    Sen gizemli, bilge ve öz konuşan bir RÜYA KAHİNİSİN. 
-    Kullanıcı: ${profile?.full_name}. 
-    Analiz edilen rüya özeti: ${dream.dream_text}.
-    
-    KURALLAR:
-    1. Asla çok uzun paragraflar yazma. Maksimum 4-5  cümle kur.
-    2. Cevapların mistik, rehberlik edici olsun.
-    3. Kullanıcıya rüyasındaki sembollerin derinliğini kısa ve vurucu şekilde açıkla.
-    4. Gereksiz nezaket cümlelerinden (Örn: "Size yardımcı olmaktan mutluluk duyarım") kaçın.
-    5. Cevabın sonunda bazen ucu açık bir soru bırakarak mistik havayı koru.
-  `;
+// ─── Tek sohbeti ID ile yükle ─────────────────────────────────────────────────
 
-  const messages: any[] = [
-    { role: "system", content: systemInstruction }, 
-  ];
-  if (history) history.forEach(m => messages.push({ role: m.role, content: m.content }));
-  messages.push({ role: "user", content: message });
+export async function getDreamSession(dreamId: string): Promise<DreamSession | null> {
+  const supabase = createClient();
+  const cookieStore = cookies();
 
-  try {
-    const completion = await openai.chat.completions.create({
-        messages: messages,
-        model: "google/gemini-2.0-flash-lite-001",
-        temperature: 0.8, // Biraz daha tutarlı cevaplar için düşürdüm
-        max_tokens: 150,  // Botun cevabını fiziksel olarak sınırlandırıyoruz
-    });
+  const { data: { user } } = await supabase.auth.getUser();
+  const guestId = cookieStore.get("guest_session_id")?.value;
 
-    const responseText = completion.choices[0].message.content;
-    if (!responseText) throw new Error("Boş cevap.");
+  // Rüyayı çek
+  const { data: dream, error } = await supabase
+    .from("dreams")
+    .select("id, dream_title, dream_text, ai_response, moon_phase, created_at, user_id, guest_session_id")
+    .eq("id", dreamId)
+    .single();
 
-    await supabase.from('dream_chat_messages').insert([
-        { user_id: user.id, dream_id: dreamId, role: 'user', content: message },
-        { user_id: user.id, dream_id: dreamId, role: 'assistant', content: responseText }
-    ]);
+  if (error || !dream) return null;
 
-    return { success: true, message: responseText };
+  // Yetki kontrolü: sadece sahibi görebilir
+  const isOwner =
+    (user && dream.user_id === user.id) ||
+    (!user && guestId && dream.guest_session_id === guestId);
 
-  } catch (error: any) {
-    console.error("Sohbet Hatası:", error);
-    await supabase.rpc('handle_credit_transaction', {
-        p_user_id: user.id, p_amount: COST, p_process_type: 'refund', p_description: 'İade: Sohbet Hatası'
-    });
-    return { error: "Bağlantı hatası, krediniz iade edildi." };
-  }
+  if (!isOwner) return null;
+
+  // Follow-up mesajlarını çek
+  const { data: messages } = await supabase
+    .from("dream_chat_messages")
+    .select("id, role, content, created_at, credits_spent")
+    .eq("dream_id", dreamId)
+    .order("created_at", { ascending: true });
+
+  return {
+    id: dream.id,
+    dream_title: dream.dream_title,
+    dream_text: dream.dream_text,
+    ai_response: dream.ai_response as DreamSession["ai_response"],
+    moon_phase: dream.moon_phase,
+    created_at: dream.created_at,
+    messages: (messages ?? []) as ChatMessage[],
+  };
 }

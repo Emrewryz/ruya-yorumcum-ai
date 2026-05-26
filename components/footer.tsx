@@ -1,159 +1,30 @@
-"use client";
-
 import Link from "next/link";
-import { Moon, Mail, Instagram } from "lucide-react";
 
-// TikTok İkonu (Custom SVG)
-const TikTokIcon = ({ className }: { className?: string }) => (
-  <svg 
-    viewBox="0 0 24 24" 
-    fill="currentColor" 
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-  </svg>
-);
+const LEGAL_LINKS = [
+  { href: "/gizlilik",        label: "Gizlilik Politikası" },
+  { href: "/mesafeli-satis",  label: "Mesafeli Satış Sözleşmesi" },
+  { href: "/iptal-iade",      label: "İptal & İade Koşulları" },
+];
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
-
   return (
-    // bg-[var(...)] yerine transparan bıraktık, böylece layout.tsx'teki body arkaplanıyla bütünleşecek.
-    <footer className="w-full relative overflow-hidden font-sans border-t border-stone-200 dark:border-stone-800 transition-colors duration-300">
-      
-      {/* Arkaplan Işığı */}
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none -z-10 dark:opacity-40"></div>
-
-      <div className="max-w-7xl mx-auto px-6 pt-16 pb-8 relative z-10">
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 mb-16">
-           
-           {/* --- 1. SOL BLOK (MARKA & LOGO) --- */}
-           <div className="lg:col-span-5 space-y-6">
-              <div className="flex items-center gap-3">
-                 <div className="w-12 h-12 rounded-2xl border border-amber-500/30 flex items-center justify-center bg-amber-500/10 shadow-sm">
-                    <Moon className="w-6 h-6 text-amber-500 fill-amber-500/20 -rotate-12" strokeWidth={1.5} />
-                 </div>
-                 <span className="font-serif text-3xl text-stone-900 dark:text-stone-50 font-bold tracking-wide">RüyaYorumcum</span>
-              </div>
-
-              <p className="text-sm leading-relaxed text-stone-600 dark:text-stone-400 max-w-sm">
-                 Türkiye'nin en kapsamlı spiritüel yapay zeka platformu. 
-                 Geleneksel bilgeliği modern teknolojiyle birleştirerek bilinçaltınızın şifrelerini çözüyoruz.
-              </p>
-              
-              <div className="flex gap-4 pt-2">
-                 <SocialLink href="https://instagram.com/ruyayorumcum_ai" icon={<Instagram className="w-5 h-5"/>} label="Instagram" />
-                 <SocialLink href="https://tiktok.com/@ruya.yorumcum.ai" icon={<TikTokIcon className="w-5 h-5"/>} label="TikTok" />
-                 <SocialLink href="mailto:iletisim@ruyayorumcum.com" icon={<Mail className="w-5 h-5"/>} label="Email" />
-              </div>
-           </div>
-
-           {/* --- 2. HİZMETLER --- */}
-           <div className="lg:col-span-3">
-              <h4 className="text-stone-900 dark:text-stone-100 font-serif font-bold text-lg mb-6">Hizmetler</h4>
-              <ul className="space-y-3 text-sm">
-                 <FooterLink href="/ruya-tabiri">Rüya Analizi</FooterLink>
-                 <FooterLink href="/astroloji">Doğum Haritası</FooterLink>
-                 <FooterLink href="/ruya-gorsellestirme">Rüya Görselleştirme</FooterLink>
-                 <FooterLink href="/tarot">Tarot Falı</FooterLink>
-                 <FooterLink href="/numeroloji">Numeroloji</FooterLink>
-                 <FooterLink href="/duygu-analizi">Duygu Analizi</FooterLink>
-              </ul>
-           </div>
-
-           {/* --- 3. POPÜLER SÖZLÜK --- */}
-           <div className="lg:col-span-2">
-              <h4 className="text-stone-900 dark:text-stone-100 font-serif font-bold text-lg mb-6">Sözlük</h4>
-              <ul className="space-y-3 text-sm">
-                 <FooterLink href="/sozluk/ruyada-yilan-gormek">Rüyada Yılan</FooterLink>
-                 <FooterLink href="/sozluk/ruyada-altin-gormek">Rüyada Altın</FooterLink>
-                 <FooterLink href="/sozluk/ruyada-dis-dokulmesi">Rüyada Diş</FooterLink>
-                 <FooterLink href="/sozluk/ruyada-ucmak">Rüyada Uçmak</FooterLink>
-                 <FooterLink href="/sozluk/ruyada-aglamak">Rüyada Ağlamak</FooterLink>
-              </ul>
-           </div>
-
-           {/* --- 4. KURUMSAL & YASAL --- */}
-           <div className="lg:col-span-2">
-              <h4 className="text-stone-900 dark:text-stone-100 font-serif font-bold text-lg mb-6">Kurumsal</h4>
-              <ul className="space-y-3 text-sm">
-                 <FooterLink href="/blog">Blog</FooterLink>
-                 <FooterLink href="/iletisim">İletişim</FooterLink>
-                 <FooterLink href="/yasal/kullanim-kosullari">Kullanım Şartları</FooterLink>
-                 <FooterLink href="/yasal/gizlilik-politikasi">Gizlilik Politikası</FooterLink>
-                 <FooterLink href="/yasal/mesafeli-satis-sozlesmesi">Satış Sözleşmesi</FooterLink>
-                 <FooterLink href="/yasal/iptal-ve-iade-kosullari">İptal ve İade</FooterLink>
-              </ul>
-           </div>
-
-        </div>
-
-        {/* --- ALT KISIM --- */}
-        <div className="border-t border-stone-200 dark:border-stone-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-           <p className="text-xs text-stone-500 dark:text-stone-400 text-center md:text-left">
-              © {currentYear} Rüya Yorumcum AI. Tüm Hakları Saklıdır.
-           </p>
-           
-           <div className="flex items-center gap-4 opacity-70 hover:opacity-100 transition-opacity duration-300">
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 cursor-default">
-                 <LockIcon className="w-3 h-3 text-emerald-600 dark:text-emerald-500" />
-                 <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 tracking-widest">SSL SECURE</span>
-              </div>
-              <div className="flex gap-2">
-                 <div className="h-6 w-10 bg-stone-200 dark:bg-stone-800 rounded flex items-center justify-center text-[8px] font-bold text-stone-800 dark:text-stone-300">VISA</div>
-                 <div className="h-6 w-10 bg-stone-200 dark:bg-stone-800 rounded flex items-center justify-center text-[8px] font-bold text-stone-800 dark:text-stone-300">MASTER</div>
-              </div>
-           </div>
-        </div>
-
+    <footer className="border-t border-zinc-100 bg-white">
+      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-6 py-5 sm:flex-row">
+        <p className="text-xs text-zinc-400">
+          © {new Date().getFullYear()} Rüya Yorumcum. Tüm hakları saklıdır.
+        </p>
+        <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
+          {LEGAL_LINKS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="text-xs text-zinc-400 transition-colors hover:text-zinc-700"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </footer>
   );
-}
-
-// --- YARDIMCI BİLEŞENLER ---
-
-function SocialLink({ href, icon, label }: { href: string, icon: React.ReactNode, label: string }) {
-   return (
-      <a 
-        href={href} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        aria-label={label}
-        className="w-10 h-10 rounded-full bg-white dark:bg-stone-900 text-stone-500 dark:text-stone-400 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-stone-950 border border-stone-200 dark:border-stone-800 hover:border-amber-500 dark:hover:border-amber-500 flex items-center justify-center transition-all duration-300 group shadow-sm"
-      >
-         {icon}
-      </a>
-   )
-}
-
-function FooterLink({ href, children }: { href: string, children: React.ReactNode }) {
-   return (
-      <li>
-         <Link href={href} className="text-stone-500 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors flex items-center gap-2 group">
-            <span className="w-1 h-1 rounded-full bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-            {children}
-         </Link>
-      </li>
-   )
-}
-
-function LockIcon({ className }: { className?: string }) {
-   return (
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        className={className}
-      >
-         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-      </svg>
-   )
 }

@@ -1,0 +1,314 @@
+"use client";
+
+import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import {
+  PanelLeftClose, PanelLeftOpen, SquarePen,
+  BookOpen, Library, LogIn, LogOut, Loader2
+} from "lucide-react";
+import { getChatList, type SidebarChat } from "@/app/actions/chat-actions";
+
+// ─── Yardımcı: Tarih formatı ──────────────────────────────────────────────────
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "";
+  try {
+    return new Date(dateStr).toLocaleDateString("tr-TR", {
+      day: "numeric", month: "short",
+    });
+  } catch {
+    return "";
+  }
+}
+
+// ─── Chat Listesi Öğesi ───────────────────────────────────────────────────────
+
+function ChatItem({
+  chat,
+  isActive,
+  isCollapsed,
+  onClick,
+}: {
+  chat: SidebarChat;
+  isActive: boolean;
+  isCollapsed: boolean;
+  onClick: () => void;
+}) {
+  const title =
+    chat.dream_title?.trim() ||
+    chat.dream_text?.slice(0, 45) ||
+    "Rüya";
+
+  if (isCollapsed) return null; // Kapalı modda liste görünmez
+
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full rounded-lg px-3 py-2 text-left transition-colors
+        ${isActive ? "bg-zinc-200/70 text-zinc-900" : "text-zinc-600 hover:bg-zinc-100"}
+      `}
+    >
+      <p className={`truncate text-sm ${isActive ? "font-medium" : ""}`}>
+        {title}
+      </p>
+      <p className="mt-0.5 text-[11px] text-zinc-400">{formatDate(chat.last_message_at)}</p>
+    </button>
+  );
+}
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+function Avatar({ user }: { user: any }) {
+  const letter =
+    user?.user_metadata?.full_name?.charAt(0).toUpperCase() ||
+    user?.email?.charAt(0).toUpperCase() ||
+    "M";
+  return (
+    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[11px] font-bold text-white select-none">
+      {letter}
+    </div>
+  );
+}
+
+// ─── Ana Sidebar ──────────────────────────────────────────────────────────────
+
+export default function AppSidebar({
+  activeChatId,
+  onSelectChat,
+  onNewChat,
+  refreshTrigger,
+}: {
+  activeChatId: string | null;
+  onSelectChat: (id: string) => void;
+  onNewChat: () => void;
+  refreshTrigger: number;
+}) {
+  const supabase = createClient();
+  const router = useRouter();
+
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [chats, setChats] = useState<SidebarChat[]>([]);
+  const [loadingChats, setLoadingChats] = useState(true);
+  const [, startTransition] = useTransition();
+
+  // ── Auth + kredi ──
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles").select("credits").eq("id", user.id).single();
+      if (profile) setCredits(profile.credits);
+
+      const ch = supabase
+        .channel("sidebar-credits")
+        .on("postgres_changes", {
+          event: "UPDATE", schema: "public",
+          table: "profiles", filter: `id=eq.${user.id}`,
+        }, (p) => setCredits((p.new as any).credits))
+        .subscribe();
+
+      return () => { supabase.removeChannel(ch); };
+    };
+    init();
+  }, [supabase]);
+
+  // ── Chat listesi ──
+  useEffect(() => {
+    setLoadingChats(true);
+    startTransition(async () => {
+      const list = await getChatList();
+      setChats(list);
+      setLoadingChats(false);
+    });
+  }, [refreshTrigger]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  };
+
+  const navLinks = [
+    { href: "/blog", icon: BookOpen, label: "Blog" },
+    { href: "/sozluk", icon: Library, label: "Sözlük" },
+  ];
+
+  return (
+    <aside
+      className={`
+        hidden md:flex flex-col
+        border-r border-zinc-200 bg-zinc-50
+        h-screen sticky top-0 overflow-hidden shrink-0
+        transition-[width] duration-200 ease-in-out
+        ${isCollapsed ? "w-14" : "w-56"}
+      `}
+    >
+
+      {/* ── Üst: Toggle + Yeni Analiz ── */}
+      <div className={`flex items-center border-b border-zinc-200 shrink-0 ${isCollapsed ? "flex-col gap-1 px-0 py-3" : "flex-row gap-1 px-3 py-3"}`}>
+
+        {/* Kapat / Aç butonu */}
+        <button
+          onClick={() => setIsCollapsed((v) => !v)}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 transition-colors shrink-0"
+          aria-label={isCollapsed ? "Paneli genişlet" : "Paneli daralt"}
+        >
+          {isCollapsed
+            ? <PanelLeftOpen className="h-4 w-4" strokeWidth={1.5} />
+            : <PanelLeftClose className="h-4 w-4" strokeWidth={1.5} />
+          }
+        </button>
+
+        {/* Yeni analiz */}
+        <button
+          onClick={onNewChat}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 transition-colors shrink-0"
+          aria-label="Yeni analiz"
+          title="Yeni Analiz"
+        >
+          <SquarePen className="h-4 w-4" strokeWidth={1.5} />
+        </button>
+
+        {/* Logo metni — sadece açık halde */}
+        {!isCollapsed && (
+          <span className="ml-1 text-sm font-semibold text-zinc-900 truncate">
+            Rüya Yorumcum
+          </span>
+        )}
+      </div>
+
+      {/* ── Orta: Navigasyon + Geçmiş ── */}
+      <div
+        className="flex-1 overflow-y-auto py-2"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        <style>{`.sidebar-scroll::-webkit-scrollbar{display:none}`}</style>
+
+        {/* Nav linkleri */}
+        {!isCollapsed && (
+          <div className="px-3 mb-2 space-y-0.5">
+            {navLinks.map(({ href, icon: Icon, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
+              >
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                {label}
+              </Link>
+            ))}
+            <div className="mt-2 mb-1 border-t border-zinc-200" />
+          </div>
+        )}
+
+        {/* Kapalı modda ikonlar */}
+        {isCollapsed && (
+          <div className="flex flex-col items-center gap-1 px-1">
+            {navLinks.map(({ href, icon: Icon, label }) => (
+              <Link
+                key={href}
+                href={href}
+                title={label}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-200/60 hover:text-zinc-900 transition-colors"
+              >
+                <Icon className="h-4 w-4" strokeWidth={1.5} />
+              </Link>
+            ))}
+            <div className="mt-1 w-8 border-t border-zinc-200" />
+          </div>
+        )}
+
+        {/* Geçmiş sohbet listesi — sadece açık halde */}
+        {!isCollapsed && (
+          <div className="px-3 space-y-0.5">
+            {loadingChats ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-300" strokeWidth={1.5} />
+              </div>
+            ) : chats.length === 0 ? (
+              <p className="px-3 py-3 text-xs text-zinc-400 text-center">Henüz analiz yok</p>
+            ) : (
+              <>
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                  Geçmiş
+                </p>
+                {chats.map((chat) => (
+                  <ChatItem
+                    key={chat.id}
+                    chat={chat}
+                    isActive={chat.id === activeChatId}
+                    isCollapsed={isCollapsed}
+                    onClick={() => onSelectChat(chat.id)}
+                  />
+                ))}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Alt: Kullanıcı Alanı ── */}
+      <div className={`border-t border-zinc-200 shrink-0 ${isCollapsed ? "flex flex-col items-center py-3 gap-2" : "px-3 py-3"}`}>
+
+        {isCollapsed ? (
+          /* Kapalı: sadece avatar */
+          user ? (
+            <Link href="/profile" title="Profil">
+              <div className="transition-opacity hover:opacity-70">
+                <Avatar user={user} />
+              </div>
+            </Link>
+          ) : (
+            <Link href="/auth" title="Giriş Yap">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 text-zinc-400 hover:border-zinc-400 hover:text-zinc-600 transition-colors">
+                <LogIn className="h-3.5 w-3.5" strokeWidth={1.5} />
+              </div>
+            </Link>
+          )
+        ) : (
+          /* Açık: tam kullanıcı bilgisi */
+          user ? (
+            <div className="space-y-1">
+              <Link href="/profile" className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-zinc-100 transition-colors">
+                <Avatar user={user} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium text-zinc-800">
+                    {user.user_metadata?.full_name || user.email?.split("@")[0] || "Kullanıcı"}
+                  </p>
+                  {credits !== null && (
+                    <p className="text-[11px] text-zinc-400">
+                      <span className="font-semibold text-zinc-700">{credits}</span> kredi
+                    </p>
+                  )}
+                </div>
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                Çıkış yap
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/auth"
+              className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
+            >
+              <LogIn className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+              Giriş Yap
+            </Link>
+          )
+        )}
+      </div>
+    </aside>
+  );
+}

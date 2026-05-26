@@ -1,38 +1,32 @@
-import { NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  
-  // BURAYI DEĞİŞTİRDİK:
-  // Parametreye bakmaksızın, giriş başarılıysa KESİN OLARAK dashboard'a git.
-  const next = '/dashboard';
+  const code = searchParams.get("code");
 
   if (code) {
-    const cookieStore = await cookies();
+    const supabase = createClient();
+    await supabase.auth.exchangeCodeForSession(code);
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name) { return cookieStore.get(name)?.value; },
-          set(name, value, options) { cookieStore.set({ name, value, ...options }); },
-          remove(name, options) { cookieStore.set({ name, value: '', ...options }); },
-        },
+    // Yeni kullanıcı mı? personalization_data boşsa onboarding'e yönlendir
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("personalization_data")
+        .eq("id", user.id)
+        .single();
+
+      const isEmpty =
+        !profile?.personalization_data ||
+        Object.keys(profile.personalization_data).length === 0;
+
+      if (isEmpty) {
+        return NextResponse.redirect(`${origin}/onboarding`);
       }
-    );
-
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!error) {
-      // Başarılı! Direkt Dashboard'a yönlendir.
-      return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  // Hata varsa ana sayfaya at
-  return NextResponse.redirect(`${origin}/?error=auth`);
+  return NextResponse.redirect(`${origin}/`);
 }

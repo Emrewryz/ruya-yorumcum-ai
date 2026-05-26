@@ -3,24 +3,22 @@
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 
+/**
+ * Navbar'ı bazı sayfalarda gizlemek için wrapper.
+ *
+ * GİZLENDİĞİ DURUMLAR:
+ * - /auth (Giriş/Kayıt sayfası)
+ * - /ruya-tabiri/[id] — sonuç sayfasının kendi düzeni var, navbar sidebar gibi çalışabilir
+ *   (isteğe bağlı: sonuç sayfasında görmek istersen bu satırı kaldır)
+ */
 export default function NavbarWrapper() {
   const pathname = usePathname();
-  
-  // Mantık: 
-  // 1. /auth (Giriş/Kayıt)
-  // 2. /dashboard ve alt sayfaları (Panel)
-  // 3. /bio ve alt sayfaları (TikTok Link Sayfası) -> EKLENDİ
-  // Bu sayfalarda Navbar GİZLENİR.
-  
-  const shouldHide = 
-    pathname === '/auth' || 
-    pathname?.startsWith('/dashboard') || 
-    pathname?.startsWith('/bio');
 
-  if (shouldHide) {
-    return null;
-  }
+  const shouldHide =
+    pathname === "/auth" ||
+    pathname?.startsWith("/auth/");
 
-  // Diğer tüm sayfalarda (Anasayfa, Blog, Sözlük vb.) GÖSTER
+  if (shouldHide) return null;
+
   return <Navbar />;
 }
