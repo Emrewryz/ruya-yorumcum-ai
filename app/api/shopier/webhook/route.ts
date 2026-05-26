@@ -11,20 +11,6 @@ function getServiceClient() {
 }
 
 // Shopier'in bilinen sunucu IP aralıkları
-const SHOPIER_IPS = [
-  "212.58.136.",
-  "212.58.137.",
-  "212.58.138.",
-  "212.58.139.",
-  "185.8.177.",
-];
-
-function isShopierIP(ip: string): boolean {
-  // Geliştirme ortamında veya IP alınamazsa geç
-  if (!ip || ip === "::1" || ip === "127.0.0.1") return true;
-  return SHOPIER_IPS.some((range) => ip.startsWith(range));
-}
-
 interface ShopierPayload {
   email:        string;
   orderid:      string;
@@ -59,17 +45,6 @@ function parseMultipart(rawText: string, boundary: string): Record<string, strin
 }
 
 export async function POST(request: NextRequest) {
-  // ── IP kontrolü ──
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    ?? request.headers.get("x-real-ip")
-    ?? "";
-
-  console.log("[webhook] Gelen IP:", ip);
-
-  if (!isShopierIP(ip)) {
-    console.warn("[webhook] Bilinmeyen IP, reddedildi:", ip);
-    return new NextResponse("forbidden", { status: 200 }); // Shopier 200 bekler
-  }
 
   // ── Body parse ──
   let body: Record<string, string> = {};
