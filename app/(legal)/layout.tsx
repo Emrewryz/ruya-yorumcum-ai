@@ -8,28 +8,50 @@ const LEGAL_LINKS = [
   { href: "/iptal-iade",     label: "İptal & İade Koşulları" },
 ];
 
+const NAV_LINKS = [
+  { href: "/",               label: "Ana Sayfa" },
+  { href: "/blog",           label: "Blog" },
+  { href: "/ruya-tabirleri", label: "Rüya Tabirleri" },
+];
+
 export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-white">
 
-      {/* Minimal header */}
+      {/* Header */}
       <header className="border-b border-zinc-100">
-        <div className="mx-auto flex max-w-3xl items-center px-6 py-4">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
+
+          {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <Moon className="h-4 w-4 text-zinc-900" strokeWidth={1.5} />
             <span className="text-sm font-semibold text-zinc-900 group-hover:text-zinc-600 transition-colors">
               Rüya Yorumcum
             </span>
           </Link>
+
+          {/* Nav linkleri */}
+          <nav className="flex items-center gap-5">
+            {NAV_LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="text-xs font-medium text-zinc-400 hover:text-zinc-800 transition-colors"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+
         </div>
       </header>
 
-      {/* Sayfa içeriği */}
+      {/* İçerik */}
       <main className="flex-1">
         {children}
       </main>
 
-      {/* Footer — inline, dış bağımlılık yok */}
+      {/* Footer */}
       <footer className="border-t border-zinc-100 bg-white">
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-3 px-6 py-5 sm:flex-row">
           <p className="text-xs text-zinc-400">

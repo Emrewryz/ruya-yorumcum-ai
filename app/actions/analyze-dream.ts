@@ -23,7 +23,6 @@ export interface DreamAnalysis {
   semboller: string;
 }
 
-// SPA için analysis verisini de döndürüyoruz (redirect yok)
 export type AnalyzeDreamResult =
   | { success: true; dreamId: string; analysis: DreamAnalysis }
   | { success: false; code?: "GUEST_LIMIT" | "NO_CREDIT" | "VALIDATION" | "SERVER"; error: string };
@@ -58,7 +57,11 @@ export async function analyzeDream(dreamText: string): Promise<AnalyzeDreamResul
 
   const trimmed = dreamText?.trim() ?? "";
   if (trimmed.length < 20) {
-    return { success: false, code: "VALIDATION", error: "Rüyanızı en az 20 karakter ile anlatmanız gerekmektedir." };
+    return {
+      success: false,
+      code: "VALIDATION",
+      error: "Rüyanızı en az 20 karakter ile anlatmanız gerekmektedir.",
+    };
   }
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -67,7 +70,11 @@ export async function analyzeDream(dreamText: string): Promise<AnalyzeDreamResul
   if (!user) {
     const hasUsedFree = cookieStore.get("guest_dream_analyzed")?.value;
     if (hasUsedFree) {
-      return { success: false, code: "GUEST_LIMIT", error: "Ücretsiz analiz hakkınızı kullandınız. Devam etmek için kayıt olun veya kredi satın alın." };
+      return {
+        success: false,
+        code: "GUEST_LIMIT",
+        error: "Ücretsiz analiz hakkınızı kullandınız. Devam etmek için kayıt olun veya kredi satın alın.",
+      };
     }
   }
 
@@ -80,7 +87,11 @@ export async function analyzeDream(dreamText: string): Promise<AnalyzeDreamResul
       p_metadata: { text_length: trimmed.length },
     });
     if (txError || !txResult?.success) {
-      return { success: false, code: "NO_CREDIT", error: "Yetersiz bakiye. Analiz için kredi satın alabilirsiniz." };
+      return {
+        success: false,
+        code: "NO_CREDIT",
+        error: "Yetersiz bakiye. Analiz için kredi satın alabilirsiniz.",
+      };
     }
   }
 
@@ -116,34 +127,36 @@ Yalnızca aşağıdaki JSON formatında yanıt ver:
 
     const raw = JSON.parse(cleanJson(resultText));
 
-    // Gemini bazen alan adlarını farklı döndürür — normalize et
     const aiData: DreamAnalysis = {
-      kisa_ozet:
-        raw.kisa_ozet || raw.kisaOzet || raw.summary || raw.genel || "",
-      islami_analiz:
-        raw.islami_analiz || raw.islamiAnaliz || raw.islamic || raw.islami || "",
-      psikolojik_analiz:
-        raw.psikolojik_analiz || raw.psikolojikAnaliz || raw.psychological || raw.psikolojik || "",
-      semboller:
-        raw.semboller || raw.symbols || raw.sembol || raw.symboller || "",
+      kisa_ozet:         raw.kisa_ozet         || raw.kisaOzet       || raw.summary    || raw.genel        || "",
+      islami_analiz:     raw.islami_analiz     || raw.islamiAnaliz   || raw.islamic    || raw.islami       || "",
+      psikolojik_analiz: raw.psikolojik_analiz || raw.psikolojikAnaliz || raw.psychological || raw.psikolojik || "",
+      semboller:         raw.semboller         || raw.symbols        || raw.sembol     || raw.symboller    || "",
     };
 
-    const requiredFields: (keyof DreamAnalysis)[] = ["kisa_ozet", "islami_analiz", "psikolojik_analiz", "semboller"];
+    const requiredFields: (keyof DreamAnalysis)[] = [
+      "kisa_ozet",
+      "islami_analiz",
+      "psikolojik_analiz",
+      "semboller",
+    ];
+
     for (const field of requiredFields) {
-      if (!aiData[field] || typeof aiData[field] !== "string") throw new Error(`Eksik alan: ${field}`);
+      if (!aiData[field] || typeof aiData[field] !== "string") {
+        throw new Error(`Eksik alan: ${field}`);
+      }
     }
 
     const { data: dreamData, error: dbError } = await supabase
       .from("dreams")
       .insert({
-        user_id: user ? user.id : null,
+        user_id:          user ? user.id : null,
         guest_session_id: guestSessionId,
-        dream_text: trimmed,
-        dream_title: aiData.kisa_ozet.slice(0, 100),
-        ai_response: aiData,
-        moon_phase: currentMoon.phase,
-        status: "completed",
-        visibility: "private",
+        dream_text:       trimmed,
+        dream_title:      aiData.kisa_ozet.slice(0, 100),
+        ai_response:      aiData,
+        moon_phase:       currentMoon.phase,
+        status:           "completed",
       })
       .select("id")
       .single();
@@ -160,11 +173,16 @@ Yalnızca aşağıdaki JSON formatında yanıt ver:
       });
     }
 
-    // SPA için analysis verisini de döndür
     return { success: true, dreamId: dreamData.id, analysis: aiData };
 
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message =
+      err instanceof Error
+        ? err.message
+        : typeof err === "object"
+        ? JSON.stringify(err)
+        : String(err);
+
     console.error("[analyzeDream] Hata:", message);
 
     if (user) {
@@ -176,6 +194,10 @@ Yalnızca aşağıdaki JSON formatında yanıt ver:
       });
     }
 
-    return { success: false, code: "SERVER", error: "Analiz sırasında bir sorun oluştu. Lütfen tekrar deneyin." };
+    return {
+      success: false,
+      code: "SERVER",
+      error: "Analiz sırasında bir sorun oluştu. Lütfen tekrar deneyin.",
+    };
   }
 }
