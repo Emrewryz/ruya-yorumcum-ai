@@ -5,20 +5,26 @@ const SITE_URL = "https://www.ruyayorumcum.com.tr";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createClient();
+    const nowISO = new Date().toISOString(); // ← en üste taşı
+
 
   // Blog yazıları — updated_at yoksa created_at kullan
   const { data: posts } = await supabase
     .from("blog_posts")
     .select("slug, created_at")
-    .eq("is_published", true)
+    .lte("published_at", nowISO)
+
     .order("created_at", { ascending: false });
 
   // Rüya tabirleri — yeni updated_at kolonu
-  const { data: entries } = await supabase
-    .from("dream_dictionary")
-    .select("slug, updated_at, created_at")
-    .order("updated_at", { ascending: false });
-
+ 
+const { data: entries } = await supabase
+  .from("dream_dictionary")
+  .select("slug, updated_at, created_at, published_at")
+  .eq("is_published", true)
+  .lte("published_at", nowISO)          // ← Planlanmış içerikler sitemap'e girmesin
+  .order("published_at", { ascending: false });
+ 
   // ── Statik sayfalar ──────────────────────────────────────────────────────
 
   const staticPages: MetadataRoute.Sitemap = [

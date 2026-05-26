@@ -30,8 +30,8 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          {/* Nav linkleri */}
-          <nav className="flex items-center gap-5">
+          {/* Masaüstü Nav */}
+          <nav className="hidden sm:flex items-center gap-5">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
@@ -43,6 +43,13 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
+          {/* Mobil — Ana Sayfa linki */}
+          <Link
+            href="/"
+            className="sm:hidden text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
+          >
+            ← Ana Sayfa
+          </Link>
         </div>
       </header>
 
@@ -57,7 +64,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
           <p className="text-xs text-zinc-400">
             © {new Date().getFullYear()} Rüya Yorumcum. Tüm hakları saklıdır.
           </p>
-          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             {LEGAL_LINKS.map(({ href, label }) => (
               <Link
                 key={href}

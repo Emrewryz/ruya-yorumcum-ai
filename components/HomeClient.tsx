@@ -12,6 +12,8 @@ import { sendFollowUp } from "@/app/actions/follow-up-actions";
 import { generateShareToken } from "@/app/actions/share-actions";
 import { refreshDailyCredits } from "@/app/actions/refresh-credits";
 import PaywallCard from "@/components/PaywallCard";
+import OruntuKarti from "@/components/OruntuKarti";
+import MobileNav from "@/components/MobileNav";
 import AppSidebar from "@/components/AppSidebar";
 import CreditModal from "@/components/CreditModal";
 
@@ -177,6 +179,10 @@ function HomeInner() {
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [followUpLoading, setFollowUpLoading] = useState(false);
 
+  // Örüntü kartı
+  const [showOruntuKarti, setShowOruntuKarti] = useState(false);
+  const [dreamCount, setDreamCount] = useState(1);
+
   // Share state
   const [shareLoading, setShareLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -302,7 +308,10 @@ function HomeInner() {
           setActiveChatId(res.dreamId);
           setLocalMessages(data.messages ?? []);
           setPhase("session");
-          setSidebarRefresh((n) => n + 1);
+          setSidebarRefresh((n) => {
+            setDreamCount(n + 1); // toplam rüya sayısını güncelle
+            return n + 1;
+          });
           router.push(`/?chat=${res.dreamId}`, { scroll: false });
         }
       } catch {
@@ -392,7 +401,8 @@ function HomeInner() {
         reason={modalReason}
       />
 
-      <div className="flex h-screen overflow-hidden bg-white">
+      {/* Ana wrapper — dvh ile iOS Safari keyboard sorunu giderildi */}
+      <div className="flex bg-white" style={{ height: "100dvh", overflow: "hidden" }}>
 
         <AppSidebar
           activeChatId={activeChatId}
@@ -401,11 +411,17 @@ function HomeInner() {
           refreshTrigger={sidebarRefresh}
         />
 
+        {/* Mobil Bottom Navigation */}
+        <MobileNav
+          onNewChat={handleNewChat}
+          activeChatId={activeChatId}
+        />
+
         <main className="flex flex-1 flex-col overflow-hidden bg-white">
 
           {/* ══ IDLE ══ */}
           {phase === "idle" && (
-            <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 overflow-y-auto">
+            <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 overflow-y-auto pb-24 md:pb-16">
               <div className="mb-10 text-center">
                 <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
                   Bilinçaltınıza hoş geldiniz.
@@ -534,7 +550,13 @@ function HomeInner() {
                         islamiAnaliz={session.ai_response.islami_analiz ?? ""}
                         psikolojikAnaliz={session.ai_response.psikolojik_analiz ?? ""}
                         semboller={session.ai_response.semboller ?? ""}
+                        onUnlocked={() => setShowOruntuKarti(true)}
                       />
+                    )}
+
+                    {/* Örüntü Kartı — "Aha!" anında göster */}
+                    {showOruntuKarti && (
+                      <OruntuKarti dreamCount={dreamCount} />
                     )}
 
                     {/* Follow-up mesajlar */}
@@ -576,7 +598,12 @@ function HomeInner() {
               </div>
 
               {/* ── Sticky Bottom Input ── */}
-              <div className="shrink-0 border-t border-zinc-100 bg-white px-4 py-3">
+              <div
+                className="shrink-0 border-t border-zinc-100 bg-white px-4 py-3 md:pb-3"
+                style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+              >
+                {/* Mobilde bottom nav için boşluk */}
+                <div className="md:hidden h-14" />
                 <div className="mx-auto w-full max-w-2xl">
                   <StickyInput
                     value={inputText}

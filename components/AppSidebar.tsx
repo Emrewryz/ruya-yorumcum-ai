@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import {
   PanelLeftClose, PanelLeftOpen, SquarePen,
-  BookOpen, Library, LogIn, LogOut, Loader2
+  BookOpen, Library, LogIn, LogOut, Loader2, BarChart2
 } from "lucide-react";
 import { getChatList, type SidebarChat } from "@/app/actions/chat-actions";
 
@@ -38,10 +38,10 @@ function ChatItem({
 }) {
   const title =
     chat.dream_title?.trim() ||
-    chat.dream_text?.slice(0, 45) ||
+    chat.dream_text?.slice(0, 40) ||
     "Rüya";
 
-  if (isCollapsed) return null; // Kapalı modda liste görünmez
+  if (isCollapsed) return null;
 
   return (
     <button
@@ -51,10 +51,9 @@ function ChatItem({
         ${isActive ? "bg-zinc-200/70 text-zinc-900" : "text-zinc-600 hover:bg-zinc-100"}
       `}
     >
-      <p className={`truncate text-sm ${isActive ? "font-medium" : ""}`}>
+      <p className={`truncate text-xs leading-snug ${isActive ? "font-medium text-zinc-900" : "text-zinc-500"}`}>
         {title}
       </p>
-      <p className="mt-0.5 text-[11px] text-zinc-400">{formatDate(chat.last_message_at)}</p>
     </button>
   );
 }
@@ -137,8 +136,9 @@ export default function AppSidebar({
   };
 
   const navLinks = [
-    { href: "/blog", icon: BookOpen, label: "Blog" },
-    { href: "/ruya-tabirleri", icon: Library, label: "Rüya Tabirleri" },
+    { href: "/blog",             icon: BookOpen,  label: "Blog" },
+    { href: "/ruya-tabirleri",   icon: Library,   label: "Rüya Tabirleri" },
+    { href: "/oruntu-analizi",   icon: BarChart2, label: "Haftalık Analiz" },
   ];
 
   return (
@@ -152,7 +152,7 @@ export default function AppSidebar({
       `}
     >
 
-      {/* ── Üst: Toggle + Yeni Analiz ── */}
+      {/* ── Üst: Toggle + Logo ── */}
       <div className={`flex items-center border-b border-zinc-200 shrink-0 ${isCollapsed ? "flex-col gap-1 px-0 py-3" : "flex-row gap-1 px-3 py-3"}`}>
 
         {/* Kapat / Aç butonu */}
@@ -167,23 +167,37 @@ export default function AppSidebar({
           }
         </button>
 
-        {/* Yeni analiz */}
-        <button
-          onClick={onNewChat}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 transition-colors shrink-0"
-          aria-label="Yeni analiz"
-          title="Yeni Analiz"
-        >
-          <SquarePen className="h-4 w-4" strokeWidth={1.5} />
-        </button>
-
         {/* Logo metni — sadece açık halde */}
         {!isCollapsed && (
-          <span className="ml-1 text-sm font-semibold text-zinc-900 truncate">
+          <span className="ml-1 text-sm font-semibold text-zinc-900 truncate flex-1">
             Rüya Yorumcum
           </span>
         )}
       </div>
+
+      {/* ── Yeni Analiz butonu — logo altında ── */}
+      {!isCollapsed && (
+        <div className="px-3 pt-2 pb-1 shrink-0">
+          <button
+            onClick={onNewChat}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
+          >
+            <SquarePen className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+            Yeni Analiz
+          </button>
+        </div>
+      )}
+      {isCollapsed && (
+        <div className="flex justify-center pt-1 shrink-0">
+          <button
+            onClick={onNewChat}
+            title="Yeni Analiz"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 transition-colors"
+          >
+            <SquarePen className="h-4 w-4" strokeWidth={1.5} />
+          </button>
+        </div>
+      )}
 
       {/* ── Orta: Navigasyon + Geçmiş ── */}
       <div

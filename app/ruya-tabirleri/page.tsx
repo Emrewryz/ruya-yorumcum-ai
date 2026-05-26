@@ -9,18 +9,15 @@ const SITE_URL  = "https://www.ruyayorumcum.com.tr";
 const PER_PAGE  = 48;
 const ALPHABET  = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ".split("");
 
-// ─── 1. Dinamik Metadata — Crawl Budget Koruması ─────────────────────────────
-
 export async function generateMetadata({
   searchParams,
 }: {
   searchParams: { q?: string; harf?: string; page?: string };
 }): Promise<Metadata> {
-  const query       = searchParams.q?.trim() ?? "";
+  const query        = searchParams.q?.trim() ?? "";
   const activeLetter = searchParams.harf?.toUpperCase() ?? "";
-  const page        = parseInt(searchParams.page ?? "1", 10);
+  const page         = parseInt(searchParams.page ?? "1", 10);
 
-  // Arama sorgusuysa indexleme — KAPALI (çöp URL'ler indexlenmesin)
   if (query) {
     return {
       title: `"${query}" Rüya Tabiri Arama — Rüya Yorumcum`,
@@ -28,7 +25,6 @@ export async function generateMetadata({
     };
   }
 
-  // Harf filtresi veya sayfa numarasıysa canonical ile indexle
   const canonicalPath = activeLetter
     ? `/ruya-tabirleri?harf=${activeLetter}`
     : page > 1
@@ -54,8 +50,6 @@ export async function generateMetadata({
     },
   };
 }
-
-// ─── Pagination Bileşeni ─────────────────────────────────────────────────────
 
 function Pagination({
   currentPage,
@@ -105,8 +99,6 @@ function Pagination({
   );
 }
 
-// ─── Sayfa ────────────────────────────────────────────────────────────────────
-
 export default async function RuyaTabirleriPage({
   searchParams,
 }: {
@@ -118,11 +110,13 @@ export default async function RuyaTabirleriPage({
   const currentPage  = Math.max(1, parseInt(searchParams.page ?? "1", 10));
   const from         = (currentPage - 1) * PER_PAGE;
   const to           = from + PER_PAGE - 1;
+  const nowISO       = new Date().toISOString();
 
-  // ── Sorgu ──
   let dbQuery = supabase
     .from("dream_dictionary")
     .select("id, term, slug, description, first_letter", { count: "exact" })
+    .eq("is_published", true)
+    .lte("published_at", nowISO)
     .order("term", { ascending: true });
 
   if (query) {
@@ -131,7 +125,6 @@ export default async function RuyaTabirleriPage({
     dbQuery = dbQuery.ilike("first_letter", activeLetter);
   }
 
-  // Pagination — arama yapılırken limit yok, listede range kullan
   if (!query) {
     dbQuery = dbQuery.range(from, to);
   } else {
@@ -168,32 +161,34 @@ export default async function RuyaTabirleriPage({
         </Suspense>
       </div>
 
-      {/* Harf filtresi */}
+      {/* Harf filtresi — mobilde yatay kaydırma */}
       {!query && (
-        <div className="mb-6 flex flex-wrap gap-1">
-          <Link
-            href="/ruya-tabirleri"
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-              !activeLetter
-                ? "bg-zinc-900 text-white"
-                : "border border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
-            }`}
-          >
-            Tümü
-          </Link>
-          {ALPHABET.map((letter) => (
+        <div className="mb-6 -mx-5 overflow-x-auto px-5" style={{ scrollbarWidth: "none" }}>
+          <div className="flex min-w-max gap-1 pb-1">
             <Link
-              key={letter}
-              href={`/ruya-tabirleri?harf=${letter}`}
+              href="/ruya-tabirleri"
               className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                activeLetter === letter
+                !activeLetter
                   ? "bg-zinc-900 text-white"
                   : "border border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
               }`}
             >
-              {letter}
+              Tümü
             </Link>
-          ))}
+            {ALPHABET.map((letter) => (
+              <Link
+                key={letter}
+                href={`/ruya-tabirleri?harf=${letter}`}
+                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                  activeLetter === letter
+                    ? "bg-zinc-900 text-white"
+                    : "border border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
+                }`}
+              >
+                {letter}
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
@@ -233,7 +228,6 @@ export default async function RuyaTabirleriPage({
             ))}
           </div>
 
-          {/* 4. Pagination */}
           {!query && (
             <Pagination
               currentPage={currentPage}

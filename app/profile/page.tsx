@@ -355,14 +355,16 @@ function ProfileContent() {
 }
 
 export default function ProfilePage() {
+      const router = useRouter(); // ← ekle
+
   return (
     <div className="flex h-screen overflow-hidden bg-white">
       <AppSidebar
-        activeChatId={null}
-        onSelectChat={() => {}}
-        onNewChat={() => {}}
-        refreshTrigger={0}
-      />
+  activeChatId={null}
+  onSelectChat={(id) => router.push(`/?chat=${id}`)}
+  onNewChat={() => router.push("/")}
+  refreshTrigger={0}
+/>
       <main className="flex flex-1 flex-col overflow-hidden bg-white">
         <Suspense fallback={
           <div className="flex h-full items-center justify-center">

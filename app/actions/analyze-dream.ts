@@ -9,7 +9,7 @@ const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
   defaultHeaders: {
-    "HTTP-Referer": "https://ruyayorumcum.com",
+    "HTTP-Referer": "https://ruyayorumcum.com.tr",
     "X-Title": "Rüya Yorumcum",
   },
 });
@@ -30,7 +30,7 @@ export type AnalyzeDreamResult =
 function cleanJson(text: string): string {
   let clean = text.replace(/```json/g, "").replace(/```/g, "").trim();
   const firstBrace = clean.indexOf("{");
-  const lastBrace = clean.lastIndexOf("}");
+  const lastBrace  = clean.lastIndexOf("}");
   if (firstBrace !== -1 && lastBrace !== -1) {
     clean = clean.substring(firstBrace, lastBrace + 1);
   }
@@ -52,16 +52,12 @@ function getOrCreateGuestId(cookieStore: ReturnType<typeof cookies>): string {
 }
 
 export async function analyzeDream(dreamText: string): Promise<AnalyzeDreamResult> {
-  const supabase = createClient();
-  const cookieStore = cookies();
+  const supabase     = createClient();
+  const cookieStore  = cookies();
+  const trimmed      = dreamText?.trim() ?? "";
 
-  const trimmed = dreamText?.trim() ?? "";
-  if (trimmed.length < 20) {
-    return {
-      success: false,
-      code: "VALIDATION",
-      error: "Rüyanızı en az 20 karakter ile anlatmanız gerekmektedir.",
-    };
+  if (trimmed.length < 10) {
+    return { success: false, code: "VALIDATION", error: "Rüyanızı biraz daha detaylı anlatır mısınız?" };
   }
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -70,81 +66,66 @@ export async function analyzeDream(dreamText: string): Promise<AnalyzeDreamResul
   if (!user) {
     const hasUsedFree = cookieStore.get("guest_dream_analyzed")?.value;
     if (hasUsedFree) {
-      return {
-        success: false,
-        code: "GUEST_LIMIT",
-        error: "Ücretsiz analiz hakkınızı kullandınız. Devam etmek için kayıt olun veya kredi satın alın.",
-      };
+      return { success: false, code: "GUEST_LIMIT", error: "Ücretsiz analiz hakkınızı kullandınız. Devam etmek için kayıt olun veya kredi satın alın." };
     }
   }
 
   if (user) {
     const { data: txResult, error: txError } = await supabase.rpc("handle_credit_transaction", {
-      p_user_id: user.id,
-      p_amount: -DREAM_ANALYSIS_COST,
-      p_process_type: "spend",
+      p_user_id:     user.id,
+      p_amount:      -DREAM_ANALYSIS_COST,
+      p_process_type:"spend",
       p_description: "Rüya Analizi",
-      p_metadata: { text_length: trimmed.length },
+      p_metadata:    { text_length: trimmed.length },
     });
     if (txError || !txResult?.success) {
-      return {
-        success: false,
-        code: "NO_CREDIT",
-        error: "Yetersiz bakiye. Analiz için kredi satın alabilirsiniz.",
-      };
+      return { success: false, code: "NO_CREDIT", error: "Yetersiz bakiye." };
     }
   }
 
   const currentMoon = getMoonPhase();
 
   try {
-    const systemPrompt = `Sen sadece geçerli JSON döndüren, uzman bir rüya analiz motorusun. JSON dışında hiçbir şey yazma. Tüm içerik Türkçe olmalı.`;
+    const systemPrompt = `Sen sadece geçerli JSON döndüren, uzman bir rüya analiz motorusun.
+JSON dışında hiçbir şey yazma. Tüm içerik Türkçe olmalı.
+Analizlerin derin, şefkatli ve özgün olsun.`;
 
-    const userPrompt = `Aşağıdaki rüyayı dört farklı boyutta analiz et.
+    const userPrompt = `Aşağıdaki rüyayı analiz et.
 
 RÜYA: "${trimmed.slice(0, 1200)}"
 
-Yalnızca aşağıdaki JSON formatında yanıt ver:
+Yalnızca şu JSON formatında yanıt ver:
 {
-  "kisa_ozet": "Rüyanın özünü yakalayan 2-3 cümlelik, merak uyandırıcı bir özet.",
-  "islami_analiz": "İbn-i Sirin ve İmam Nablusi metodolojisine dayanan kapsamlı analiz. Müjde mi uyarı mı, hayır mı şer mi olduğunu belirt.",
-  "psikolojik_analiz": "Carl Jung'un analitik psikoloji çerçevesinde derin bir analiz. Arketipler, bilinçaltı mesajlar, bastırılmış duygular.",
-  "semboller": "Rüyadaki en güçlü 3-4 sembolü belirle. Her birini yeni satırda '[Sembol Adı]: [Anlam]' formatında yaz."
+  "kisa_ozet": "FRAGMAN KURALI — Bu alanı çok dikkatli yaz. Rüyanın en çarpıcı sembolünü veya duygusunu yakala ve analiz etmeye başla, ama tam en can alıcı noktada — bilinçaltının gerçek mesajını açıklamak üzereyken — cümleyi bir soruyla veya '...' ile ASLA tamamlama. Kullanıcı devamını okumak için yanmalı. Örnek format: '[Sembol/duygu tespiti yapan 1-2 güçlü cümle]. Ancak bu rüyadaki [kritik detay], bilinçaltınızda çok daha derin bir [tema/korku/arzu]nın kilidini açıyor...' — Maksimum 3 cümle.",
+  "islami_analiz": "İbn-i Sirin ve İmam Nablusi geleneğine dayanan derin analiz. Müjde mi uyarı mı, hayır mı şer mi? Dini referanslar kullan. En az 3-4 paragraf.",
+  "psikolojik_analiz": "Carl Jung arketipleri, bilinçaltı mesajlar, gölge benlik, bastırılmış duygular üzerinden derin analiz. En az 3-4 paragraf.",
+  "semboller": "En güçlü 3-4 sembolü belirle. Her birini yeni satırda '[Sembol]: [Kadim ve psikolojik anlam]' formatında yaz."
 }`;
 
     const completion = await openai.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user",   content: userPrompt },
       ],
-      model: "google/gemini-2.0-flash-lite-001",
-      temperature: 0.72,
+      model:           "google/gemini-2.0-flash-lite-001",
+      temperature:     0.75,
       response_format: { type: "json_object" },
     });
 
     const resultText = completion.choices[0].message.content;
-    if (!resultText) throw new Error("AI'dan boş yanıt alındı.");
+    if (!resultText) throw new Error("AI'dan boş yanıt.");
 
     const raw = JSON.parse(cleanJson(resultText));
 
     const aiData: DreamAnalysis = {
-      kisa_ozet:         raw.kisa_ozet         || raw.kisaOzet       || raw.summary    || raw.genel        || "",
-      islami_analiz:     raw.islami_analiz     || raw.islamiAnaliz   || raw.islamic    || raw.islami       || "",
-      psikolojik_analiz: raw.psikolojik_analiz || raw.psikolojikAnaliz || raw.psychological || raw.psikolojik || "",
-      semboller:         raw.semboller         || raw.symbols        || raw.sembol     || raw.symboller    || "",
+      kisa_ozet:         raw.kisa_ozet         || raw.kisaOzet         || raw.summary    || "",
+      islami_analiz:     raw.islami_analiz     || raw.islamiAnaliz     || raw.islamic    || "",
+      psikolojik_analiz: raw.psikolojik_analiz || raw.psikolojikAnaliz || raw.psychological || "",
+      semboller:         raw.semboller         || raw.symbols          || raw.sembol     || "",
     };
 
-    const requiredFields: (keyof DreamAnalysis)[] = [
-      "kisa_ozet",
-      "islami_analiz",
-      "psikolojik_analiz",
-      "semboller",
-    ];
-
-    for (const field of requiredFields) {
-      if (!aiData[field] || typeof aiData[field] !== "string") {
-        throw new Error(`Eksik alan: ${field}`);
-      }
+    for (const field of ["kisa_ozet", "islami_analiz", "psikolojik_analiz", "semboller"] as const) {
+      if (!aiData[field]) throw new Error(`Eksik alan: ${field}`);
     }
 
     const { data: dreamData, error: dbError } = await supabase
@@ -176,28 +157,18 @@ Yalnızca aşağıdaki JSON formatında yanıt ver:
     return { success: true, dreamId: dreamData.id, analysis: aiData };
 
   } catch (err: unknown) {
-    const message =
-      err instanceof Error
-        ? err.message
-        : typeof err === "object"
-        ? JSON.stringify(err)
-        : String(err);
-
+    const message = err instanceof Error ? err.message : JSON.stringify(err);
     console.error("[analyzeDream] Hata:", message);
 
     if (user) {
       await supabase.rpc("handle_credit_transaction", {
-        p_user_id: user.id,
-        p_amount: DREAM_ANALYSIS_COST,
-        p_process_type: "refund",
+        p_user_id:     user.id,
+        p_amount:      DREAM_ANALYSIS_COST,
+        p_process_type:"refund",
         p_description: "İade: Rüya Analiz Hatası",
       });
     }
 
-    return {
-      success: false,
-      code: "SERVER",
-      error: "Analiz sırasında bir sorun oluştu. Lütfen tekrar deneyin.",
-    };
+    return { success: false, code: "SERVER", error: "Analiz sırasında bir sorun oluştu. Lütfen tekrar deneyin." };
   }
 }
