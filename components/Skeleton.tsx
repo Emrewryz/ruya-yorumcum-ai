@@ -117,7 +117,55 @@ export function DashboardSkeleton() {
   );
 }
 
-// ─── Analytics Skeleton ───────────────────────────────────────────────────────
+// ─── Dream Card Skeleton ──────────────────────────────────────────────────────
+
+export function DreamCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-zinc-100 bg-white p-5 min-h-[120px]">
+      {/* Görsel alanı */}
+      <SkeletonBlock className="mb-3 h-8 w-8 rounded-lg" />
+      {/* Başlık */}
+      <SkeletonBlock className="mb-2 h-4 w-3/4" />
+      {/* Açıklama satır 1 */}
+      <SkeletonBlock className="mb-1.5 h-3 w-full" />
+      {/* Açıklama satır 2 */}
+      <SkeletonBlock className="h-3 w-2/3" />
+    </div>
+  );
+}
+
+// ─── Dream List Skeleton ──────────────────────────────────────────────────────
+
+export function DreamListSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 min-h-[600px]">
+      {Array.from({ length: count }).map((_, i) => (
+        <DreamCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+// ─── Chat Message Skeleton ────────────────────────────────────────────────────
+
+export function ChatMessageSkeleton() {
+  return (
+    <div className="space-y-4 px-4 py-6 min-h-[200px]">
+      {/* AI mesajı */}
+      <div className="flex flex-col gap-2">
+        <SkeletonBlock className="h-3 w-16" />
+        <SkeletonBlock className="h-4 w-full" />
+        <SkeletonBlock className="h-4 w-5/6" />
+        <SkeletonBlock className="h-4 w-4/5" />
+      </div>
+      {/* Kullanıcı mesajı */}
+      <div className="flex flex-col items-end gap-2">
+        <SkeletonBlock className="h-3 w-12" />
+        <SkeletonBlock className="h-4 w-1/2" />
+      </div>
+    </div>
+  );
+}
 
 export function AnalyticsSkeleton() {
   return (
