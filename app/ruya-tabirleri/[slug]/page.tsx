@@ -6,7 +6,7 @@ import { TrendingUp } from "lucide-react";
 import RelatedDreams from "@/components/RelatedDreams";
 
 // ISR — 60 saniyede bir yenile
-export const revalidate = 60;
+export const revalidate = 30;
 
 const SITE_URL = "https://www.ruyayorumcum.com.tr";
 
