@@ -3,6 +3,9 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { Suspense } from "react";
 import SearchBar from "@/components/SearchBar";
+
+// ISR — 60 saniyede bir yenile, zamanı gelen içerikler otomatik görünür
+export const revalidate = 60;
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const SITE_URL  = "https://www.ruyayorumcum.com.tr";

@@ -10,15 +10,16 @@ export default async function AdminTakvimPage() {
     .order("published_at", { ascending: false })
     .limit(100);
 
+  // Türkiye saati (UTC+3) ile şu anki zamanı hesapla
   const now = new Date();
 
+  // published_at UTC olarak DB'de — karşılaştırma UTC bazlı yapılır, doğru
   const planned   = (entries ?? []).filter((e) => e.published_at && new Date(e.published_at) > now);
   const published = (entries ?? []).filter((e) => !e.published_at || new Date(e.published_at) <= now);
 
   return (
     <div className="p-6 lg:p-8">
 
-      {/* Başlık */}
       <div className="mb-7">
         <h1 className="text-xl font-bold text-white">Yayın Takvimi</h1>
         <div className="mt-1 flex items-center gap-4 text-xs text-zinc-500">
@@ -33,7 +34,6 @@ export default async function AdminTakvimPage() {
         </div>
       </div>
 
-      {/* ── Planlanmış İçerikler ── */}
       {planned.length > 0 && (
         <section className="mb-8">
           <div className="mb-3 flex items-center gap-2">
@@ -46,7 +46,6 @@ export default async function AdminTakvimPage() {
         </section>
       )}
 
-      {/* ── Yayındaki İçerikler ── */}
       <section>
         <div className="mb-3 flex items-center gap-2">
           <Calendar className="h-4 w-4 text-emerald-400" strokeWidth={1.5} />
@@ -56,20 +55,14 @@ export default async function AdminTakvimPage() {
           <Table entries={published} now={now} />
         </div>
       </section>
-
     </div>
   );
 }
 
 // ─── Tablo ────────────────────────────────────────────────────────────────────
 
-function Table({
-  entries, now,
-}: {
-  entries: any[];
-  now: Date;
-}) {
-  if (entries.length === 0) {
+function Table({ entries, now }: { entries: any[]; now: Date }) {
+  if (!entries.length) {
     return (
       <div className="py-10 text-center text-sm text-zinc-600 bg-zinc-900/50">
         İçerik yok.
@@ -77,12 +70,16 @@ function Table({
     );
   }
 
+  // Türkiye locale formatı
+  const trLocale = "tr-TR";
+  const trTZ     = "Europe/Istanbul";
+
   return (
     <table className="w-full text-sm">
       <thead className="border-b border-zinc-800 bg-zinc-900">
         <tr>
           <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Sembol</th>
-          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Yayın Tarihi</th>
+          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Yayın Tarihi (TR)</th>
           <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Durum</th>
           <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Kalan / Geçen</th>
         </tr>
@@ -90,6 +87,7 @@ function Table({
       <tbody className="divide-y divide-zinc-800 bg-zinc-900/50">
         {entries.map((entry) => {
           const pubDate   = entry.published_at ? new Date(entry.published_at) : null;
+          // Türkiye saatiyle karşılaştır
           const isPlanned = pubDate ? pubDate > now : false;
           const diffMs    = pubDate ? Math.abs(pubDate.getTime() - now.getTime()) : 0;
           const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -109,10 +107,14 @@ function Table({
               </td>
               <td className="px-5 py-3.5 text-sm text-zinc-400">
                 {pubDate
-                  ? pubDate.toLocaleString("tr-TR", {
-                      day: "numeric", month: "long", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
-                    })
+                  ? new Intl.DateTimeFormat(trLocale, {
+                      timeZone:  trTZ,
+                      day:       "numeric",
+                      month:     "long",
+                      year:      "numeric",
+                      hour:      "2-digit",
+                      minute:    "2-digit",
+                    }).format(pubDate)
                   : "—"}
               </td>
               <td className="px-5 py-3.5">

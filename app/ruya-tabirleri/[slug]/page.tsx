@@ -5,6 +5,9 @@ import { createClient } from "@/utils/supabase/server";
 import { TrendingUp } from "lucide-react";
 import RelatedDreams from "@/components/RelatedDreams";
 
+// ISR — 60 saniyede bir yenile
+export const revalidate = 60;
+
 const SITE_URL = "https://www.ruyayorumcum.com.tr";
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
@@ -101,8 +104,7 @@ const SCENARIO_COLORS = [
   "border-amber-300",  "border-rose-300", "border-indigo-300",
 ];
 
-function ScenariosSection({ scenarios }: { scenarios: { title: string; meaning?: string; description?: string }[]
- }) {
+function ScenariosSection({ scenarios }: { scenarios: { title: string; meaning: string }[] }) {
   return (
     <section className="mb-10">
       <div className="mb-4 flex items-center gap-3">
@@ -121,10 +123,7 @@ function ScenariosSection({ scenarios }: { scenarios: { title: string; meaning?:
             }`}
           >
             <p className="mb-1.5 text-sm font-semibold text-zinc-900">{scenario.title}</p>
-            <p className="text-sm leading-relaxed text-zinc-600">
-  {scenario.meaning ?? scenario.description}
-</p>
-
+            <p className="text-sm leading-relaxed text-zinc-600">{scenario.meaning}</p>
           </div>
         ))}
       </div>
@@ -276,6 +275,7 @@ export default async function DreamDictionaryDetailPage({
       "id, term, slug, description, content, tags, search_count, first_letter, updated_at, created_at, published_at"
     )
     .eq("slug", params.slug)
+    .eq("is_published", true)
     .lte("published_at", nowISO)
     .single();
 
