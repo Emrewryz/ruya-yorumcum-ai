@@ -6,40 +6,43 @@ import { cookies } from "next/headers";
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  created_at: string;
+  id:            string;
+  role:          "user" | "assistant";
+  content:       string;
+  created_at:    string;
   credits_spent: number;
 }
 
 export interface DreamSession {
-  id: string;
-  dream_title: string | null;
-  dream_text: string;
+  id:                  string;
+  dream_title:         string | null;
+  dream_text:          string;
   ai_response: {
-    kisa_ozet: string;
-    islami_analiz: string;
-    psikolojik_analiz: string;
-    semboller: string;
+    kisa_ozet:          string;
+    islami_analiz:      string;
+    psikolojik_analiz:  string;
+    semboller:          string;
   };
-  moon_phase: string | null;
-  created_at: string;
-  messages: ChatMessage[];
+  moon_phase:           string | null;
+  image_url:            string | null;
+  created_at:           string;
+  islami_unlocked:      boolean;
+  psikolojik_unlocked:  boolean;
+  messages:             ChatMessage[];
 }
 
 export interface SidebarChat {
-  id: string;
-  dream_title: string | null;
-  dream_text: string;
+  id:              string;
+  dream_title:     string | null;
+  dream_text:      string;
   last_message_at: string;
-  message_count: number;
+  message_count:   number;
 }
 
 // ─── Sidebar için sohbet listesi ─────────────────────────────────────────────
 
 export async function getChatList(): Promise<SidebarChat[]> {
-  const supabase = createClient();
+  const supabase    = createClient();
   const cookieStore = cookies();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -49,13 +52,7 @@ export async function getChatList(): Promise<SidebarChat[]> {
 
   const query = supabase
     .from("dreams")
-    .select(`
-      id,
-      dream_title,
-      dream_text,
-      last_message_at,
-      created_at
-    `)
+    .select("id, dream_title, dream_text, last_message_at, created_at")
     .eq("status", "completed")
     .order("last_message_at", { ascending: false, nullsFirst: false })
     .limit(30);
@@ -70,40 +67,50 @@ export async function getChatList(): Promise<SidebarChat[]> {
   if (error || !data) return [];
 
   return data.map((d) => ({
-    id: d.id,
-    dream_title: d.dream_title,
-    dream_text: d.dream_text,
+    id:              d.id,
+    dream_title:     d.dream_title,
+    dream_text:      d.dream_text,
     last_message_at: d.last_message_at ?? d.created_at,
-    message_count: 0,
+    message_count:   0,
   }));
 }
 
 // ─── Tek sohbeti ID ile yükle ─────────────────────────────────────────────────
 
 export async function getDreamSession(dreamId: string): Promise<DreamSession | null> {
-  const supabase = createClient();
+  const supabase    = createClient();
   const cookieStore = cookies();
 
   const { data: { user } } = await supabase.auth.getUser();
   const guestId = cookieStore.get("guest_session_id")?.value;
 
-  // Rüyayı çek
   const { data: dream, error } = await supabase
     .from("dreams")
-    .select("id, dream_title, dream_text, ai_response, moon_phase, created_at, user_id, guest_session_id")
+    .select(`
+      id,
+      dream_title,
+      dream_text,
+      ai_response,
+      moon_phase,
+      image_url,
+      created_at,
+      user_id,
+      guest_session_id,
+      islami_unlocked,
+      psikolojik_unlocked
+    `)
     .eq("id", dreamId)
     .single();
 
   if (error || !dream) return null;
 
-  // Yetki kontrolü: sadece sahibi görebilir
+  // Yetki kontrolü
   const isOwner =
     (user && dream.user_id === user.id) ||
     (!user && guestId && dream.guest_session_id === guestId);
 
   if (!isOwner) return null;
 
-  // Follow-up mesajlarını çek
   const { data: messages } = await supabase
     .from("dream_chat_messages")
     .select("id, role, content, created_at, credits_spent")
@@ -111,12 +118,15 @@ export async function getDreamSession(dreamId: string): Promise<DreamSession | n
     .order("created_at", { ascending: true });
 
   return {
-    id: dream.id,
-    dream_title: dream.dream_title,
-    dream_text: dream.dream_text,
-    ai_response: dream.ai_response as DreamSession["ai_response"],
-    moon_phase: dream.moon_phase,
-    created_at: dream.created_at,
-    messages: (messages ?? []) as ChatMessage[],
+    id:                  dream.id,
+    dream_title:         dream.dream_title,
+    dream_text:          dream.dream_text,
+    ai_response:         dream.ai_response as DreamSession["ai_response"],
+    moon_phase:          dream.moon_phase,
+    image_url:           dream.image_url ?? null,
+    created_at:          dream.created_at,
+    islami_unlocked:     dream.islami_unlocked ?? false,
+    psikolojik_unlocked: dream.psikolojik_unlocked ?? false,
+    messages:            (messages ?? []) as ChatMessage[],
   };
 }

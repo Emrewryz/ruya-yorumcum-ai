@@ -1,69 +1,143 @@
 "use client";
 
 import { useEffect, useCallback, useState, useTransition } from "react";
-import { X, Zap, Compass, FlaskConical, ShieldCheck, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, Zap, Compass, FlaskConical, ShieldCheck, Loader2, CheckCircle, AlertCircle, Moon, Sparkles } from "lucide-react";
 import { claimOrder } from "@/app/actions/payment-actions";
+import { createClient } from "@/utils/supabase/client";
 
 // ─── Paket Tanımları ──────────────────────────────────────────────────────────
 
 const PACKAGES = [
   {
-    key: "tekli",
-    icon: Zap,
-    name: "Tekli Rapor",
-    credits: 10,
-    price: 39,
-    pricePerCredit: "39 TL / analiz",
-    description: "Tek seferlik analiz.",
-    highlight: false,
-    badge: null,
-    href: "https://www.shopier.com/ruyayorumcumai/43928759", // Shopier ürün linkinizi buraya koyun
+    key:           "tekli",
+    icon:          Zap,
+    name:          "Tekli Rapor",
+    credits:       1,
+    price:         39,
+    pricePerCredit:"39 TL / analiz",
+    description:   "Tek seferlik analiz.",
+    highlight:     false,
+    badge:         null,
+    href:          "#",
   },
   {
-    key: "kasif",
-    icon: Compass,
-    name: "Kâşif Paketi",
-    credits: 30,
-    price: 89,
-    pricePerCredit: "~29.6 TL / analiz",
-    description: "Tekrarlayan rüyalar için.",
-    highlight: true,
-    badge: "En Popüler",
-    href: "https://www.shopier.com/ruyayorumcumai/43369308", // Shopier ürün linkinizi buraya koyun
+    key:           "kasif",
+    icon:          Compass,
+    name:          "Kâşif Paketi",
+    credits:       3,
+    price:         89,
+    pricePerCredit:"~29.6 TL / analiz",
+    description:   "Tekrarlayan rüyalar için.",
+    highlight:     true,
+    badge:         "En Popüler",
+    href:          "#",
   },
   {
-    key: "laboratuvar",
-    icon: FlaskConical,
-    name: "Laboratuvar",
-    credits: 100,
-    price: 249,
-    pricePerCredit: "~16.9 TL / analiz",
-    description: "Düzenli araştırma için.",
-    highlight: false,
-    badge: "En Avantajlı",
-    href: "#", // Shopier ürün linkinizi buraya koyun
+    key:           "laboratuvar",
+    icon:          FlaskConical,
+    name:          "Laboratuvar",
+    credits:       10,
+    price:         169,
+    pricePerCredit:"~16.9 TL / analiz",
+    description:   "Düzenli araştırma için.",
+    highlight:     false,
+    badge:         "En Avantajlı",
+    href:          "#",
   },
 ] as const;
 
-// ─── Tipler ───────────────────────────────────────────────────────────────────
-
 interface CreditModalProps {
-  open: boolean;
-  onClose: () => void;
-  reason?: "NO_AUTH" | "NO_CREDIT";
+  open:     boolean;
+  onClose:  () => void;
+  reason?:  "NO_AUTH" | "NO_CREDIT";
 }
 
-// ─── Sipariş Doğrulama Bölümü ─────────────────────────────────────────────────
+// ─── Giriş Yap / Kayıt Ol Ekranı ─────────────────────────────────────────────
+
+function AuthScreen({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+
+  function handleAuth(mode: "login" | "register") {
+    onClose();
+    router.push(`/auth?mode=${mode}`);
+  }
+
+  return (
+    <div className="overflow-hidden rounded-t-2xl md:rounded-2xl border border-zinc-200 bg-white shadow-xl">
+
+      {/* Header */}
+      <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-zinc-100">
+        <div>
+          <h2 className="text-sm font-bold text-zinc-900">Devam etmek için giriş yap</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">Ücretsiz hesap aç, 2 kredi ile başla.</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 text-zinc-400 hover:text-zinc-600 transition-colors"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* İçerik */}
+      <div className="px-6 py-6">
+
+        {/* İkon */}
+        <div className="mb-5 flex justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50">
+            <Moon className="h-6 w-6 text-zinc-700" strokeWidth={1.5} />
+          </div>
+        </div>
+
+        {/* Avantajlar */}
+        <div className="mb-6 space-y-2.5">
+          {[
+            "Her gün 2 ücretsiz analiz kredisi",
+            "İslami ve psikolojik yorumlar",
+            "Sohbet geçmişin kaydedilir",
+            "Rüyalarını görselleştirebilirsin",
+          ].map((item) => (
+            <div key={item} className="flex items-center gap-2.5">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100">
+                <CheckCircle className="h-3 w-3 text-emerald-500" strokeWidth={2} />
+              </div>
+              <p className="text-sm text-zinc-600">{item}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Butonlar */}
+        <div className="space-y-2">
+          <button
+            onClick={() => handleAuth("register")}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 transition-colors"
+          >
+            <Sparkles className="h-4 w-4" strokeWidth={1.5} />
+            Ücretsiz Hesap Oluştur
+          </button>
+          <button
+            onClick={() => handleAuth("login")}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 transition-colors"
+          >
+            Zaten hesabım var, giriş yap
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sipariş Doğrulama ────────────────────────────────────────────────────────
 
 function ClaimSection({ onSuccess }: { onSuccess: (credits: number) => void }) {
-  const [orderId, setOrderId]     = useState("");
-  const [isPending, startTransition] = useTransition();
-  const [result, setResult]       = useState<{ ok: boolean; msg: string } | null>(null);
+  const [orderId, setOrderId]           = useState("");
+  const [isPending, startTransition]    = useTransition();
+  const [result, setResult]             = useState<{ ok: boolean; msg: string } | null>(null);
 
   function handleClaim() {
     if (!orderId.trim() || isPending) return;
     setResult(null);
-
     startTransition(async () => {
       const res = await claimOrder(orderId);
       if (res.success) {
@@ -84,7 +158,6 @@ function ClaimSection({ onSuccess }: { onSuccess: (credits: number) => void }) {
       <p className="mb-3 text-xs text-zinc-500 leading-relaxed">
         Shopier'den ödeme yaptıktan sonra aldığınız sipariş numarasını girin.
       </p>
-
       <div className="flex gap-2">
         <input
           type="text"
@@ -93,42 +166,22 @@ function ClaimSection({ onSuccess }: { onSuccess: (credits: number) => void }) {
           onKeyDown={(e) => { if (e.key === "Enter") handleClaim(); }}
           placeholder="Shopier Sipariş No"
           disabled={isPending}
-          className="
-            flex-1 rounded-xl border border-zinc-200 bg-zinc-50
-            px-3.5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400
-            focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400
-            disabled:opacity-50 transition-all
-          "
+          className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 disabled:opacity-50 transition-all"
         />
         <button
           onClick={handleClaim}
           disabled={!orderId.trim() || isPending}
-          className="
-            flex shrink-0 items-center gap-1.5
-            rounded-xl bg-zinc-900 px-4 py-2.5
-            text-sm font-semibold text-white
-            transition-all hover:bg-zinc-700
-            disabled:opacity-40 disabled:cursor-not-allowed
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2
-          "
+          className="flex shrink-0 items-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {isPending
-            ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
-            : "Yükle"
-          }
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} /> : "Yükle"}
         </button>
       </div>
-
-      {/* Sonuç mesajı */}
       {result && (
-        <div className={`
-          mt-3 flex items-start gap-2 rounded-xl px-3.5 py-2.5 text-xs
-          animate-in fade-in slide-in-from-bottom-1 duration-200
-          ${result.ok
+        <div className={`mt-3 flex items-start gap-2 rounded-xl px-3.5 py-2.5 text-xs animate-in fade-in duration-200 ${
+          result.ok
             ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
             : "border border-red-100 bg-red-50 text-red-600"
-          }
-        `}>
+        }`}>
           {result.ok
             ? <CheckCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
             : <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
@@ -140,10 +193,99 @@ function ClaimSection({ onSuccess }: { onSuccess: (credits: number) => void }) {
   );
 }
 
+// ─── Satın Alma Ekranı ────────────────────────────────────────────────────────
+
+function PurchaseScreen({ onClose, onSuccess }: { onClose: () => void; onSuccess: (c: number) => void }) {
+  return (
+    <div className="overflow-hidden rounded-t-2xl md:rounded-2xl border border-zinc-200 bg-white shadow-xl">
+
+      {/* Header */}
+      <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-zinc-100">
+        <div>
+          <h2 className="text-sm font-bold text-zinc-900">Krediniz tükendi</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">Aşağıdaki paketlerden birini seçerek devam edin.</p>
+        </div>
+        <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 text-zinc-400 hover:text-zinc-600 transition-colors">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Paketler */}
+      <div className="p-4 space-y-2">
+        {PACKAGES.map((pkg) => {
+          const Icon = pkg.icon;
+          return (
+            <a
+              key={pkg.key}
+              href={pkg.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`group relative flex items-center gap-4 rounded-xl border p-4 transition-all duration-150 ${
+                pkg.highlight
+                  ? "border-zinc-900 bg-zinc-900 hover:bg-zinc-800"
+                  : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
+              }`}
+            >
+              {pkg.badge && (
+                <div className={`absolute -top-2 right-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  pkg.highlight ? "bg-white text-zinc-900" : "bg-zinc-100 text-zinc-600"
+                }`}>
+                  {pkg.badge}
+                </div>
+              )}
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
+                pkg.highlight ? "border-white/20 bg-white/10" : "border-zinc-200 bg-zinc-50"
+              }`}>
+                <Icon className={`h-4 w-4 ${pkg.highlight ? "text-white" : "text-zinc-500"}`} strokeWidth={1.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-sm font-semibold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>{pkg.name}</span>
+                  <span className={`text-xs ${pkg.highlight ? "text-white/60" : "text-zinc-400"}`}>{pkg.credits} analiz</span>
+                </div>
+                <p className={`text-xs mt-0.5 ${pkg.highlight ? "text-white/50" : "text-zinc-400"}`}>{pkg.pricePerCredit}</p>
+              </div>
+              <div className="shrink-0 text-right">
+                <div className={`text-base font-bold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>{pkg.price} ₺</div>
+                <div className={`mt-1 text-xs font-medium ${pkg.highlight ? "text-white/60" : "text-zinc-500"}`}>Satın Al →</div>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+
+      <ClaimSection onSuccess={onSuccess} />
+
+      <div className="px-6 py-3 border-t border-zinc-100">
+        <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-400">
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="h-3 w-3 text-emerald-500" strokeWidth={1.5} />
+            Güvenli ödeme
+          </span>
+          <span className="h-3 w-px bg-zinc-200" />
+          <span>Shopier altyapısı</span>
+          <span className="h-3 w-px bg-zinc-200" />
+          <span>Anında tanımlama</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Ana Modal ────────────────────────────────────────────────────────────────
 
 export default function CreditModal({ open, onClose, reason }: CreditModalProps) {
-  const [credited, setCredited] = useState(false);
+  const [credited, setCredited]   = useState(false);
+  const [isGuest, setIsGuest]     = useState<boolean | null>(null); // null = yükleniyor
+
+  // Kullanıcı giriş yapmış mı kontrol et
+  useEffect(() => {
+    if (!open) return;
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsGuest(!user);
+    });
+  }, [open]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") onClose();
@@ -159,152 +301,53 @@ export default function CreditModal({ open, onClose, reason }: CreditModalProps)
     };
   }, [open, handleKeyDown]);
 
-  // Başarılı yükleme sonrası otomatik kapat
   function handleClaimSuccess(credits: number) {
     setCredited(true);
-    setTimeout(() => {
-      setCredited(false);
-      onClose();
-    }, 2000);
+    setTimeout(() => { setCredited(false); onClose(); }, 2000);
   }
 
   if (!open) return null;
 
-  const headline = reason === "NO_AUTH" ? "Devam etmek için giriş yapın" : "Krediniz tükendi";
-  const sub      = reason === "NO_AUTH"
-    ? "Hesap oluşturun, ardından bir paket satın alın."
-    : "Aşağıdaki paketlerden birini seçerek analize devam edin.";
-
-  return (
-    <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Modal */}
-      <div
-        className="
-          fixed inset-x-4 bottom-0 z-50 mx-auto max-w-lg
-          md:inset-x-auto md:top-1/2 md:bottom-auto md:left-1/2
-          md:-translate-x-1/2 md:-translate-y-1/2
-          animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-200
-        "
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* Kredi yüklendi ekranı */}
-        {credited ? (
+  // Kredi yüklendi ekranı
+  if (credited) {
+    return (
+      <>
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px]" onClick={onClose} />
+        <div className="fixed inset-x-4 bottom-0 z-50 mx-auto max-w-lg md:inset-x-auto md:top-1/2 md:bottom-auto md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2">
           <div className="flex flex-col items-center justify-center gap-4 rounded-t-2xl md:rounded-2xl border border-emerald-100 bg-white px-8 py-12 shadow-xl">
             <div className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50">
               <CheckCircle className="h-7 w-7 text-emerald-500" strokeWidth={1.5} />
             </div>
             <p className="text-base font-semibold text-zinc-900">Krediniz yüklendi!</p>
           </div>
-        ) : (
-          <div className="overflow-hidden rounded-t-2xl md:rounded-2xl border border-zinc-200 bg-white shadow-xl">
+        </div>
+      </>
+    );
+  }
 
-            {/* Header */}
-            <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-zinc-100">
-              <div>
-                <h2 className="text-sm font-bold text-zinc-900">{headline}</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">{sub}</p>
-              </div>
-              <button
-                onClick={onClose}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 text-zinc-400 hover:text-zinc-600 transition-colors"
-                aria-label="Kapat"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-
-            {/* Paketler */}
-            <div className="p-4 space-y-2">
-              {PACKAGES.map((pkg) => {
-                const Icon = pkg.icon;
-                return (
-                  <a
-                    key={pkg.key}
-                    href={pkg.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`
-                      group relative flex items-center gap-4 rounded-xl border p-4
-                      transition-all duration-150
-                      ${pkg.highlight
-                        ? "border-zinc-900 bg-zinc-900 hover:bg-zinc-800"
-                        : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
-                      }
-                    `}
-                  >
-                    {pkg.badge && (
-                      <div className={`
-                        absolute -top-2 right-3 rounded-full px-2.5 py-0.5
-                        text-[10px] font-bold uppercase tracking-wide
-                        ${pkg.highlight
-                          ? "bg-white text-zinc-900"
-                          : "bg-zinc-100 text-zinc-600"
-                        }
-                      `}>
-                        {pkg.badge}
-                      </div>
-                    )}
-
-                    <div className={`
-                      flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border
-                      ${pkg.highlight ? "border-white/20 bg-white/10" : "border-zinc-200 bg-zinc-50"}
-                    `}>
-                      <Icon className={`h-4 w-4 ${pkg.highlight ? "text-white" : "text-zinc-500"}`} strokeWidth={1.5} />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-sm font-semibold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>
-                          {pkg.name}
-                        </span>
-                        <span className={`text-xs ${pkg.highlight ? "text-white/60" : "text-zinc-400"}`}>
-                          {pkg.credits} analiz
-                        </span>
-                      </div>
-                      <p className={`text-xs mt-0.5 ${pkg.highlight ? "text-white/50" : "text-zinc-400"}`}>
-                        {pkg.pricePerCredit}
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      <div className={`text-base font-bold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>
-                        {pkg.price} ₺
-                      </div>
-                      <div className={`mt-1 text-xs font-medium ${pkg.highlight ? "text-white/60" : "text-zinc-500"}`}>
-                        Satın Al →
-                      </div>
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-
-            {/* Sipariş Doğrulama */}
-            <ClaimSection onSuccess={handleClaimSuccess} />
-
-            {/* Alt güven çubuğu */}
-            <div className="px-6 py-3 border-t border-zinc-100">
-              <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-400">
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="h-3 w-3 text-emerald-500" strokeWidth={1.5} />
-                  Güvenli ödeme
-                </span>
-                <span className="h-3 w-px bg-zinc-200" />
-                <span>Shopier altyapısı</span>
-                <span className="h-3 w-px bg-zinc-200" />
-                <span>Anında tanımlama</span>
-              </div>
-            </div>
-
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
+      <div
+        className="fixed inset-x-4 bottom-0 z-50 mx-auto max-w-lg md:inset-x-auto md:top-1/2 md:bottom-auto md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-200"
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Yükleniyor */}
+        {isGuest === null && (
+          <div className="flex items-center justify-center rounded-t-2xl md:rounded-2xl border border-zinc-200 bg-white py-10 shadow-xl">
+            <Loader2 className="h-5 w-5 animate-spin text-zinc-400" strokeWidth={1.5} />
           </div>
+        )}
+
+        {/* Misafir — giriş yap ekranı */}
+        {isGuest === true && (
+          <AuthScreen onClose={onClose} />
+        )}
+
+        {/* Kayıtlı kullanıcı — satın alma ekranı */}
+        {isGuest === false && (
+          <PurchaseScreen onClose={onClose} onSuccess={handleClaimSuccess} />
         )}
       </div>
     </>

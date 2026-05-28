@@ -14,6 +14,7 @@ import { refreshDailyCredits } from "@/app/actions/refresh-credits";
 import PaywallCard from "@/components/PaywallCard";
 import OruntuKarti from "@/components/OruntuKarti";
 import MobileNav from "@/components/MobileNav";
+import DreamVisualizer from "@/components/DreamVisualizer";
 import AppSidebar from "@/components/AppSidebar";
 import CreditModal from "@/components/CreditModal";
 
@@ -229,17 +230,18 @@ function HomeInner() {
     return () => { if (loadingRef.current) clearInterval(loadingRef.current); };
   }, [phase]);
 
-  // Otomatik scroll — yeni mesajda
+  // Otomatik scroll — sadece yeni mesaj gelince, phase değişiminde değil
   const scrollToBottom = () => {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
   };
 
   useEffect(() => {
-    if (phase === "session") scrollToBottom();
-  }, [localMessages.length, followUpLoading, phase]);
+    // Sadece follow-up mesajlar gelince aşağı in, analiz tamamlanınca değil
+    if (phase === "session" && localMessages.length > 0) scrollToBottom();
+  }, [localMessages.length, followUpLoading]);
 
   // ── Sohbet yükle ──
-  async function loadSession(chatId: string) {
+  async function loadSession(chatId: string, retryCount = 0) {
     setSessionLoading(true);
     setActiveChatId(chatId);
     setPhase("session");
@@ -247,16 +249,25 @@ function HomeInner() {
     try {
       const data = await getDreamSession(chatId);
       if (!data) {
+        // Auth henüz hazır olmayabilir — 1 kez daha dene
+        if (retryCount === 0) {
+          setTimeout(() => loadSession(chatId, 1), 800);
+          return;
+        }
         setErrorMsg("Sohbet bulunamadı.");
         setPhase("idle");
         setActiveChatId(null);
+        router.replace("/", { scroll: false });
       } else {
         setSession(data);
         setLocalMessages(data.messages ?? []);
         setErrorMsg(null);
       }
     } catch {
-      setErrorMsg("Sohbet yüklenirken hata oluştu.");
+      if (retryCount === 0) {
+        setTimeout(() => loadSession(chatId, 1), 800);
+        return;
+      }
       setPhase("idle");
     } finally {
       setSessionLoading(false);
@@ -550,6 +561,8 @@ function HomeInner() {
                         islamiAnaliz={session.ai_response.islami_analiz ?? ""}
                         psikolojikAnaliz={session.ai_response.psikolojik_analiz ?? ""}
                         semboller={session.ai_response.semboller ?? ""}
+                        initialIslamiUnlocked={session.islami_unlocked ?? false}
+                        initialPsikolojikUnlocked={session.psikolojik_unlocked ?? false}
                         onUnlocked={() => setShowOruntuKarti(true)}
                       />
                     )}
@@ -558,6 +571,13 @@ function HomeInner() {
                     {showOruntuKarti && (
                       <OruntuKarti dreamCount={dreamCount} />
                     )}
+
+                    {/* Rüya Görselleştir — görsel varsa göster, yoksa buton */}
+                    <DreamVisualizer
+                      dreamId={session.id}
+                      dreamText={session.dream_text}
+                      existingImageUrl={session.image_url ?? null}
+                    />
 
                     {/* Follow-up mesajlar */}
                     {localMessages.length > 0 && (

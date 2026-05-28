@@ -2,15 +2,14 @@
 
 import { createClient } from "@/utils/supabase/server";
 
-// ─── Tipler ───────────────────────────────────────────────────────────────────
-
 export type CreditActionResult =
-  | { success: true; remainingCredits: number }
+  | { success: true;  remainingCredits: number }
   | { success: false; code: "NO_AUTH" | "NO_CREDIT" | "SERVER_ERROR"; error: string };
 
-// ─── Ana Action ───────────────────────────────────────────────────────────────
-
-export async function spendAnalysisCredit(dreamId: string): Promise<CreditActionResult> {
+export async function spendAnalysisCredit(
+  dreamId: string,
+  target?: "islami" | "psikolojik"
+): Promise<CreditActionResult> {
   const supabase = createClient();
 
   // 1. Auth kontrolü
@@ -19,8 +18,7 @@ export async function spendAnalysisCredit(dreamId: string): Promise<CreditAction
     return { success: false, code: "NO_AUTH", error: "Giriş yapmanız gerekmektedir." };
   }
 
-  // 2. KRİTİK — RPC'ye bırakmadan önce manuel kredi kontrolü
-  //    Böylece NO_CREDIT vs SERVER_ERROR ayrımı her zaman doğru olur
+  // 2. Kredi kontrolü
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("credits")
@@ -39,25 +37,36 @@ export async function spendAnalysisCredit(dreamId: string): Promise<CreditAction
   const { data: txResult, error: txError } = await supabase.rpc(
     "handle_credit_transaction",
     {
-      p_user_id: user.id,
-      p_amount: -1,
+      p_user_id:      user.id,
+      p_amount:       -1,
       p_process_type: "spend",
-      p_description: "Rüya Analizi Kilidi",
-      p_metadata: { dream_id: dreamId },
+      p_description:  "Rüya Analizi Kilidi",
+      p_metadata:     { dream_id: dreamId, target },
     }
   );
 
   if (txError) {
-    console.error("[spendAnalysisCredit] RPC hatası:", txError.message);
     return { success: false, code: "SERVER_ERROR", error: "Bir sorun oluştu. Lütfen tekrar deneyin." };
   }
 
-  // RPC başarısız döndürdüyse (race condition — kredi bitmişse)
   if (!txResult?.success) {
     return { success: false, code: "NO_CREDIT", error: "Yetersiz bakiye." };
   }
 
-  // 4. Güncel bakiyeyi döndür
+  // 4. Unlock state'i DB'ye kaydet — sayfa yenilemede korunur
+  if (target && dreamId) {
+    const updateField = target === "islami"
+      ? { islami_unlocked: true }
+      : { psikolojik_unlocked: true };
+
+    await supabase
+      .from("dreams")
+      .update(updateField)
+      .eq("id", dreamId)
+      .eq("user_id", user.id);
+  }
+
+  // 5. Güncel bakiyeyi döndür
   const { data: updated } = await supabase
     .from("profiles")
     .select("credits")

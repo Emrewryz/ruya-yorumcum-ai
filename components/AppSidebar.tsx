@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import {
   PanelLeftClose, PanelLeftOpen, SquarePen,
-  BookOpen, Library, LogIn, LogOut, Loader2, BarChart2
+  BookOpen, Library, LogIn, LogOut, Loader2, BarChart2, Compass, ImageIcon
 } from "lucide-react";
 import { getChatList, type SidebarChat } from "@/app/actions/chat-actions";
 
@@ -136,9 +136,11 @@ export default function AppSidebar({
   };
 
   const navLinks = [
-    { href: "/blog",             icon: BookOpen,  label: "Blog" },
-    { href: "/ruya-tabirleri",   icon: Library,   label: "Rüya Tabirleri" },
-    { href: "/oruntu-analizi",   icon: BarChart2, label: "Haftalık Analiz" },
+    { href: "/blog",             icon: BookOpen,   label: "Blog" },
+    { href: "/ruya-tabirleri",   icon: Library,    label: "Rüya Tabirleri" },
+    { href: "/oruntu-analizi",   icon: BarChart2,  label: "Haftalık Analiz" },
+    { href: "/kesfet",           icon: Compass,    label: "Keşfet" },
+    { href: "/galerim",          icon: ImageIcon,  label: "Rüya Galerim" },
   ];
 
   return (
