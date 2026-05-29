@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Moon } from "lucide-react";
-import MobileNavWrapper from "@/components/MobileNavWrapper";
+import GlobalMobileNav from "@/components/GlobalMobileNav";
+// ...
 
 const LEGAL_LINKS = [
   { href: "/gizlilik",       label: "Gizlilik Politikası" },
@@ -78,7 +79,6 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
       </footer>
 
       {/* Mobil Bottom Nav */}
-      <MobileNavWrapper />
-    </div>
+<GlobalMobileNav />    </div>
   );
 }
