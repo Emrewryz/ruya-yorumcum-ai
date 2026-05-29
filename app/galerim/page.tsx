@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toggleDreamPublic } from "@/app/actions/dream-slug-action";
 import AppSidebar from "@/components/AppSidebar";
-import MobileNavWrapper from "@/components/MobileNavWrapper";
+import GlobalMobileNav from "@/components/GlobalMobileNav";
+
 import {
   Loader2, ImageIcon, Globe, Lock,
   Download, X, ZoomIn, Gift
@@ -235,10 +236,14 @@ export default function GalerimPage() {
   return (
     <div className="flex overflow-hidden bg-white" style={{ height: "100dvh" }}>
       <AppSidebar activeChatId={null} onSelectChat={(id) => router.push(`/?chat=${id}`)} onNewChat={() => router.push("/")} refreshTrigger={0} />
-      <MobileNavWrapper />
+      <GlobalMobileNav />
 
       <main className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-        <div className="mx-auto max-w-4xl px-5 py-8 pb-28 md:pb-10">
+        <div
+    className="md:hidden shrink-0"
+    style={{ height: "calc(3.5rem + env(safe-area-inset-top))" }}
+  />
+        <div className="mx-auto max-w-4xl px-5 py-8 pb-10 md:pb-10">
 
           <div className="mb-8">
             <div className="flex items-center gap-2.5 mb-1">

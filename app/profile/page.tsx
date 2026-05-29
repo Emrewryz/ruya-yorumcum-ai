@@ -12,9 +12,9 @@ import {
 } from "@/app/actions/profile-actions";
 import CreditModal from "@/components/CreditModal";
 import AppSidebar from "@/components/AppSidebar";
-import MobileNavWrapper from "@/components/MobileNavWrapper";
+import GlobalMobileNav from "@/components/GlobalMobileNav";
 
-// ─── Soru meta verisi (onboarding ile aynı) ───────────────────────────────────
+// ─── Soru meta verisi ─────────────────────────────────────────────────────────
 
 const QUESTION_META: Record<string, { label: string; options: Record<string, string> }> = {
   yasam_evreni: {
@@ -65,7 +65,7 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
   );
 }
 
-// ─── Profil Kartı (Hesap & Kredi) ────────────────────────────────────────────
+// ─── Profil Kartı ─────────────────────────────────────────────────────────────
 
 function AccountSection({
   profile,
@@ -97,7 +97,6 @@ function AccountSection({
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-base font-bold text-white">
             {(profile.full_name?.charAt(0) || profile.email?.charAt(0) || "U").toUpperCase()}
           </div>
-
           <div>
             {editing ? (
               <div className="flex items-center gap-2">
@@ -319,9 +318,13 @@ function ProfileContent() {
         className="flex-1 overflow-y-auto"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {/* Mobilde bottom nav için padding */}
-        <div className="mx-auto max-w-2xl px-6 py-8 pb-28 md:pb-10">
+        {/* Mobil header boşluğu */}
+        <div
+          className="md:hidden shrink-0"
+          style={{ height: "calc(3.5rem + env(safe-area-inset-top))" }}
+        />
 
+        <div className="mx-auto max-w-2xl px-6 py-8 pb-10">
           <button
             onClick={() => router.push("/")}
             className="group mb-7 flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-700 transition-colors"
@@ -338,10 +341,7 @@ function ProfileContent() {
           </div>
 
           <div className="space-y-6">
-            <AccountSection
-              profile={profile}
-              onCreditClick={() => setCreditModalOpen(true)}
-            />
+            <AccountSection profile={profile} onCreditClick={() => setCreditModalOpen(true)} />
             <AlgorithmSection profile={profile} />
           </div>
         </div>
@@ -358,7 +358,7 @@ export default function ProfilePage() {
   return (
     <div className="flex overflow-hidden bg-white" style={{ height: "100dvh" }}>
 
-      {/* Masaüstü Sidebar */}
+      {/* Desktop Sidebar */}
       <AppSidebar
         activeChatId={null}
         onSelectChat={(id) => router.push(`/?chat=${id}`)}
@@ -366,8 +366,8 @@ export default function ProfilePage() {
         refreshTrigger={0}
       />
 
-      {/* Mobil Bottom Nav */}
-      <MobileNavWrapper />
+      {/* Mobil Header + Drawer */}
+      <GlobalMobileNav />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-white">
         <Suspense fallback={

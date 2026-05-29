@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Compass, Download } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
-import MobileNavWrapper from "@/components/MobileNavWrapper";
+import GlobalMobileNav from "@/components/GlobalMobileNav";
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Macera:    "bg-amber-100 text-amber-700",
 };
 
-// ─── Kart — Lightbox yok, Link ile detay sayfasına git ───────────────────────
+// ─── Kart ─────────────────────────────────────────────────────────────────────
 
 function DreamCard({ dream }: { dream: PublicDream }) {
   const color = CATEGORY_COLORS[dream.category ?? ""] ?? "bg-zinc-100 text-zinc-600";
@@ -51,8 +51,6 @@ function DreamCard({ dream }: { dream: PublicDream }) {
 
   const CardContent = (
     <div className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
-
-      {/* Görsel */}
       <div className="relative aspect-square w-full overflow-hidden bg-zinc-100 min-h-[200px]">
         <Image
           src={dream.image_url}
@@ -64,8 +62,6 @@ function DreamCard({ dream }: { dream: PublicDream }) {
           loading="lazy"
           decoding="async"
         />
-
-        {/* Kategori */}
         {dream.category && (
           <div className="absolute left-3 top-3">
             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${color}`}>
@@ -73,8 +69,6 @@ function DreamCard({ dream }: { dream: PublicDream }) {
             </span>
           </div>
         )}
-
-        {/* İndir */}
         <button
           onClick={handleDownload}
           className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 hover:bg-black/70"
@@ -84,7 +78,6 @@ function DreamCard({ dream }: { dream: PublicDream }) {
         </button>
       </div>
 
-      {/* Bilgi */}
       <div className="p-4">
         <p className="mb-2 line-clamp-2 text-sm font-medium text-zinc-800 leading-snug">
           {dream.dream_title || dream.dream_text.slice(0, 60)}
@@ -107,10 +100,7 @@ function DreamCard({ dream }: { dream: PublicDream }) {
     </div>
   );
 
-  // Slug varsa Link, yoksa div
-  if (href) {
-    return <Link href={href}>{CardContent}</Link>;
-  }
+  if (href) return <Link href={href}>{CardContent}</Link>;
   return <div>{CardContent}</div>;
 }
 
@@ -137,10 +127,19 @@ export default function KesfetClient({ dreams }: { dreams: PublicDream[] }) {
         onNewChat={() => router.push("/")}
         refreshTrigger={0}
       />
-      <MobileNavWrapper />
+
+      {/* Mobil Header + Drawer */}
+      <GlobalMobileNav />
 
       <main className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-        <div className="mx-auto max-w-5xl px-5 py-8 pb-28 md:pb-10">
+
+        {/* Mobil header boşluğu */}
+        <div
+          className="md:hidden shrink-0"
+          style={{ height: "calc(3.5rem + env(safe-area-inset-top))" }}
+        />
+
+        <div className="mx-auto max-w-5xl px-5 py-8 pb-10">
 
           {/* Başlık */}
           <div className="mb-8">

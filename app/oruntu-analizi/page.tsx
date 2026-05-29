@@ -6,6 +6,7 @@ import { Loader2, ArrowLeft, BarChart2, AlertCircle } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { generateOruntuAnalizi } from "@/app/actions/oruntu-actions";
 import AppSidebar from "@/components/AppSidebar";
+import GlobalMobileNav from "@/components/GlobalMobileNav";
 
 interface DreamSummary {
   id:          string;
@@ -69,7 +70,9 @@ export default function OruntuAnaliziPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex overflow-hidden bg-white" style={{ height: "100dvh" }}>
+
+      {/* Desktop Sidebar */}
       <AppSidebar
         activeChatId={null}
         onSelectChat={(id) => router.push(`/?chat=${id}`)}
@@ -77,8 +80,18 @@ export default function OruntuAnaliziPage() {
         refreshTrigger={0}
       />
 
+      {/* Mobil Header + Drawer */}
+      <GlobalMobileNav />
+
       <main className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-        <div className="mx-auto max-w-2xl px-6 py-8">
+
+        {/* Mobil header boşluğu */}
+        <div
+          className="md:hidden shrink-0"
+          style={{ height: "calc(3.5rem + env(safe-area-inset-top))" }}
+        />
+
+        <div className="mx-auto max-w-2xl px-6 py-8 pb-10">
 
           {/* Geri */}
           <button
@@ -183,10 +196,10 @@ export default function OruntuAnaliziPage() {
                     </>
                   ) : (
                     <>
-  <BarChart2 className="h-4 w-4" strokeWidth={1.5} />
-  Haftalık Analizi Başlat
-  <span className="rounded-md bg-white/15 px-2 py-0.5 text-xs">5 Kredi</span>
-</>
+                      <BarChart2 className="h-4 w-4" strokeWidth={1.5} />
+                      Haftalık Analizi Başlat
+                      <span className="rounded-md bg-white/15 px-2 py-0.5 text-xs">5 Kredi</span>
+                    </>
                   )}
                 </button>
               )}
