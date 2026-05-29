@@ -7,7 +7,7 @@ import { Calendar } from "lucide-react";
 
 const SITE_URL = "https://www.ruyayorumcum.com.tr";
 
-// ─── 1. Dinamik Metadata — Crawl Budget Koruması ─────────────────────────────
+// ─── Metadata (değişmedi) ─────────────────────────────────────────────────────
 
 export async function generateMetadata({
   searchParams,
@@ -89,14 +89,14 @@ export default async function BlogPage({
           </p>
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="divide-y divide-zinc-100">
           {posts.map((post) => (
             <Link
               key={post.id}
               href={`/blog/${post.slug}`}
-              className="group flex flex-col gap-1.5 rounded-xl border border-transparent px-4 py-4 transition-all hover:border-zinc-200 hover:bg-zinc-50"
+              className="group flex flex-col gap-1.5 px-2 py-5 transition-all hover:bg-zinc-50/80 rounded-xl -mx-2"
             >
-              <h2 className="text-base font-semibold text-zinc-900 group-hover:text-zinc-700 transition-colors">
+              <h2 className="text-base font-semibold text-zinc-900 group-hover:text-zinc-600 transition-colors">
                 {post.title}
               </h2>
               {post.excerpt && (

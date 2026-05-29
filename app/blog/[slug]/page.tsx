@@ -7,7 +7,7 @@ import { Calendar } from "lucide-react";
 
 const SITE_URL = "https://www.ruyayorumcum.com.tr";
 
-// ─── Metadata ─────────────────────────────────────────────────────────────────
+// ─── Metadata (değişmedi) ─────────────────────────────────────────────────────
 
 export async function generateMetadata({
   params,
@@ -63,40 +63,34 @@ function renderContent(content: any): React.ReactNode {
     switch (block.type) {
       case "heading":
         return (
-          <h2 key={i} className="mt-8 mb-3 text-xl font-semibold text-zinc-900">
+          <h2 key={i} className="mt-10 mb-4 text-xl font-semibold text-zinc-900">
             {block.content}
           </h2>
         );
       case "subheading":
         return (
-          <h3 key={i} className="mt-6 mb-2 text-lg font-semibold text-zinc-800">
+          <h3 key={i} className="mt-7 mb-3 text-lg font-semibold text-zinc-800">
             {block.content}
           </h3>
         );
       case "paragraph":
         return (
-          <p key={i} className="mb-4 leading-loose text-zinc-700">
+          <p key={i} className="mb-5 text-[17px] leading-loose text-zinc-700">
             {block.content}
           </p>
         );
       case "image":
         return (
-          <figure key={i} className="my-6">
-            {/*
-              İçerik bloğu görselleri için standart <img> kullanılıyor.
-              Bu görsellerin kaynağı dinamik ve next.config'de
-              remotePatterns'a eklenmemiş olabilir.
-              loading="lazy" ve decoding="async" ile Core Web Vitals korunuyor.
-            */}
+          <figure key={i} className="my-8">
             <img
               src={block.url}
               alt={block.alt ?? ""}
               loading="lazy"
               decoding="async"
-              className="w-full rounded-xl object-cover"
+              className="w-full rounded-2xl object-cover"
             />
             {block.caption && (
-              <figcaption className="mt-2 text-center text-xs text-zinc-400">
+              <figcaption className="mt-2.5 text-center text-xs text-zinc-400">
                 {block.caption}
               </figcaption>
             )}
@@ -106,14 +100,14 @@ function renderContent(content: any): React.ReactNode {
         return (
           <blockquote
             key={i}
-            className="my-6 border-l-2 border-zinc-300 pl-4 italic text-zinc-600"
+            className="my-7 border-l-[3px] border-zinc-300 bg-zinc-50/50 px-5 py-3 rounded-r-lg italic text-[16px] leading-loose text-zinc-600"
           >
             {block.content}
           </blockquote>
         );
       default:
         return block.content ? (
-          <p key={i} className="mb-4 leading-loose text-zinc-700">
+          <p key={i} className="mb-5 text-[17px] leading-loose text-zinc-700">
             {block.content}
           </p>
         ) : null;
@@ -139,7 +133,7 @@ export default async function BlogDetailPage({
 
   if (error || !post) notFound();
 
-  // İlgili blog yazıları
+  // İlgili blog yazıları (değişmedi)
   const { data: relatedPosts } = await supabase
     .from("blog_posts")
     .select("id, title, slug, excerpt, created_at")
@@ -152,26 +146,37 @@ export default async function BlogDetailPage({
     day: "numeric", month: "long", year: "numeric",
   });
 
-  // Breadcrumb Schema
+  const postUrl = `${SITE_URL}/blog/${post.slug}`;
+
+  // Breadcrumb Schema (değişmedi)
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_URL}/blog` },
-      { "@type": "ListItem", position: 3, name: post.title, item: `${SITE_URL}/blog/${post.slug}` },
+      { "@type": "ListItem", position: 2, name: "Blog",      item: `${SITE_URL}/blog` },
+      { "@type": "ListItem", position: 3, name: post.title,  item: postUrl },
     ],
   };
 
-  // Article Schema
+  // Article Schema — author + mainEntityOfPage eklendi
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: post.title,
+    headline:    post.title,
     description: post.excerpt,
     datePublished: post.created_at,
     image: post.image_url,
-    url: `${SITE_URL}/blog/${post.slug}`,
+    url: postUrl,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": postUrl,
+    },
+    author: {
+      "@type": "Organization",
+      name: "Rüya Yorumcum Uzman Kadrosu",
+      url: SITE_URL,
+    },
     publisher: {
       "@type": "Organization",
       name: "Rüya Yorumcum",
@@ -196,14 +201,14 @@ export default async function BlogDetailPage({
         </span>
       </nav>
 
-      {/* ── Kapak Görseli — next/image ile CLS önlendi ── */}
+      {/* Kapak Görseli — 16/9 sinematik oran */}
       {post.image_url && (
-        <div className="relative mb-8 aspect-[16/7] w-full overflow-hidden rounded-2xl">
+        <div className="relative mb-8 aspect-video w-full overflow-hidden rounded-2xl">
           <Image
             src={post.image_url}
             alt={post.title}
             fill
-            priority          // LCP görseli — önce yükle
+            priority
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 672px"
           />
@@ -216,7 +221,7 @@ export default async function BlogDetailPage({
           {post.title}
         </h1>
         {post.excerpt && (
-          <p className="text-base leading-relaxed text-zinc-500">{post.excerpt}</p>
+          <p className="text-[17px] leading-relaxed text-zinc-500">{post.excerpt}</p>
         )}
         <div className="mt-4 flex items-center gap-1.5 text-xs text-zinc-400">
           <Calendar className="h-3 w-3" strokeWidth={1.5} />
@@ -224,11 +229,27 @@ export default async function BlogDetailPage({
         </div>
       </header>
 
-      <div className="border-t border-zinc-100 mb-8" />
+      <hr className="border-zinc-100 mb-8" />
 
       {/* İçerik */}
-      <div className="text-[15px]">
+      <div>
         {renderContent(post.content)}
+      </div>
+
+      {/* CTA */}
+      <div className="mt-14 rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center">
+        <p className="mb-1 font-semibold text-zinc-900">
+          Rüyanızın bilinçaltınızdaki gerçek karşılığını merak ediyor musunuz?
+        </p>
+        <p className="mb-4 text-sm text-zinc-500">
+          Yapay zeka ile hem İslami hem psikolojik açıdan anında analiz edin. İlk analiz ücretsiz.
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700"
+        >
+          Rüyamı Analiz Et
+        </Link>
       </div>
 
       {/* İlgili Yazılar */}
@@ -236,7 +257,7 @@ export default async function BlogDetailPage({
         <div className="mt-14">
           <div className="mb-5 flex items-center gap-3">
             <div className="h-px flex-1 bg-zinc-100" />
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-400">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
               İlgili Yazılar
             </h2>
             <div className="h-px flex-1 bg-zinc-100" />

@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+
+
+
 import localFont from "next/font/local";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -19,9 +22,14 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Rüya Yorumcum — Yapay Zeka Destekli Rüya Analizi",
-  description: "Rüyanızı yazın, yapay zeka hem İslami hem psikolojik açıdan anında yorumlasın. Ücretsiz ilk analiz.",
   metadataBase: new URL("https://www.ruyayorumcum.com.tr"),
+  title: "Rüya Yorumcum | Yapay Zeka ile Rüyanı Analiz Et ve Çizdir Ücretsiz",
+  description:
+    "Sıkıcı rüya tabirlerini unutun. Yapay zeka ile rüyanızın psikolojik ve İslami analizini öğrenin, rüyanızı muazzam bir tabloya dönüştürün. Ücretsiz analiz için tıklayın!",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

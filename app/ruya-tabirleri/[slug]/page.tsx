@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, BookOpen, Brain, HelpCircle, Eye } from "lucide-react";
 import RelatedDreams from "@/components/RelatedDreams";
 
-// ISR — 60 saniyede bir yenile
+// ISR — 30 saniyede bir yenile
 export const revalidate = 30;
 
 const SITE_URL = "https://www.ruyayorumcum.com.tr";
 
-// ─── Metadata ─────────────────────────────────────────────────────────────────
+// ─── Metadata (değişmedi) ─────────────────────────────────────────────────────
 
 export async function generateMetadata({
   params,
@@ -40,180 +40,7 @@ export async function generateMetadata({
   };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// BÖLÜM BİLEŞENLERİ — Ultimate Format
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function PsychologicalSection({ text }: { text: string }) {
-  return (
-    <section className="mb-10">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-100" />
-        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400">
-          Psikolojik & Bilinçaltı Analizi
-        </h2>
-        <div className="h-px flex-1 bg-zinc-100" />
-      </div>
-      <div
-        className="rounded-2xl border border-zinc-200 bg-white p-6 text-[15px] leading-loose text-zinc-700"
-        dangerouslySetInnerHTML={{ __html: text.replace(/\n/g, "<br/>") }}
-      />
-    </section>
-  );
-}
-
-function PillarCard({ pillar }: { pillar: { title: string; description: string } }) {
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
-      <p className="mb-2 text-sm font-semibold text-zinc-900">{pillar.title}</p>
-      <p className="text-sm leading-relaxed text-zinc-600">{pillar.description}</p>
-    </div>
-  );
-}
-
-function TraditionalWisdomSection({
-  data,
-}: {
-  data: { introduction: string; pillars: { title: string; description: string }[] };
-}) {
-  return (
-    <section className="mb-10">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-100" />
-        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400">
-          Kadim Bilgelik & Dini Yorumlar
-        </h2>
-        <div className="h-px flex-1 bg-zinc-100" />
-      </div>
-      {data.introduction && (
-        <p className="mb-5 text-[15px] leading-loose text-zinc-700">{data.introduction}</p>
-      )}
-      {data.pillars?.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {data.pillars.map((pillar, i) => (
-            <PillarCard key={i} pillar={pillar} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-const SCENARIO_COLORS = [
-  "border-violet-300", "border-sky-300", "border-emerald-300",
-  "border-amber-300",  "border-rose-300", "border-indigo-300",
-];
-
-function ScenariosSection({ scenarios }: { scenarios: { title: string; meaning: string }[] }) {
-  return (
-    <section className="mb-10">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-100" />
-        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400">
-          Farklı Senaryolar & Durumlar
-        </h2>
-        <div className="h-px flex-1 bg-zinc-100" />
-      </div>
-      <div className="space-y-3">
-        {scenarios.map((scenario, i) => (
-          <div
-            key={i}
-            className={`rounded-xl border-l-4 bg-white border border-zinc-200 pl-5 pr-5 py-4 ${
-              SCENARIO_COLORS[i % SCENARIO_COLORS.length]
-            }`}
-          >
-            <p className="mb-1.5 text-sm font-semibold text-zinc-900">{scenario.title}</p>
-            <p className="text-sm leading-relaxed text-zinc-600">{scenario.meaning}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function FaqSection({ faqs }: { faqs: { question: string; answer: string }[] }) {
-  return (
-    <section className="mb-10">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-100" />
-        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400">
-          Sıkça Sorulan Sorular
-        </h2>
-        <div className="h-px flex-1 bg-zinc-100" />
-      </div>
-      <div className="space-y-3">
-        {faqs.map((faq, i) => (
-          <div key={i} className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
-            <div className="border-b border-zinc-100 bg-zinc-50 px-5 py-3.5">
-              <p className="text-sm font-semibold text-zinc-900">{faq.question}</p>
-            </div>
-            <div className="px-5 py-4">
-              <p className="text-sm leading-relaxed text-zinc-600">{faq.answer}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// ANA RENDERER — Ultimate + Fallback
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function renderDictionaryContent(content: any): React.ReactNode {
-  if (!content) return null;
-
-  if (content.type === "ultimate") {
-    return (
-      <div>
-        {content.psychological && <PsychologicalSection text={content.psychological} />}
-        {content.traditional_wisdom &&
-          (content.traditional_wisdom.introduction || content.traditional_wisdom.pillars?.length > 0) && (
-            <TraditionalWisdomSection data={content.traditional_wisdom} />
-          )}
-        {Array.isArray(content.scenarios) && content.scenarios.length > 0 && (
-          <ScenariosSection scenarios={content.scenarios} />
-        )}
-        {Array.isArray(content.faq) && content.faq.length > 0 && (
-          <FaqSection faqs={content.faq} />
-        )}
-      </div>
-    );
-  }
-
-  if (Array.isArray(content.blocks) || Array.isArray(content)) {
-    const blocks: any[] = Array.isArray(content) ? content : content.blocks;
-    return (
-      <div>
-        {blocks.map((block: any, i: number) => {
-          switch (block.type) {
-            case "heading":
-              return <h2 key={i} className="mt-8 mb-3 text-lg font-semibold text-zinc-900">{block.content}</h2>;
-            case "subheading":
-              return <h3 key={i} className="mt-6 mb-2 text-base font-semibold text-zinc-800">{block.content}</h3>;
-            case "paragraph":
-              return <p key={i} className="mb-4 leading-loose text-zinc-700">{block.content}</p>;
-            default:
-              return block.content
-                ? <p key={i} className="mb-4 leading-loose text-zinc-700">{block.content}</p>
-                : null;
-          }
-        })}
-      </div>
-    );
-  }
-
-  if (typeof content === "string") {
-    return <p className="mb-4 leading-loose text-zinc-700">{content}</p>;
-  }
-
-  return null;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// FAQ SCHEMA BUILDER
-// ═══════════════════════════════════════════════════════════════════════════════
+// ─── FAQ Schema Builder (değişmedi) ──────────────────────────────────────────
 
 function buildFaqSchema(content: any, term: string) {
   if (!content) return null;
@@ -257,9 +84,140 @@ function buildFaqSchema(content: any, term: string) {
   };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SAYFA
-// ═══════════════════════════════════════════════════════════════════════════════
+// ─── Bölüm Başlığı ────────────────────────────────────────────────────────────
+
+function SectionHeading({
+  icon: Icon,
+  children,
+}: {
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
+  return (
+    <h2 className="flex items-center gap-2.5 text-base font-semibold text-zinc-900 mb-4 mt-10">
+      <Icon className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1.5} />
+      {children}
+    </h2>
+  );
+}
+
+// ─── Düz Metin Paragrafı ──────────────────────────────────────────────────────
+
+function Prose({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("\n").filter(Boolean).map((line, i) => (
+        <p key={i} className="text-[16px] leading-loose text-zinc-700 mb-4">
+          {line}
+        </p>
+      ))}
+    </>
+  );
+}
+
+// ─── İçerik Render (yeni sıralama ve sade tasarım) ───────────────────────────
+
+function renderDictionaryContent(content: any): React.ReactNode {
+  if (!content) return null;
+
+  // ── "ultimate" format ──
+  if (content.type === "ultimate") {
+    const faqItems: { question: string; answer: string }[] = [
+      ...(Array.isArray(content.faq) ? content.faq : []),
+      ...(Array.isArray(content.scenarios)
+        ? content.scenarios.map((s: any) => ({ question: s.title, answer: s.meaning }))
+        : []),
+    ];
+
+    return (
+      <>
+        {/* 1. İslami ve Dini Yorum */}
+        {content.traditional_wisdom &&
+          (content.traditional_wisdom.introduction || content.traditional_wisdom.pillars?.length > 0) && (
+            <section>
+              <SectionHeading icon={BookOpen}>İslami ve Dini Yorum</SectionHeading>
+              {content.traditional_wisdom.introduction && (
+                <Prose text={content.traditional_wisdom.introduction} />
+              )}
+              {Array.isArray(content.traditional_wisdom.pillars) &&
+                content.traditional_wisdom.pillars.map((p: any, i: number) => (
+                  <div key={i} className="mb-5">
+                    <p className="text-[15px] font-semibold text-zinc-800 mb-1.5">{p.title}</p>
+                    <p className="text-[16px] leading-loose text-zinc-700">{p.description}</p>
+                  </div>
+                ))}
+              <hr className="border-zinc-100 my-8" />
+            </section>
+          )}
+
+        {/* 2. Psikolojik Analiz */}
+        {content.psychological && (
+          <section>
+            <SectionHeading icon={Brain}>Psikolojik Analiz</SectionHeading>
+            <Prose text={content.psychological} />
+            <hr className="border-zinc-100 my-8" />
+          </section>
+        )}
+
+        {/* 3. Sıkça Sorulan Sorular (FAQ + Senaryolar birleşik) */}
+        {faqItems.length > 0 && (
+          <section>
+            <SectionHeading icon={HelpCircle}>Sıkça Sorulan Sorular</SectionHeading>
+            <div className="space-y-6">
+              {faqItems.map((item, i) => (
+                <div key={i}>
+                  <p className="text-[15px] font-semibold text-zinc-800 mb-1.5">{item.question}</p>
+                  <p className="text-[16px] leading-loose text-zinc-700">{item.answer}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </>
+    );
+  }
+
+  // ── Legacy "blocks" format ──
+  if (Array.isArray(content.blocks) || Array.isArray(content)) {
+    const blocks: any[] = Array.isArray(content) ? content : content.blocks;
+    return (
+      <>
+        {blocks.map((block: any, i: number) => {
+          switch (block.type) {
+            case "heading":
+              return (
+                <h2 key={i} className="text-lg font-semibold text-zinc-900 mt-10 mb-4">
+                  {block.content}
+                </h2>
+              );
+            case "subheading":
+              return (
+                <h3 key={i} className="text-base font-semibold text-zinc-800 mt-7 mb-3">
+                  {block.content}
+                </h3>
+              );
+            case "paragraph":
+            default:
+              return block.content ? (
+                <p key={i} className="text-[16px] leading-loose text-zinc-700 mb-4">
+                  {block.content}
+                </p>
+              ) : null;
+          }
+        })}
+      </>
+    );
+  }
+
+  // ── Plain string ──
+  if (typeof content === "string") {
+    return <Prose text={content} />;
+  }
+
+  return null;
+}
+
+// ─── Sayfa ────────────────────────────────────────────────────────────────────
 
 export default async function DreamDictionaryDetailPage({
   params,
@@ -281,7 +239,7 @@ export default async function DreamDictionaryDetailPage({
 
   if (error || !entry) notFound();
 
-  // Arama sayacı — fire and forget
+  // Arama sayacı — fire and forget (değişmedi)
   supabase
     .from("dream_dictionary")
     .update({ search_count: (entry.search_count ?? 0) + 1 })
@@ -290,7 +248,7 @@ export default async function DreamDictionaryDetailPage({
 
   const tags: string[] = Array.isArray(entry.tags) ? entry.tags : [];
 
-  // ── JSON-LD ──
+  // ── JSON-LD (değişmedi) ──
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -315,10 +273,10 @@ export default async function DreamDictionaryDetailPage({
   const faqSchema = buildFaqSchema(entry.content, entry.term);
 
   return (
-    <article className="mx-auto max-w-2xl px-5 py-10">
+    <article className="mx-auto max-w-2xl px-5 py-12">
 
       {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-1.5 text-xs text-zinc-400" aria-label="Breadcrumb">
+      <nav className="mb-8 flex items-center gap-1.5 text-xs text-zinc-400" aria-label="Breadcrumb">
         <Link href="/" className="hover:text-zinc-600 transition-colors">Ana Sayfa</Link>
         <span>/</span>
         <Link href="/ruya-tabirleri" className="hover:text-zinc-600 transition-colors">Rüya Tabirleri</Link>
@@ -328,28 +286,30 @@ export default async function DreamDictionaryDetailPage({
 
       {/* Başlık */}
       <header className="mb-8">
-        <div className="mb-3">
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500">
+        <div className="mb-4">
+          <span className="inline-flex items-center gap-1.5 text-xs text-zinc-400">
             <TrendingUp className="h-3 w-3" strokeWidth={1.5} />
             {(entry.search_count ?? 0).toLocaleString("tr-TR")} kez arandı
           </span>
         </div>
 
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 leading-snug">
           {entry.term} Rüyası Ne Anlama Gelir?
         </h1>
 
         {entry.description && (
-          <p className="mt-3 text-base leading-relaxed text-zinc-500">{entry.description}</p>
+          <p className="mt-4 text-[17px] leading-relaxed text-zinc-500">
+            {entry.description}
+          </p>
         )}
 
         {tags.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-5 flex flex-wrap gap-2">
             {tags.map((tag) => (
               <Link
                 key={tag}
                 href={`/ruya-tabirleri?q=${encodeURIComponent(tag)}`}
-                className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-400 hover:text-zinc-900"
+                className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-800"
               >
                 #{tag}
               </Link>
@@ -358,15 +318,24 @@ export default async function DreamDictionaryDetailPage({
         )}
       </header>
 
-      <div className="border-t border-zinc-100 mb-8" />
+      <hr className="border-zinc-100 mb-8" />
 
-      {/* İçerik */}
-      <div className="text-[15px]">
+      {/* Genel Bakış — description'dan ayrı, content'in ilk paragrafından gelebilir */}
+      {entry.content?.introduction && (
+        <section className="mb-2">
+          <SectionHeading icon={Eye}>Genel Bakış</SectionHeading>
+          <Prose text={entry.content.introduction} />
+          <hr className="border-zinc-100 my-8" />
+        </section>
+      )}
+
+      {/* Ana İçerik */}
+      <div>
         {renderDictionaryContent(entry.content)}
       </div>
 
       {/* CTA */}
-      <div className="mt-10 rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center">
+      <div className="mt-14 rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center">
         <p className="mb-1 font-semibold text-zinc-900">{entry.term} rüyasını mı gördünüz?</p>
         <p className="mb-4 text-sm text-zinc-500">Yapay zeka ile kişisel analizinizi hemen alın.</p>
         <Link
@@ -377,13 +346,13 @@ export default async function DreamDictionaryDetailPage({
         </Link>
       </div>
 
-      {/* Benzer Rüya Tabirleri — tag overlap + fallback */}
+      {/* Benzer Rüya Tabirleri */}
       <RelatedDreams
         currentSlug={entry.slug}
         tags={tags}
       />
 
-      {/* JSON-LD */}
+      {/* JSON-LD (değişmedi) */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {faqSchema && (
