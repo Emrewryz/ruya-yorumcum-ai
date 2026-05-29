@@ -14,17 +14,20 @@ const nextConfig = {
   },
 
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "images.pexels.com" },
-      { protocol: "https", hostname: "upload.wikimedia.org" },
-      {
-        protocol: "https",
-        hostname: "jhejnsarsxhvmsquxuat.supabase.co",
-        pathname: "/storage/v1/object/public/**",
-      },
-    ],
-  },
+  remotePatterns: [
+    { protocol: "https", hostname: "images.unsplash.com" },
+    { protocol: "https", hostname: "images.pexels.com" },
+    { protocol: "https", hostname: "upload.wikimedia.org" },
+    {
+      protocol: "https",
+      hostname: "jhejnsarsxhvmsquxuat.supabase.co",
+      pathname: "/storage/v1/object/public/**",
+    },
+    { protocol: "https", hostname: "*.supabase.co" },
+    { protocol: "https", hostname: "www.ruyayorumcum.com.tr" }, // ← ekle
+    { protocol: "https", hostname: "ruyayorumcum.com.tr" },     // ← www'siz hali de
+  ],
+},
 
   async headers() {
     return [

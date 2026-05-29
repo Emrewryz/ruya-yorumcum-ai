@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, RefreshCw, Pencil, Trash2, Loader2, Eye, EyeOff } from "lucide-react";
+import { Plus, Search, RefreshCw, Pencil, Trash2, Loader2, Eye, EyeOff,Newspaper } from "lucide-react";
 import { getDreamEntries, deleteDreamEntry } from "@/app/actions/cms-actions";
 
 interface Entry {
@@ -73,6 +73,13 @@ export default function AdminCmsPage() {
           >
             <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.5} />
           </button>
+           <Link
+    href="/admin/blog-ekle"
+    className="flex items-center gap-2 rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-300 hover:border-zinc-500 hover:text-white transition-colors"
+  >
+    <Newspaper className="h-4 w-4" strokeWidth={1.5} />
+    Blog Ekle
+  </Link>
           <Link
             href="/admin/cms/ruya-ekle"
             className="flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-amber-300 transition-colors"

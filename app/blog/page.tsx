@@ -47,15 +47,17 @@ export default async function BlogPage({
   const supabase = createClient();
   const query    = searchParams.q?.trim() ?? "";
 
-  let dbQuery = supabase
-    .from("blog_posts")
-    .select("id, title, slug, excerpt, image_url, created_at")
-    .eq("is_published", true)
-    .order("created_at", { ascending: false });
-
+  // blog_posts listesi
+let dbQuery = supabase
+  .from("blog_posts")
+  .select("id, title, slug, excerpt, image_url, created_at")
+  .eq("is_published", true)
+  .lte("published_at", new Date().toISOString()) // ← ekle
+  .order("created_at", { ascending: false });
   if (query) {
     dbQuery = dbQuery.ilike("title", `%${query}%`);
   }
+  
 
   const { data: posts } = await dbQuery;
 

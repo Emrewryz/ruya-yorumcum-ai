@@ -125,12 +125,12 @@ export default async function BlogDetailPage({
   const supabase = createClient();
 
   const { data: post, error } = await supabase
-    .from("blog_posts")
-    .select("id, title, slug, excerpt, content, image_url, created_at")
-    .eq("slug", params.slug)
-    .eq("is_published", true)
-    .single();
-
+  .from("blog_posts")
+  .select("id, title, slug, excerpt, content, image_url, created_at")
+  .eq("slug", params.slug)
+  .eq("is_published", true)
+  .lte("published_at", new Date().toISOString()) // ← ekle
+  .single();
   if (error || !post) notFound();
 
   // İlgili blog yazıları (değişmedi)
