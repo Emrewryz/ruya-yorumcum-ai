@@ -7,12 +7,13 @@ import { PenLine, Clock, BarChart2, Compass, User } from "lucide-react";
 interface MobileNavProps {
   onNewChat:    () => void;
   activeChatId: string | null;
+  onOpenHistory?: () => void; // <-- Kenar çubuğunu (geçmişi) açmak için eklendi
 }
 
-export default function MobileNav({ onNewChat, activeChatId }: MobileNavProps) {
+export default function MobileNav({ onNewChat, activeChatId, onOpenHistory }: MobileNavProps) {
   const pathname = usePathname();
 
-  const isHome   = pathname === "/" && !activeChatId;
+  const isHome    = pathname === "/" && !activeChatId;
   const isHistory = pathname === "/" && !!activeChatId;
   const isAnaliz  = pathname === "/oruntu-analizi";
   const isKesfet  = pathname.startsWith("/kesfet") || pathname.startsWith("/galerim");
@@ -35,7 +36,7 @@ export default function MobileNav({ onNewChat, activeChatId }: MobileNavProps) {
 
       {/* Geçmiş */}
       <button
-        onClick={() => {}}
+        onClick={onOpenHistory} // <-- BOŞ FONKSİYON YERİNE YENİ PROP EKLENDİ
         className={`${base} ${isHistory ? active : passive}`}
       >
         <Clock className="h-5 w-5" strokeWidth={1.5} />
