@@ -1,7 +1,4 @@
 import type { Metadata } from "next";
-
-
-
 import localFont from "next/font/local";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -45,8 +42,8 @@ export default function RootLayout({
         {/* Vercel Speed Insights */}
         <SpeedInsights />
 
-        {/* Google Analytics */}
-        {process.env.NEXT_PUBLIC_GA_ID && (
+        {/* Google Analytics — Sadece canlı ortamda (production) çalışır, localhost'ta engellenir */}
+        {process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}
       </body>
