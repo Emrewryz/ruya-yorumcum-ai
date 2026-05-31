@@ -81,16 +81,17 @@ function AuthForm() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-[100dvh] bg-zinc-50 flex flex-col items-start overflow-y-auto px-4 pt-12 pb-40">
+
 
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-2 mb-10 group">
+      <Link href="/" className="flex items-center gap-2 mb-10 group mx-auto">
         <Moon className="h-4 w-4 text-zinc-900" strokeWidth={1.5} />
         <span className="text-sm font-bold text-zinc-900">Rüya Yorumcum</span>
       </Link>
 
       {/* Kart */}
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm mx-auto">
 
         {/* Başlık */}
         <div className="mb-8">

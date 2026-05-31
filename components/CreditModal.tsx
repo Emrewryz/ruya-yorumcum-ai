@@ -1,72 +1,59 @@
 "use client";
 
 import { useEffect, useCallback, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { X, Zap, Compass, FlaskConical, ShieldCheck, Loader2, CheckCircle, AlertCircle, Moon, Sparkles } from "lucide-react";
+import { X, ShieldCheck, Loader2, CheckCircle, AlertCircle, Moon, Sparkles, Zap, Star, Crown } from "lucide-react";
 import { claimOrder } from "@/app/actions/payment-actions";
 import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 // ─── Paket Tanımları ──────────────────────────────────────────────────────────
+// href: Shopier ürün linkinizi buraya yazın
 
 const PACKAGES = [
   {
-    key:           "tekli",
-    icon:          Zap,
-    name:          "Tekli Rapor",
-    credits:       1,
-    price:         39,
-    pricePerCredit:"39 TL / analiz",
-    description:   "Tek seferlik analiz.",
-    highlight:     false,
-    badge:         null,
-    href:          "#",
+    key:     "baslangic",
+    icon:    Zap,
+    name:    "Başlangıç",
+    credits: 10,
+    price:   49,
+    badge:   null,
+    highlight: false,
+    href:    "https://www.shopier.com/ruyayorumcumai/43928759",
   },
   {
-    key:           "kasif",
-    icon:          Compass,
-    name:          "Kâşif Paketi",
-    credits:       3,
-    price:         89,
-    pricePerCredit:"~29.6 TL / analiz",
-    description:   "Tekrarlayan rüyalar için.",
-    highlight:     true,
-    badge:         "En Popüler",
-    href:          "#",
+    key:     "populer",
+    icon:    Star,
+    name:    "Popüler",
+    credits: 30,
+    price:   119,
+    badge:   "En Popüler",
+    highlight: true,
+    href:    "https://www.shopier.com/ruyayorumcumai/43369308",
   },
   {
-    key:           "laboratuvar",
-    icon:          FlaskConical,
-    name:          "Laboratuvar",
-    credits:       10,
-    price:         169,
-    pricePerCredit:"~16.9 TL / analiz",
-    description:   "Düzenli araştırma için.",
-    highlight:     false,
-    badge:         "En Avantajlı",
-    href:          "#",
+    key:     "bilge",
+    icon:    Crown,
+    name:    "Bilge",
+    credits: 100,
+    price:   299,
+    badge:   "En Avantajlı",
+    highlight: false,
+    href:    "https://www.shopier.com/ruyayorumcumai/43369409",
   },
 ] as const;
 
 interface CreditModalProps {
-  open:     boolean;
-  onClose:  () => void;
-  reason?:  "NO_AUTH" | "NO_CREDIT";
+  open:    boolean;
+  onClose: () => void;
+  reason?: "NO_AUTH" | "NO_CREDIT";
 }
 
-// ─── Giriş Yap / Kayıt Ol Ekranı ─────────────────────────────────────────────
+// ─── Giriş Yap Ekranı ────────────────────────────────────────────────────────
 
 function AuthScreen({ onClose }: { onClose: () => void }) {
-  const router = useRouter();
-
-  function handleAuth(mode: "login" | "register") {
-    onClose();
-    router.push(`/auth?mode=${mode}`);
-  }
-
   return (
     <div className="overflow-hidden rounded-t-2xl md:rounded-2xl border border-zinc-200 bg-white shadow-xl">
 
-      {/* Header */}
       <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-zinc-100">
         <div>
           <h2 className="text-sm font-bold text-zinc-900">Devam etmek için giriş yap</h2>
@@ -80,17 +67,13 @@ function AuthScreen({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      {/* İçerik */}
       <div className="px-6 py-6">
-
-        {/* İkon */}
         <div className="mb-5 flex justify-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50">
             <Moon className="h-6 w-6 text-zinc-700" strokeWidth={1.5} />
           </div>
         </div>
 
-        {/* Avantajlar */}
         <div className="mb-6 space-y-2.5">
           {[
             "Her gün 2 ücretsiz analiz kredisi",
@@ -107,21 +90,23 @@ function AuthScreen({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        {/* Butonlar */}
         <div className="space-y-2">
-          <button
-            onClick={() => handleAuth("register")}
+          {/* target="_top" — TikTok in-app browser uyumlu */}
+          <a
+            href="/auth?mode=register"
+            target="_top"
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 transition-colors"
           >
             <Sparkles className="h-4 w-4" strokeWidth={1.5} />
             Ücretsiz Hesap Oluştur
-          </button>
-          <button
-            onClick={() => handleAuth("login")}
+          </a>
+          <a
+            href="/auth?mode=login"
+            target="_top"
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 transition-colors"
           >
             Zaten hesabım var, giriş yap
-          </button>
+          </a>
         </div>
       </div>
     </div>
@@ -131,9 +116,9 @@ function AuthScreen({ onClose }: { onClose: () => void }) {
 // ─── Sipariş Doğrulama ────────────────────────────────────────────────────────
 
 function ClaimSection({ onSuccess }: { onSuccess: (credits: number) => void }) {
-  const [orderId, setOrderId]           = useState("");
-  const [isPending, startTransition]    = useTransition();
-  const [result, setResult]             = useState<{ ok: boolean; msg: string } | null>(null);
+  const [orderId, setOrderId]        = useState("");
+  const [isPending, startTransition] = useTransition();
+  const [result, setResult]          = useState<{ ok: boolean; msg: string } | null>(null);
 
   function handleClaim() {
     if (!orderId.trim() || isPending) return;
@@ -151,8 +136,8 @@ function ClaimSection({ onSuccess }: { onSuccess: (credits: number) => void }) {
   }
 
   return (
-    <div className="border-t border-zinc-100 px-6 py-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">
+    <div className="border-t border-zinc-100 px-5 py-4">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-zinc-400">
         Ödemenizi Doğrulayın
       </p>
       <p className="mb-3 text-xs text-zinc-500 leading-relaxed">
@@ -195,68 +180,99 @@ function ClaimSection({ onSuccess }: { onSuccess: (credits: number) => void }) {
 
 // ─── Satın Alma Ekranı ────────────────────────────────────────────────────────
 
-function PurchaseScreen({ onClose, onSuccess }: { onClose: () => void; onSuccess: (c: number) => void }) {
+function PurchaseScreen({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: (c: number) => void;
+}) {
   return (
     <div className="overflow-hidden rounded-t-2xl md:rounded-2xl border border-zinc-200 bg-white shadow-xl">
 
-      {/* Header */}
-      <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-zinc-100">
+      <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-zinc-100">
         <div>
           <h2 className="text-sm font-bold text-zinc-900">Krediniz tükendi</h2>
-          <p className="text-xs text-zinc-500 mt-0.5">Aşağıdaki paketlerden birini seçerek devam edin.</p>
+          <p className="text-xs text-zinc-500 mt-0.5">Bir paket seçerek analizlerinize devam edin.</p>
         </div>
-        <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 text-zinc-400 hover:text-zinc-600 transition-colors">
+        <button
+          onClick={onClose}
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 text-zinc-400 hover:text-zinc-600 transition-colors"
+        >
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
 
       {/* Paketler */}
-      <div className="p-4 space-y-2">
+      <div className="p-4 space-y-2.5">
         {PACKAGES.map((pkg) => {
           const Icon = pkg.icon;
           return (
+            /*
+             * TikTok in-app browser uyumlu:
+             * - <a href="..."> — onClick/router.push YOK
+             * - target="_top"  — TikTok'un iframe'ini kırar, system browser'a taşır
+             * - target="_blank" KULLANILMADI
+             */
             <a
               key={pkg.key}
               href={pkg.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`group relative flex items-center gap-4 rounded-xl border p-4 transition-all duration-150 ${
-                pkg.highlight
+              target="_top"
+              rel="noopener"
+              className={`
+                relative flex items-center gap-4 rounded-xl border p-4
+                transition-all duration-150 active:scale-[0.99]
+                ${pkg.highlight
                   ? "border-zinc-900 bg-zinc-900 hover:bg-zinc-800"
                   : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
-              }`}
+                }
+              `}
             >
+              {/* Badge */}
               {pkg.badge && (
-                <div className={`absolute -top-2 right-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                  pkg.highlight ? "bg-white text-zinc-900" : "bg-zinc-100 text-zinc-600"
+                <div className={`absolute -top-2.5 right-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  pkg.highlight ? "bg-white text-zinc-900" : "bg-zinc-900 text-white"
                 }`}>
                   {pkg.badge}
                 </div>
               )}
+
+              {/* İkon */}
               <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
                 pkg.highlight ? "border-white/20 bg-white/10" : "border-zinc-200 bg-zinc-50"
               }`}>
                 <Icon className={`h-4 w-4 ${pkg.highlight ? "text-white" : "text-zinc-500"}`} strokeWidth={1.5} />
               </div>
+
+              {/* Bilgi */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className={`text-sm font-semibold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>{pkg.name}</span>
-                  <span className={`text-xs ${pkg.highlight ? "text-white/60" : "text-zinc-400"}`}>{pkg.credits} analiz</span>
-                </div>
-                <p className={`text-xs mt-0.5 ${pkg.highlight ? "text-white/50" : "text-zinc-400"}`}>{pkg.pricePerCredit}</p>
+                <p className={`text-sm font-semibold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>
+                  {pkg.name}
+                </p>
+                <p className={`text-xs mt-0.5 ${pkg.highlight ? "text-white/60" : "text-zinc-400"}`}>
+                  {pkg.credits} analiz kredisi
+                </p>
               </div>
+
+              {/* Fiyat */}
               <div className="shrink-0 text-right">
-                <div className={`text-base font-bold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>{pkg.price} ₺</div>
-                <div className={`mt-1 text-xs font-medium ${pkg.highlight ? "text-white/60" : "text-zinc-500"}`}>Satın Al →</div>
+                <p className={`text-lg font-bold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>
+                  {pkg.price}₺
+                </p>
+                <p className={`text-xs ${pkg.highlight ? "text-white/50" : "text-zinc-400"}`}>
+                  {(pkg.price / pkg.credits).toFixed(1)}₺/analiz
+                </p>
               </div>
             </a>
           );
         })}
       </div>
 
+      {/* Sipariş doğrulama */}
       <ClaimSection onSuccess={onSuccess} />
 
-      <div className="px-6 py-3 border-t border-zinc-100">
+      {/* Alt bilgi */}
+      <div className="px-5 py-3 border-t border-zinc-100">
         <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-400">
           <span className="flex items-center gap-1">
             <ShieldCheck className="h-3 w-3 text-emerald-500" strokeWidth={1.5} />
@@ -276,9 +292,8 @@ function PurchaseScreen({ onClose, onSuccess }: { onClose: () => void; onSuccess
 
 export default function CreditModal({ open, onClose, reason }: CreditModalProps) {
   const [credited, setCredited]   = useState(false);
-  const [isGuest, setIsGuest]     = useState<boolean | null>(null); // null = yükleniyor
+  const [isGuest, setIsGuest]     = useState<boolean | null>(null);
 
-  // Kullanıcı giriş yapmış mı kontrol et
   useEffect(() => {
     if (!open) return;
     const supabase = createClient();
@@ -327,7 +342,11 @@ export default function CreditModal({ open, onClose, reason }: CreditModalProps)
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
+      <div
+        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div
         className="fixed inset-x-4 bottom-0 z-50 mx-auto max-w-lg md:inset-x-auto md:top-1/2 md:bottom-auto md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-200"
         role="dialog"
@@ -340,12 +359,10 @@ export default function CreditModal({ open, onClose, reason }: CreditModalProps)
           </div>
         )}
 
-        {/* Misafir — giriş yap ekranı */}
-        {isGuest === true && (
-          <AuthScreen onClose={onClose} />
-        )}
+        {/* Misafir */}
+        {isGuest === true && <AuthScreen onClose={onClose} />}
 
-        {/* Kayıtlı kullanıcı — satın alma ekranı */}
+        {/* Kayıtlı kullanıcı */}
         {isGuest === false && (
           <PurchaseScreen onClose={onClose} onSuccess={handleClaimSuccess} />
         )}
