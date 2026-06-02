@@ -1,9 +1,32 @@
 "use client";
 
+import { useEffect } from "react";
 import { Loader2, ArrowUp } from "lucide-react";
+
+const DRAFT_KEY = "draft_dream";
+
+export function saveDraft(text: string) {
+  if (typeof window === "undefined") return;
+  if (text.trim()) {
+    localStorage.setItem(DRAFT_KEY, text);
+  } else {
+    localStorage.removeItem(DRAFT_KEY);
+  }
+}
+
+export function loadDraft(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(DRAFT_KEY) ?? "";
+}
+
+export function clearDraft() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(DRAFT_KEY);
+}
 
 export default function StickyInput({
   value, onChange, onSubmit, disabled, placeholder, minLength = 3,
+  enableDraft = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -11,9 +34,18 @@ export default function StickyInput({
   disabled: boolean;
   placeholder?: string;
   minLength?: number;
+  enableDraft?: boolean;
 }) {
   const isValid = (value?.trim()?.length ?? 0) >= minLength;
   const MAX = 1200;
+
+  // Draft yükle — sadece ilk render'da, input boşsa
+  useEffect(() => {
+    if (!enableDraft) return;
+    const saved = loadDraft();
+    if (saved && !value) onChange(saved);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enableDraft]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -26,7 +58,11 @@ export default function StickyInput({
     const el = e.target;
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
-    if ((el.value?.length ?? 0) <= MAX) onChange(el.value);
+    const val = el.value;
+    if ((val?.length ?? 0) <= MAX) {
+      onChange(val);
+      if (enableDraft) saveDraft(val);
+    }
   }
 
   return (

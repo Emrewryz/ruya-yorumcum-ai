@@ -11,11 +11,11 @@ import GlobalMobileNav   from "@/components/GlobalMobileNav";
 import { createClient }  from "@/utils/supabase/client";
 
 // ─── Alt bileşenler — components/home/ altına taşındı ────────────────────────
-import StickyInput     from "@/components/home/StickyInput";
-import MessageBubble   from "@/components/home/MessageBubble";
-import TypingIndicator from "@/components/home/TypingIndicator";
-import MobileHeader    from "@/components/home/MobileHeader";
-import MobileDrawer    from "@/components/home/MobileDrawer";
+import StickyInput, { clearDraft } from "@/components/home/StickyInput";
+import MessageBubble                from "@/components/home/MessageBubble";
+import TypingIndicator              from "@/components/home/TypingIndicator";
+import MobileHeader                 from "@/components/home/MobileHeader";
+import MobileDrawer                 from "@/components/home/MobileDrawer";
 
 // ─── Server Actions ───────────────────────────────────────────────────────────
 import { analyzeDream }        from "@/app/actions/analyze-dream";
@@ -230,6 +230,7 @@ function HomeInner() {
         }
         const data = await getDreamSession(res.dreamId);
         if (data) {
+          clearDraft(); // ── Başarılı analiz → taslağı temizle
           setSession(data);
           setActiveChatId(res.dreamId);
           setLocalMessages(data.messages ?? []);
@@ -365,6 +366,7 @@ function HomeInner() {
                   </div>
                 )}
 
+                {/* Desktop input */}
                 <div className="hidden md:block w-full max-w-xl">
                   <StickyInput
                     value={dreamText}
@@ -373,6 +375,7 @@ function HomeInner() {
                     disabled={isPending}
                     placeholder="Bu gece ne gördünüz? Rüyanızı anlatın..."
                     minLength={10}
+                    enableDraft
                   />
                   <p className="mt-2.5 text-center text-xs text-zinc-300">
                     İlk analiz ücretsiz · Kayıt gerekmez ·{" "}
@@ -511,6 +514,7 @@ function HomeInner() {
                 )}
               </div>
 
+              {/* Desktop sticky input */}
               <div
                 className="hidden md:block shrink-0 border-t border-zinc-100 bg-white px-4 py-3"
                 style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
@@ -552,6 +556,7 @@ function HomeInner() {
                 disabled={isPending || followUpLoading}
                 placeholder={phase === "idle" ? "Rüyanızı anlatın..." : "Soru sorun..."}
                 minLength={phase === "idle" ? 10 : 3}
+                enableDraft={phase === "idle"}
               />
             </div>
           </div>

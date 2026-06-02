@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import {
   Users, CreditCard, FileText, LogOut,
-  ChevronLeft, ChevronRight, Shield, BarChart2, Calendar, Newspaper // ← ekle
+  ChevronLeft, ChevronRight, Shield, BarChart2, Calendar, Newspaper,FlaskConical // ← ekle
 } from "lucide-react";
 
 // ─── Nav Linkleri ─────────────────────────────────────────────────────────────
@@ -19,6 +19,7 @@ const NAV = [
   { href: "/admin/cms",       icon: FileText,  label: "İçerik (CMS)"  },
   { href: "/admin/blog-ekle", icon: Newspaper, label: "Blog Ekle"      }, // ← ekle
   { href: "/admin/takvim",    icon: Calendar,  label: "Yayın Takvimi" },
+  { href: "/admin/testler/ekle", icon: FlaskConical, label: "Test Ekle" }
 ];
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────

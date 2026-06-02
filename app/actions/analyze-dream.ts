@@ -1,174 +1,202 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { getMoonPhase } from "@/utils/moon";
-import OpenAI from "openai";
-import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    "HTTP-Referer": "https://ruyayorumcum.com.tr",
-    "X-Title": "Rüya Yorumcum",
-  },
-});
+// ─── Fallback model dizisi — en ucuzdan en pahalıya ──────────────────────────
 
-const DREAM_ANALYSIS_COST = 1;
+const MODELS = [
+  "google/gemini-3.1-flash-lite"
+];
 
-export interface DreamAnalysis {
-  kisa_ozet: string;
-  islami_analiz: string;
+// ─── Tipler ───────────────────────────────────────────────────────────────────
+
+export type DreamAnalysis = {
+  kisa_ozet:         string;
+  islami_analiz:     string;
   psikolojik_analiz: string;
-  semboller: string;
-}
+  semboller:         string;
+};
 
-export type AnalyzeDreamResult =
-  | { success: true; dreamId: string; analysis: DreamAnalysis }
-  | { success: false; code?: "GUEST_LIMIT" | "NO_CREDIT" | "VALIDATION" | "SERVER"; error: string };
+type AnalyzeResult =
+  | { success: true;  dreamId: string }
+  | { success: false; error: string; code?: string };
 
-function cleanJson(text: string): string {
-  let clean = text.replace(/```json/g, "").replace(/```/g, "").trim();
-  const firstBrace = clean.indexOf("{");
-  const lastBrace  = clean.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace !== -1) {
-    clean = clean.substring(firstBrace, lastBrace + 1);
-  }
-  return clean;
-}
+// ─── Sistem Promptu ───────────────────────────────────────────────────────────
 
-function getOrCreateGuestId(cookieStore: ReturnType<typeof cookies>): string {
-  const existing = cookieStore.get("guest_session_id")?.value;
-  if (existing) return existing;
-  const newId = crypto.randomUUID();
-  cookieStore.set("guest_session_id", newId, {
-    maxAge: 60 * 60 * 24 * 365,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
-  return newId;
-}
-
-export async function analyzeDream(dreamText: string): Promise<AnalyzeDreamResult> {
-  const supabase     = createClient();
-  const cookieStore  = cookies();
-  const trimmed      = dreamText?.trim() ?? "";
-
-  if (trimmed.length < 10) {
-    return { success: false, code: "VALIDATION", error: "Rüyanızı biraz daha detaylı anlatır mısınız?" };
-  }
-
-  const { data: { user } } = await supabase.auth.getUser();
-  const guestSessionId = !user ? getOrCreateGuestId(cookieStore) : null;
-
-  if (!user) {
-    const hasUsedFree = cookieStore.get("guest_dream_analyzed")?.value;
-    if (hasUsedFree) {
-      return { success: false, code: "GUEST_LIMIT", error: "Ücretsiz analiz hakkınızı kullandınız. Devam etmek için kayıt olun veya kredi satın alın." };
-    }
-  }
-
-  if (user) {
-    const { data: txResult, error: txError } = await supabase.rpc("handle_credit_transaction", {
-      p_user_id:     user.id,
-      p_amount:      -DREAM_ANALYSIS_COST,
-      p_process_type:"spend",
-      p_description: "Rüya Analizi",
-      p_metadata:    { text_length: trimmed.length },
-    });
-    if (txError || !txResult?.success) {
-      return { success: false, code: "NO_CREDIT", error: "Yetersiz bakiye." };
-    }
-  }
-
-  const currentMoon = getMoonPhase();
-
-  try {
-    const systemPrompt = `Sen sadece geçerli JSON döndüren, uzman bir rüya analiz motorusun.
-JSON dışında hiçbir şey yazma. Tüm içerik Türkçe olmalı.
-Analizlerin derin, şefkatli ve özgün olsun.`;
-
-    const userPrompt = `Aşağıdaki rüyayı analiz et.
-
-RÜYA: "${trimmed.slice(0, 1200)}"
-
-Yalnızca şu JSON formatında yanıt ver:
+function buildSystemPrompt(personalization: Record<string, any> | null): string {
+  const base = `Sen 'Rüya Yorumcum' platformunun uzman rüya analistisin.
+Hem İslami rüya tabiri geleneğini (İbn-i Sirin, İmam Nablusi) hem de modern psikolojiyi (Jung arketipleri, Freud sembolizmi) harmanlayan sentez yöntemiyle çalışırsın.
+Cevaplarını KESINLIKLE şu JSON formatında ver, başka hiçbir şey ekleme:
 {
-  "kisa_ozet": "FRAGMAN KURALI — Bu alanı çok dikkatli yaz. Rüyanın en çarpıcı sembolünü veya duygusunu yakala ve analiz etmeye başla, ama tam en can alıcı noktada — bilinçaltının gerçek mesajını açıklamak üzereyken — cümleyi bir soruyla veya '...' ile ASLA tamamlama. Kullanıcı devamını okumak için yanmalı. Örnek format: '[Sembol/duygu tespiti yapan 1-2 güçlü cümle]. Ancak bu rüyadaki [kritik detay], bilinçaltınızda çok daha derin bir [tema/korku/arzu]nın kilidini açıyor...' — Maksimum 3 cümle.",
-  "islami_analiz": "İbn-i Sirin ve İmam Nablusi geleneğine dayanan derin analiz. Müjde mi uyarı mı, hayır mı şer mi? Dini referanslar kullan. En az 3-4 paragraf.",
-  "psikolojik_analiz": "Carl Jung arketipleri, bilinçaltı mesajlar, gölge benlik, bastırılmış duygular üzerinden derin analiz. En az 3-4 paragraf.",
-  "semboller": "En güçlü 3-4 sembolü belirle. Her birini yeni satırda '[Sembol]: [Kadim ve psikolojik anlam]' formatında yaz."
+  "kisa_ozet": "2-3 cümle genel değerlendirme",
+  "islami_analiz": "İslami kaynaklara dayalı detaylı yorum",
+  "psikolojik_analiz": "Psikolojik/Jungian yorum",
+  "semboller": "Rüyadaki sembollerin kısa açıklamaları"
 }`;
 
-    const completion = await openai.chat.completions.create({
+  if (!personalization || Object.keys(personalization).length === 0) return base;
+
+  const ctx = [
+    personalization.yasam_evreni && `Yaşam evresi: ${personalization.yasam_evreni}`,
+    personalization.ruh_hali     && `Ruh hali: ${personalization.ruh_hali}`,
+    personalization.zihin_mesgul && `Zihin meşguliyeti: ${personalization.zihin_mesgul}`,
+  ].filter(Boolean).join(", ");
+
+  return `${base}\n\nKullanıcı bağlamı (analizi kişiselleştir): ${ctx}`;
+}
+
+// ─── OpenRouter'a istek at ─────────────────────────────────────────────────────
+
+async function callModel(model: string, dreamText: string, systemPrompt: string): Promise<DreamAnalysis> {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method:  "POST",
+    headers: {
+      "Content-Type":  "application/json",
+      "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "HTTP-Referer":  "https://www.ruyayorumcum.com.tr",
+      "X-Title":       "Rüya Yorumcum",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens:  1200,
+      temperature: 0.7,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user",   content: userPrompt },
+        { role: "user",   content: `Rüya: ${dreamText}` },
       ],
-      model:           "google/gemini-2.0-flash-lite-001",
-      temperature:     0.75,
-      response_format: { type: "json_object" },
-    });
+    }),
+  });
 
-    const resultText = completion.choices[0].message.content;
-    if (!resultText) throw new Error("AI'dan boş yanıt.");
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error(`${model} → HTTP ${res.status}: ${text}`);
+  }
 
-    const raw = JSON.parse(cleanJson(resultText));
+  const data = await res.json();
+  const raw  = data?.choices?.[0]?.message?.content ?? "";
 
-    const aiData: DreamAnalysis = {
-      kisa_ozet:         raw.kisa_ozet         || raw.kisaOzet         || raw.summary    || "",
-      islami_analiz:     raw.islami_analiz     || raw.islamiAnaliz     || raw.islamic    || "",
-      psikolojik_analiz: raw.psikolojik_analiz || raw.psikolojikAnaliz || raw.psychological || "",
-      semboller:         raw.semboller         || raw.symbols          || raw.sembol     || "",
-    };
+  // JSON parse — markdown backtick varsa temizle
+  const cleaned = raw.replace(/```json|```/g, "").trim();
+  const parsed  = JSON.parse(cleaned) as DreamAnalysis;
 
-    for (const field of ["kisa_ozet", "islami_analiz", "psikolojik_analiz", "semboller"] as const) {
-      if (!aiData[field]) throw new Error(`Eksik alan: ${field}`);
-    }
+  if (!parsed.kisa_ozet) throw new Error(`${model} → Beklenen JSON alanları eksik`);
 
-    const { data: dreamData, error: dbError } = await supabase
+  return parsed;
+}
+
+// ─── Ana Fonksiyon ────────────────────────────────────────────────────────────
+
+export async function analyzeDream(dreamText: string): Promise<AnalyzeResult> {
+  const supabase = createClient();
+
+  // ── Auth / Kredi Kontrolü ──
+  const { data: { user } } = await supabase.auth.getUser();
+  const guestSessionId      = !user ? crypto.randomUUID() : null;
+
+  if (!user) {
+    // Misafir limit kontrolü (session bazlı)
+    const { count } = await supabase
       .from("dreams")
-      .insert({
-        user_id:          user ? user.id : null,
-        guest_session_id: guestSessionId,
-        dream_text:       trimmed,
-        dream_title:      aiData.kisa_ozet.slice(0, 100),
-        ai_response:      aiData,
-        moon_phase:       currentMoon.phase,
-        status:           "completed",
-      })
-      .select("id")
+      .select("id", { count: "exact", head: true })
+      .is("user_id", null)
+      .eq("guest_session_id", guestSessionId ?? "");
+
+    if ((count ?? 0) >= 1) {
+      return { success: false, error: "Misafir limiti doldu.", code: "GUEST_LIMIT" };
+    }
+  } else {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("credits")
+      .eq("id", user.id)
       .single();
 
-    if (dbError) throw dbError;
-
-    if (!user) {
-      cookieStore.set("guest_dream_analyzed", "true", {
-        maxAge: 60 * 60 * 24 * 30,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-      });
+    if (!profile || profile.credits < 1) {
+      return { success: false, error: "Yetersiz kredi.", code: "NO_CREDIT" };
     }
-
-    return { success: true, dreamId: dreamData.id, analysis: aiData };
-
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : JSON.stringify(err);
-    console.error("[analyzeDream] Hata:", message);
-
-    if (user) {
-      await supabase.rpc("handle_credit_transaction", {
-        p_user_id:     user.id,
-        p_amount:      DREAM_ANALYSIS_COST,
-        p_process_type:"refund",
-        p_description: "İade: Rüya Analiz Hatası",
-      });
-    }
-
-    return { success: false, code: "SERVER", error: "Analiz sırasında bir sorun oluştu. Lütfen tekrar deneyin." };
   }
+
+  // ── Personalizasyon ──
+  let personalization: Record<string, any> | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("personalization_data")
+      .eq("id", user.id)
+      .single();
+    personalization = profile?.personalization_data ?? null;
+  }
+
+  const systemPrompt = buildSystemPrompt(personalization);
+
+  // ── 3'lü Fallback Sistemi ──────────────────────────────────────────────────
+  let analysis: DreamAnalysis | null = null;
+  const errors: string[] = [];
+
+  for (const model of MODELS) {
+    try {
+      console.log(`[analyzeDream] Deneniyor: ${model}`);
+      analysis = await callModel(model, dreamText, systemPrompt);
+      console.log(`[analyzeDream] Başarılı: ${model}`);
+      break; // Başarılı → döngüden çık
+    } catch (err: any) {
+      const msg = err?.message ?? String(err);
+      console.warn(`[analyzeDream] Hata (${model}): ${msg}`);
+      errors.push(`${model}: ${msg}`);
+      // Bir sonraki modele geç
+    }
+  }
+
+  // Tüm modeller başarısız
+  if (!analysis) {
+    console.error("[analyzeDream] Tüm modeller başarısız:", errors);
+    return {
+      success: false,
+      code:    "ALL_MODELS_FAILED",
+      error:   "Yapay zeka sunucularımızda anlık bir yoğunluk var. Rüyanız güvende, lütfen birkaç saniye sonra tekrar deneyin.",
+    };
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // ── Rüyayı Kaydet ──
+  const { data: dream, error: dreamError } = await supabase
+    .from("dreams")
+    .insert({
+      user_id:          user?.id ?? null,
+      guest_session_id: guestSessionId,
+      dream_text:       dreamText,
+      ai_response:      analysis,
+      status:           "completed",
+    })
+    .select("id")
+    .single();
+
+  if (dreamError || !dream) {
+    console.error("[analyzeDream] DB kayıt hatası:", dreamError);
+    return { success: false, error: "Analiz tamamlandı fakat kaydedilemedi.", code: "DB_ERROR" };
+  }
+
+  // ── İlk Chat Mesajını Kaydet ──
+  await supabase.from("dream_chat_messages").insert({
+    dream_id:  dream.id,
+    user_id:   user?.id ?? null,
+    role:      "assistant",
+    content:   analysis.kisa_ozet,
+    credits_spent: 0,
+  });
+
+  // ── Kredi Düş ──
+  if (user) {
+    await supabase.rpc("handle_credit_transaction", {
+      p_user_id:    user.id,
+      p_amount:     -1,
+      p_process_type: "dream_analysis",
+      p_description: `Rüya analizi: ${dreamText.slice(0, 50)}`,
+    });
+  }
+
+  revalidatePath("/");
+
+  return { success: true, dreamId: dream.id };
 }
