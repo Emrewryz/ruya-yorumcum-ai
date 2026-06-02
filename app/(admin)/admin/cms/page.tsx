@@ -2,8 +2,12 @@
 
 import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, RefreshCw, Pencil, Trash2, Loader2, Eye, EyeOff,Newspaper } from "lucide-react";
+import {
+  Plus, Search, RefreshCw, Pencil, Trash2,
+  Loader2, Eye, EyeOff, CheckCircle, Clock
+} from "lucide-react";
 import { getDreamEntries, deleteDreamEntry } from "@/app/actions/cms-actions";
+import { createClient } from "@/utils/supabase/client";
 
 interface Entry {
   id:           string;
@@ -15,12 +19,16 @@ interface Entry {
   updated_at:   string;
 }
 
+type Tab = "all" | "pending";
+
 export default function AdminCmsPage() {
   const [entries, setEntries]   = useState<Entry[]>([]);
   const [search, setSearch]     = useState("");
   const [loading, setLoading]   = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>("pending"); // Önce bekleyenleri göster
   const [, start]               = useTransition();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState<string | null>(null);
 
   const fetchEntries = (q = search) => {
     setLoading(true);
@@ -47,13 +55,43 @@ export default function AdminCmsPage() {
     setDeleting(null);
   }
 
-  // published_at zamanı geçmişse yayında say
+  // ── Yayınla / Geri al ──
+  async function handleTogglePublish(entry: Entry) {
+    setPublishing(entry.id);
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("dream_dictionary")
+      .update({
+        is_published: !entry.is_published,
+        published_at: !entry.is_published ? new Date().toISOString() : null,
+      })
+      .eq("id", entry.id);
+
+    if (!error) {
+      setEntries((prev) =>
+        prev.map((e) =>
+          e.id === entry.id
+            ? { ...e, is_published: !e.is_published, published_at: !e.is_published ? new Date().toISOString() : null }
+            : e
+        )
+      );
+    }
+    setPublishing(null);
+  }
+
   function isLive(entry: Entry): boolean {
-    if (!entry.published_at) return false;
+    if (!entry.is_published || !entry.published_at) return false;
     return new Date(entry.published_at) <= new Date();
   }
 
-  const publishedCount = entries.filter(isLive).length;
+  // ── Sekme filtresi ──
+  const filtered = entries.filter((e) =>
+    activeTab === "pending" ? !isLive(e) : true
+  );
+
+  const pendingCount   = entries.filter((e) => !isLive(e)).length;
+  const publishedCount = entries.filter((e) => isLive(e)).length;
 
   return (
     <div className="p-6 lg:p-8">
@@ -63,7 +101,7 @@ export default function AdminCmsPage() {
           <p className="mt-0.5 text-sm text-zinc-500">
             {entries.length} kayıt —{" "}
             <span className="text-emerald-400">{publishedCount} yayında</span>,{" "}
-            <span className="text-zinc-600">{entries.length - publishedCount} taslak</span>
+            <span className="text-amber-400">{pendingCount} onay bekliyor</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -73,13 +111,6 @@ export default function AdminCmsPage() {
           >
             <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.5} />
           </button>
-           <Link
-    href="/admin/blog-ekle"
-    className="flex items-center gap-2 rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-300 hover:border-zinc-500 hover:text-white transition-colors"
-  >
-    <Newspaper className="h-4 w-4" strokeWidth={1.5} />
-    Blog Ekle
-  </Link>
           <Link
             href="/admin/cms/ruya-ekle"
             className="flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-amber-300 transition-colors"
@@ -90,7 +121,39 @@ export default function AdminCmsPage() {
         </div>
       </div>
 
-      {/* Arama */}
+      {/* ── Sekmeler ── */}
+      <div className="mb-5 flex items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 p-1 w-fit">
+        <button
+          onClick={() => setActiveTab("pending")}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
+            activeTab === "pending"
+              ? "bg-amber-400 text-zinc-900"
+              : "text-zinc-500 hover:text-zinc-300"
+          }`}
+        >
+          <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
+          Onay Bekleyenler
+          {pendingCount > 0 && (
+            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+              activeTab === "pending" ? "bg-zinc-900 text-amber-400" : "bg-amber-400/20 text-amber-400"
+            }`}>
+              {pendingCount}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
+            activeTab === "all"
+              ? "bg-zinc-700 text-white"
+              : "text-zinc-500 hover:text-zinc-300"
+          }`}
+        >
+          Tümü ({entries.length})
+        </button>
+      </div>
+
+      {/* ── Arama ── */}
       <div className="relative mb-5 max-w-sm">
         <Search
           className="pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 text-zinc-600"
@@ -105,7 +168,18 @@ export default function AdminCmsPage() {
         />
       </div>
 
-      {/* Tablo */}
+      {/* ── Onay Bekleyenler Uyarısı ── */}
+      {activeTab === "pending" && pendingCount > 0 && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-800/50 bg-amber-900/20 px-4 py-3 text-xs text-amber-400">
+          <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+          <span>
+            Bu maddeler AI tarafından otomatik üretildi. İçeriği kontrol edip onaylayın veya silin.
+            Onaylanana kadar Google'a sızmaz.
+          </span>
+        </div>
+      )}
+
+      {/* ── Tablo ── */}
       <div className="overflow-hidden rounded-xl border border-zinc-800">
         <table className="w-full text-sm">
           <thead className="border-b border-zinc-800 bg-zinc-900">
@@ -124,14 +198,17 @@ export default function AdminCmsPage() {
                   <Loader2 className="mx-auto h-5 w-5 animate-spin text-zinc-600" strokeWidth={1.5} />
                 </td>
               </tr>
-            ) : entries.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-12 text-center text-sm text-zinc-600">
-                  {search ? "Sonuç bulunamadı." : "Henüz içerik yok."}
+                  {activeTab === "pending"
+                    ? "Onay bekleyen madde yok. "
+                    : search ? "Sonuç bulunamadı." : "Henüz içerik yok."
+                  }
                 </td>
               </tr>
             ) : (
-              entries.map((entry) => {
+              filtered.map((entry) => {
                 const live = isLive(entry);
                 return (
                   <tr key={entry.id} className="hover:bg-zinc-800/40 transition-colors">
@@ -142,16 +219,16 @@ export default function AdminCmsPage() {
                       <p className="text-xs text-zinc-600">{entry.slug}</p>
                     </td>
 
-                    {/* Durum — published_at zamanına göre */}
+                    {/* Durum */}
                     <td className="px-5 py-3.5">
                       <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
                         live
                           ? "border-emerald-700 bg-emerald-900/30 text-emerald-400"
-                          : "border-zinc-700 bg-zinc-800 text-zinc-500"
+                          : "border-amber-700/50 bg-amber-900/20 text-amber-400"
                       }`}>
                         {live
                           ? <><Eye className="h-3 w-3" strokeWidth={1.5} />Yayında</>
-                          : <><EyeOff className="h-3 w-3" strokeWidth={1.5} />Taslak</>
+                          : <><Clock className="h-3 w-3" strokeWidth={1.5} />Onay Bekliyor</>
                         }
                       </span>
                     </td>
@@ -174,12 +251,35 @@ export default function AdminCmsPage() {
                     {/* İşlemler */}
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-2">
+
+                        {/* Yayınla / Geri al */}
+                        <button
+                          onClick={() => handleTogglePublish(entry)}
+                          disabled={publishing === entry.id}
+                          title={live ? "Yayından kaldır" : "Yayınla"}
+                          className={`flex h-7 w-7 items-center justify-center rounded-lg border transition-colors disabled:opacity-50 ${
+                            live
+                              ? "border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-white"
+                              : "border-emerald-800 text-emerald-500 hover:border-emerald-500 hover:bg-emerald-900/20"
+                          }`}
+                        >
+                          {publishing === entry.id
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
+                            : live
+                            ? <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
+                            : <CheckCircle className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          }
+                        </button>
+
+                        {/* Düzenle */}
                         <Link
                           href={`/admin/cms/ruya-ekle?id=${entry.id}`}
                           className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-white transition-colors"
                         >
                           <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
                         </Link>
+
+                        {/* Sil */}
                         <button
                           onClick={() => handleDelete(entry.id, entry.term)}
                           disabled={deleting === entry.id}

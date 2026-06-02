@@ -5,24 +5,23 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import {
-  Users, CreditCard, FileText, LogOut,
-  ChevronLeft, ChevronRight, Shield, BarChart2, Calendar, Newspaper,FlaskConical // ← ekle
+  Users, CreditCard, LogOut,
+  ChevronLeft, ChevronRight, Shield,
+  BarChart2, Calendar, LayoutGrid
 } from "lucide-react";
 
-// ─── Nav Linkleri ─────────────────────────────────────────────────────────────
+// ─── Nav — sadeleştirildi ──────────────────────────────────────────────────────
 
 const NAV = [
-  { href: "/admin",           icon: Shield,    label: "Genel Bakış"    },
-  { href: "/admin/users",     icon: Users,     label: "Kullanıcılar"   },
-  { href: "/admin/epins",     icon: CreditCard,label: "E-Pin İstasyonu"},
-  { href: "/admin/analytics", icon: BarChart2, label: "Analitik & Loglar"},
-  { href: "/admin/cms",       icon: FileText,  label: "İçerik (CMS)"  },
-  { href: "/admin/blog-ekle", icon: Newspaper, label: "Blog Ekle"      }, // ← ekle
-  { href: "/admin/takvim",    icon: Calendar,  label: "Yayın Takvimi" },
-  { href: "/admin/testler/ekle", icon: FlaskConical, label: "Test Ekle" }
+  { href: "/admin",           icon: Shield,      label: "Genel Bakış"    },
+  { href: "/admin/users",     icon: Users,       label: "Kullanıcılar"   },
+  { href: "/admin/epins",     icon: CreditCard,  label: "E-Pin İstasyonu"},
+  { href: "/admin/analytics", icon: BarChart2,   label: "Analitik"       },
+  { href: "/admin/icerik",    icon: LayoutGrid,  label: "İçerik Merkezi" }, // ← tüm içerik buraya
+  { href: "/admin/takvim",    icon: Calendar,    label: "Yayın Takvimi"  },
 ];
 
-// ─── Sidebar ─────────────────────────────────────────────────────────────────
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 function AdminSidebar() {
   const pathname  = usePathname();
@@ -41,6 +40,12 @@ function AdminSidebar() {
     await supabase.auth.signOut();
     router.push("/");
   };
+
+  // İçerik Merkezi aktif kontrolü — alt sayfalar da aktif görünsün
+  function isActive(href: string) {
+    if (href === "/admin") return pathname === "/admin";
+    return pathname.startsWith(href);
+  }
 
   return (
     <aside
@@ -62,14 +67,17 @@ function AdminSidebar() {
           onClick={() => setCollapsed((v) => !v)}
           className={`flex h-7 w-7 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-white transition-colors ${collapsed ? "mx-auto" : ""}`}
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {collapsed
+            ? <ChevronRight className="h-4 w-4" />
+            : <ChevronLeft  className="h-4 w-4" />
+          }
         </button>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 space-y-1 px-2 py-4">
         {NAV.map(({ href, icon: Icon, label }) => {
-          const isActive = pathname.startsWith(href);
+          const active = isActive(href);
           return (
             <Link
               key={href}
@@ -77,7 +85,7 @@ function AdminSidebar() {
               title={collapsed ? label : undefined}
               className={`
                 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors
-                ${isActive
+                ${active
                   ? "bg-amber-400/10 text-amber-400 font-medium"
                   : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
                 }

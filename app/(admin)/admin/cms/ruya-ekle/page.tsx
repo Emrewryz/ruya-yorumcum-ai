@@ -1,269 +1,269 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle, AlertCircle, Eye, Save } from "lucide-react";
-import { saveDreamEntry } from "@/app/actions/cms-actions";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Save, Loader2, CheckCircle, AlertCircle, FileJson } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
-// ─── Türkçe → Slug ────────────────────────────────────────────────────────────
+// ─── İç Bileşen ───────────────────────────────────────────────────────────────
 
-function toSlug(text: string): string {
-  const map: Record<string, string> = {
-    ç:"c", Ç:"c", ğ:"g", Ğ:"g", ı:"i", İ:"i",
-    ö:"o", Ö:"o", ş:"s", Ş:"s", ü:"u", Ü:"u",
-  };
-  return text
-    .split("").map((c) => map[c] ?? c).join("")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .trim();
-}
+function RuyaEkleForm() {
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const editId       = searchParams.get("id"); // Düzenleme modunda dolu olur
 
-// ─── Şu anki zaman — datetime-local formatında (LOCAL saat) ──────────────────
+  const [rawJson, setRawJson]   = useState("");
+  const [status, setStatus]     = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage]   = useState<string | null>(null);
+  const [fetching, setFetching] = useState(false);
 
-function nowLocal(): string {
-  const now = new Date();
-  // datetime-local için offset düzeltmesi
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  return now.toISOString().slice(0, 16);
-}
+  const isEdit = !!editId;
 
-// ─── datetime-local → UTC ISO (Timezone güvenli) ────────────────────────────
-// datetime-local değeri "2026-05-27T05:00" formatında gelir — timezone bilgisi YOK.
-// new Date("2026-05-27T05:00") → tarayıcı UTC olarak parse eder, yanlış!
-// Çözüm: değeri yerel saat olarak yorumla, UTC'ye çevir.
+  // ── Düzenleme modunda mevcut veriyi yükle ──
+  useEffect(() => {
+    if (!editId) return;
+    setFetching(true);
 
-function localDatetimeToUTC(localValue: string): string {
-  if (!localValue) return new Date().toISOString();
-  // "YYYY-MM-DDTHH:mm" → Date objesi (tarayıcı local timezone'da parse eder)
-  // Bunun için sona tarayıcının offset'ini ekleyip UTC'ye çeviriyoruz
-  const localDate = new Date(localValue);
-  // localDate zaten local timezone'da, .toISOString() UTC'ye çevirir
-  return localDate.toISOString();
-}
+    const supabase = createClient();
+    supabase
+      .from("dream_dictionary")
+      .select("term, slug, description, content, is_published, published_at, tags")
+      .eq("id", editId)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          setStatus("error");
+          setMessage("İçerik yüklenemedi.");
+          setFetching(false);
+          return;
+        }
 
-// ─── Örnek JSON ───────────────────────────────────────────────────────────────
+        // Mevcut veriyi JSON formatında textarea'ya yaz
+        const formatted = {
+          term:         data.term,
+          slug:         data.slug,
+          description:  data.description ?? "",
+          is_published: data.is_published,
+          published_at: data.published_at ?? null,
+          tags:         data.tags ?? [],
+          content:      data.content ?? {},
+        };
 
-const EXAMPLE_JSON = `{
-  "term": "Yılan",
-  "description": "Rüyada yılan görmek, dönüşüm ve içgüdüsel bilgeliğin sembolüdür.",
-  "tags": ["Hayvanlar", "Dönüşüm", "Tehlike"],
-  "content": {
-    "type": "ultimate",
-    "summary": "Yılan rüyaları...",
-    "psychological": "Jung'a göre yılan...",
-    "traditional_wisdom": {
-      "introduction": "İslami gelenekte...",
-      "pillars": [
-        { "title": "İbn-i Sirin", "description": "Yılan görmek..." }
-      ]
-    },
-    "scenarios": [
-      { "title": "Büyük yılan görmek", "meaning": "...", "isPositive": true }
-    ],
-    "faq": [
-      { "question": "Yılan ısırması ne anlama gelir?", "answer": "..." }
-    ]
-  }
-}`;
+        setRawJson(JSON.stringify(formatted, null, 2));
+        setFetching(false);
+      });
+  }, [editId]);
 
-// ─── Sayfa ────────────────────────────────────────────────────────────────────
+  const jsonValid = (() => {
+    if (!rawJson.trim()) return null;
+    try { JSON.parse(rawJson); return true; }
+    catch { return false; }
+  })();
 
-export default function RuyaEklePage() {
-  const router = useRouter();
-  const [isPending, start]  = useTransition();
-  const [jsonText, setJson] = useState("");
-  const [publishedAt, setPublishedAt] = useState(nowLocal());
-  const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
-  const [preview, setPreview] = useState<Record<string, any> | null>(null);
-  const [parseError, setParseError] = useState<string | null>(null);
-
-  function handleJsonChange(val: string) {
-    setJson(val);
-    setParseError(null);
-    setPreview(null);
-    if (!val.trim()) return;
-    try {
-      setPreview(JSON.parse(val));
-    } catch {
-      setParseError("Geçersiz JSON formatı.");
+  async function handleSave() {
+    if (!rawJson.trim() || jsonValid === false) {
+      setStatus("error"); setMessage("Geçerli bir JSON girin."); return;
     }
-  }
-
-  function handleSubmit(isPublished: boolean) {
-    setResult(null);
-    if (!jsonText.trim()) { setResult({ ok: false, msg: "JSON alanı boş." }); return; }
 
     let parsed: any;
-    try {
-      parsed = JSON.parse(jsonText);
-    } catch {
-      setResult({ ok: false, msg: "JSON parse hatası. Formatı kontrol edin." });
-      return;
+    try { parsed = JSON.parse(rawJson); }
+    catch { setStatus("error"); setMessage("JSON parse hatası."); return; }
+
+    if (!parsed.term?.trim() && !parsed.title?.trim()) {
+      setStatus("error"); setMessage("'term' veya 'title' alanı zorunlu."); return;
+    }
+    if (!parsed.slug?.trim()) {
+      setStatus("error"); setMessage("'slug' alanı zorunlu."); return;
+    }
+    if (!parsed.content) {
+      setStatus("error"); setMessage("'content' alanı zorunlu."); return;
     }
 
-    const { term, description, tags, content } = parsed;
-    if (!term?.trim())        { setResult({ ok: false, msg: '"term" alanı bulunamadı.' }); return; }
-    if (!description?.trim()) { setResult({ ok: false, msg: '"description" alanı bulunamadı.' }); return; }
+    setStatus("loading"); setMessage(null);
+    const supabase = createClient();
 
-    const slug        = toSlug(term);
-    const firstLetter = term.trim().charAt(0).toUpperCase();
-    const tagsArr     = Array.isArray(tags) ? tags.map(String) : [];
+    const payload = {
+      term:         (parsed.term ?? parsed.title).trim(),
+      slug:         parsed.slug.trim(),
+      description:  parsed.description?.trim() ?? "",
+      content:      parsed.content,
+      is_published: parsed.is_published ?? false,
+      published_at: parsed.published_at ?? null,
+      tags:         parsed.tags ?? [],
+      first_letter: (parsed.term ?? parsed.title)
+                      .replace(/^Rüyada\s+/i, "")
+                      .charAt(0)
+                      .toUpperCase() || "R",
+    };
 
-    // ── Timezone düzeltmesi: local datetime → UTC ISO ──
-    const publishedAtUTC = localDatetimeToUTC(publishedAt);
+    if (isEdit) {
+      // ── Güncelle ──
+      const { error } = await supabase
+        .from("dream_dictionary")
+        .update(payload)
+        .eq("id", editId);
 
-    start(async () => {
-      const res = await saveDreamEntry({
-        term:         term.trim(),
-        slug,
-        description:  description.trim(),
-        first_letter: firstLetter,
-        tags:         tagsArr,
-        content:      content ?? {},
-        is_published: isPublished,
-        published_at: publishedAtUTC,
-      });
-
-      if (res.success) {
-        setResult({ ok: true, msg: `✓ Kaydedildi — slug: ${res.slug}` });
-        setTimeout(() => router.push("/admin/cms"), 1800);
+      if (error) {
+        setStatus("error"); setMessage(error.message);
       } else {
-        setResult({ ok: false, msg: res.error });
+        setStatus("success");
+        setMessage(`Güncellendi → /ruya-tabirleri/${payload.slug}`);
+        setTimeout(() => router.push("/admin/icerik"), 1500);
       }
-    });
+    } else {
+      // ── Yeni ekle ──
+      const { error } = await supabase
+        .from("dream_dictionary")
+        .insert({ ...payload, search_count: 0 });
+
+      if (error) {
+        setStatus("error");
+        setMessage(
+          error.message.includes("duplicate")
+            ? `'${payload.slug}' slug'ı zaten kullanımda.`
+            : error.message
+        );
+      } else {
+        setStatus("success");
+        setMessage(`Eklendi → /ruya-tabirleri/${payload.slug}`);
+        setRawJson("");
+        setTimeout(() => router.push("/admin/icerik"), 1500);
+      }
+    }
   }
 
-  return (
-    <div className="mx-auto max-w-3xl p-6 lg:p-8">
+  // ─────────────────────────────────────────────────────────────────────────────
 
-      <div className="mb-7">
-        <h1 className="text-xl font-bold text-white">Master JSON ile Ekle</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          JSON'u yapıştırın, yayın tarihini seçin — gerisini sistem halleder.
+  return (
+    <div className="p-6 lg:p-8 max-w-2xl">
+
+      <div className="mb-8">
+        <h1 className="text-xl font-bold text-white">
+          {isEdit ? "İçeriği Düzenle" : "Yeni İçerik Ekle"}
+        </h1>
+        <p className="mt-0.5 text-sm text-zinc-500">
+          {isEdit
+            ? "Mevcut içerik yüklendi. Düzenleyip kaydedin."
+            : "JSON formatında rüya tabiri içeriği ekleyin."
+          }
         </p>
       </div>
 
-      <div className="space-y-5">
-
-        {/* ── Yayın Tarihi ── */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            Yayın Tarihi & Saati (Türkiye Saati)
-          </label>
-          <input
-            type="datetime-local"
-            value={publishedAt}
-            onChange={(e) => setPublishedAt(e.target.value)}
-            className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-white focus:border-amber-400/60 focus:outline-none transition-colors"
-          />
-          <p className="mt-2 text-xs text-zinc-600">
-            {publishedAt && (
-              new Date(localDatetimeToUTC(publishedAt)) > new Date()
-                ? `⏰ Planlandı — ${new Date(localDatetimeToUTC(publishedAt)).toLocaleString("tr-TR")} UTC'de yayına girer.`
-                : "✓ Anında yayınlanır."
-            )}
-          </p>
+      {fetching ? (
+        <div className="flex items-center gap-2 py-8 text-sm text-zinc-500">
+          <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
+          İçerik yükleniyor...
         </div>
+      ) : (
+        <div className="space-y-5">
 
-        {/* ── Master JSON ── */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
-          <div className="mb-2 flex items-center justify-between">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              Master JSON
-            </label>
-            <button
-              type="button"
-              onClick={() => handleJsonChange(EXAMPLE_JSON)}
-              className="text-xs text-zinc-600 hover:text-amber-400 transition-colors"
-            >
-              Örnek yükle
-            </button>
+          {/* JSON alanı */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-400">
+                <FileJson className="h-3.5 w-3.5" strokeWidth={1.5} />
+                {isEdit ? "İçerik JSON" : "Raw JSON"}
+              </label>
+              {jsonValid === true  && <span className="text-xs font-medium text-emerald-400">✓ Geçerli JSON</span>}
+              {jsonValid === false && <span className="text-xs font-medium text-red-400">✗ Geçersiz JSON</span>}
+            </div>
+
+            <textarea
+              value={rawJson}
+              onChange={(e) => setRawJson(e.target.value)}
+              spellCheck={false}
+              rows={28}
+              style={{ resize: "none" }}
+              className={`
+                w-full rounded-xl border bg-zinc-900 px-4 py-3 font-mono
+                text-[12px] leading-relaxed text-zinc-300
+                placeholder:text-zinc-700 focus:outline-none
+                ${jsonValid === false
+                  ? "border-red-800 focus:border-red-600"
+                  : "border-zinc-700 focus:border-zinc-500"
+                }
+              `}
+              placeholder={PLACEHOLDER}
+            />
           </div>
-          <textarea
-            value={jsonText}
-            onChange={(e) => handleJsonChange(e.target.value)}
-            placeholder={'{\n  "term": "Yılan",\n  "description": "...",\n  "tags": ["Hayvanlar"],\n  "content": { "type": "ultimate", ... }\n}'}
-            rows={20}
-            spellCheck={false}
-            className="w-full resize-y rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 font-mono text-xs text-zinc-300 placeholder:text-zinc-700 focus:border-amber-400/60 focus:outline-none transition-colors"
-          />
 
-          {parseError && <p className="mt-2 text-xs text-red-400">{parseError}</p>}
-
-          {preview && !parseError && (
-            <div className="mt-3 rounded-xl border border-zinc-700/50 bg-zinc-800/60 px-4 py-3">
-              <p className="mb-2 text-xs font-semibold text-zinc-500">Önizleme</p>
-              <div className="space-y-1 text-xs">
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-zinc-600">Term:</span>
-                  <span className="font-medium text-white">{preview.term ?? "—"}</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-zinc-600">Slug:</span>
-                  <span className="text-amber-400">{toSlug(preview.term ?? "")}</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-zinc-600">Açıklama:</span>
-                  <span className="line-clamp-1 text-zinc-300">{preview.description ?? "—"}</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-zinc-600">Etiketler:</span>
-                  <span className="text-zinc-300">
-                    {Array.isArray(preview.tags) ? preview.tags.join(", ") : "—"}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-zinc-600">İçerik tipi:</span>
-                  <span className={preview.content?.type === "ultimate" ? "text-emerald-400" : "text-zinc-500"}>
-                    {preview.content?.type ?? "tanımsız"}
-                  </span>
-                </div>
-              </div>
+          {/* Bildirim */}
+          {status === "success" && message && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-emerald-700 bg-emerald-900/30 px-4 py-3 text-sm text-emerald-400">
+              <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} />
+              {message}
             </div>
           )}
-        </div>
+          {status === "error" && message && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-red-800 bg-red-900/30 px-4 py-3 text-sm text-red-400">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} />
+              {message}
+            </div>
+          )}
 
-        {/* ── Sonuç ── */}
-        {result && (
-          <div className={`flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm ${
-            result.ok
-              ? "border border-emerald-700 bg-emerald-900/30 text-emerald-400"
-              : "border border-red-700 bg-red-900/30 text-red-400"
-          }`}>
-            {result.ok
-              ? <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} />
-              : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} />
-            }
-            {result.msg}
+          {/* Butonlar */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleSave}
+              disabled={status === "loading" || jsonValid === false}
+              className="flex items-center gap-2 rounded-xl bg-amber-400 px-6 py-3 text-sm font-bold text-zinc-900 hover:bg-amber-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {status === "loading"
+                ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Kaydediliyor...</>
+                : <><Save className="h-4 w-4" strokeWidth={2} /> {isEdit ? "Güncelle" : "Kaydet"}</>
+              }
+            </button>
+            <button
+              onClick={() => router.push("/admin/icerik")}
+              className="rounded-xl border border-zinc-700 px-4 py-3 text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Geri
+            </button>
           </div>
-        )}
 
-        {/* ── Butonlar ── */}
-        <div className="flex gap-3 pt-1">
-          <button
-            type="button"
-            onClick={() => handleSubmit(false)}
-            disabled={isPending || !!parseError || !jsonText.trim()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-700 py-3 text-sm font-semibold text-zinc-400 hover:border-zinc-500 hover:text-white transition-all disabled:opacity-40"
-          >
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} /> : <Save className="h-4 w-4" strokeWidth={1.5} />}
-            Taslak Kaydet
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSubmit(true)}
-            disabled={isPending || !!parseError || !jsonText.trim()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-400 py-3 text-sm font-semibold text-zinc-900 hover:bg-amber-300 transition-all disabled:opacity-40"
-          >
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} /> : <Eye className="h-4 w-4" strokeWidth={1.5} />}
-            Yayına Al
-          </button>
         </div>
-
-      </div>
+      )}
     </div>
   );
 }
+
+// ─── Wrapper ─────────────────────────────────────────────────────────────────
+
+export default function RuyaEklePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-full items-center justify-center py-20">
+        <Loader2 className="h-5 w-5 animate-spin text-zinc-600" strokeWidth={1.5} />
+      </div>
+    }>
+      <RuyaEkleForm />
+    </Suspense>
+  );
+}
+
+// ─── Placeholder ──────────────────────────────────────────────────────────────
+
+const PLACEHOLDER = `{
+  "term": "Rüyada Yılan Görmek",
+  "slug": "ruyada-yilan-gormek",
+  "description": "Kısa meta açıklama (160 karakter)",
+  "is_published": false,
+  "tags": ["hayvan", "korku"],
+  "content": {
+    "type": "ultimate",
+    "psychological": "Psikolojik analiz metni...",
+    "traditional_wisdom": {
+      "introduction": "İslami giriş metni...",
+      "pillars": [
+        { "title": "Olumlu Yorum", "description": "Açıklama..." },
+        { "title": "Olumsuz Yorum", "description": "Açıklama..." }
+      ]
+    },
+    "scenarios": [
+      { "title": "Senaryo başlığı", "meaning": "Anlam..." }
+    ],
+    "faq": [
+      { "question": "Soru?", "answer": "Cevap." }
+    ]
+  }
+}`;

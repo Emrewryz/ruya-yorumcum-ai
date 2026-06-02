@@ -1,11 +1,10 @@
-Need to install the following packages:
-tree-node-cli@1.6.0
-Ok to proceed? (y) 
 ruya-yorumcum-ai
 ├── app
 │   ├── (admin)
 │   │   ├── admin
 │   │   │   ├── analytics
+│   │   │   │   └── page.tsx
+│   │   │   ├── blog-ekle
 │   │   │   │   └── page.tsx
 │   │   │   ├── cms
 │   │   │   │   ├── ruya-ekle
@@ -15,6 +14,9 @@ ruya-yorumcum-ai
 │   │   │   │   └── page.tsx
 │   │   │   ├── takvim
 │   │   │   │   └── page.tsx
+│   │   │   ├── testler
+│   │   │   │   └── ekle
+│   │   │   │       └── page.tsx
 │   │   │   ├── users
 │   │   │   │   └── page.tsx
 │   │   │   └── page.tsx
@@ -29,6 +31,7 @@ ruya-yorumcum-ai
 │   │   └── layout.tsx
 │   ├── actions
 │   │   ├── admin-actions.ts
+│   │   ├── admin-blog-actions.ts
 │   │   ├── analyze-dream.ts
 │   │   ├── chat-actions.ts
 │   │   ├── cms-actions.ts
@@ -51,6 +54,7 @@ ruya-yorumcum-ai
 │   ├── auth
 │   │   ├── callback
 │   │   │   └── route.ts
+│   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── blog
 │   │   ├── [slug]
@@ -83,21 +87,30 @@ ruya-yorumcum-ai
 │   ├── share
 │   │   └── [token]
 │   │       └── page.tsx
+│   ├── testler
+│   │   ├── [slug]
+│   │   │   └── page.tsx
+│   │   └── page.tsx
 │   ├── globals.css
 │   ├── layout.tsx
 │   ├── page.tsx
 │   ├── robots.ts
 │   └── sitemap.ts
 ├── components
+│   ├── home
+│   │   ├── MessageBubble.tsx
+│   │   ├── MobileDrawer.tsx
+│   │   ├── MobileHeader.tsx
+│   │   ├── StickyInput.tsx
+│   │   └── TypingIndicator.tsx
 │   ├── AppSidebar.tsx
 │   ├── CookieConsent.tsx
 │   ├── CreditModal.tsx
 │   ├── DreamVisualizer.tsx
 │   ├── Footer.tsx
+│   ├── GlobalMobileNav.tsx
 │   ├── HomeClient.tsx
 │   ├── KesfetClient.tsx
-│   ├── MobileNav.tsx
-│   ├── MobileNavWrapper.tsx
 │   ├── Navbar.tsx
 │   ├── NavbarWrapper.tsx
 │   ├── OruntuKarti.tsx
@@ -107,6 +120,13 @@ ruya-yorumcum-ai
 │   └── Skeleton.tsx
 ├── constants
 │   └── cities.ts
+├── public
+│   ├── 4f32751213d8d7cb4899.txt
+│   ├── ads.txt
+│   ├── favicon.ico
+│   ├── googleeb31db8436dee82c.html
+│   ├── llms.txt
+│   └── manifest.json
 ├── utils
 │   ├── supabase
 │   │   ├── client.ts
@@ -122,6 +142,7 @@ ruya-yorumcum-ai
 ├── package-lock.json
 ├── package.json
 ├── postcss.config.mjs
-├── proje-yapisi.txt
+├── proje_yapisi.txt
+├── robots.ts
 ├── tailwind.config.ts
 └── tsconfig.json

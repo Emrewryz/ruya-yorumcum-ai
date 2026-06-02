@@ -1,12 +1,15 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
-import { revalidatePath } from "next/cache";
+import { createClient }            from "@/utils/supabase/server";
+import { revalidatePath }          from "next/cache";
+import { generateDictionaryEntry } from "@/app/actions/generate-dictionary-entry";
 
 // ─── Fallback model dizisi — en ucuzdan en pahalıya ──────────────────────────
 
 const MODELS = [
-  "google/gemini-3.1-flash-lite"
+  "google/gemini-2.5-flash-lite",
+  "google/gemini-2.5-flash-preview-05-20",
+  "google/gemini-2.5-pro",
 ];
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
@@ -197,6 +200,15 @@ export async function analyzeDream(dreamText: string): Promise<AnalyzeResult> {
   }
 
   revalidatePath("/");
+
+  fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/dict-gen`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    dreamText,
+    secret: process.env.DICT_GEN_SECRET,
+  }),
+}).catch((e) => console.warn("[analyzeDream] dict-gen tetiklenemedi:", e?.message));
 
   return { success: true, dreamId: dream.id };
 }

@@ -23,13 +23,16 @@ type ModalReason = "NO_AUTH" | "NO_CREDIT";
 // ─── Analiz Bölümü ────────────────────────────────────────────────────────────
 
 function AnalysisSection({ label, text }: { label: string; text: string }) {
+  // ── güvenlik: string'e zorla ──
+  const safeText = typeof text === "string" ? text : JSON.stringify(text ?? "");
+
   return (
     <div className="py-5 border-b border-zinc-100 last:border-0 animate-in fade-in duration-500">
       <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">
         {label}
       </p>
       <div className="text-sm leading-loose text-zinc-700">
-        {text.split("\n").map((line, i) => (
+        {safeText.split("\n").map((line, i) => (
           <p key={i} className={line.trim() === "" ? "h-2" : "mb-1"}>{line}</p>
         ))}
       </div>
@@ -38,11 +41,13 @@ function AnalysisSection({ label, text }: { label: string; text: string }) {
 }
 
 function LockedPreview({ label, text }: { label: string; text: string }) {
+  const safeText = typeof text === "string" ? text : JSON.stringify(text ?? "");
+
   return (
     <div className="py-5 border-b border-zinc-100 last:border-0">
       <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">{label}</p>
       <div className="blur-[5px] select-none pointer-events-none text-sm leading-loose text-zinc-700">
-        {text.split("\n").slice(0, 4).map((line, i) => (
+        {safeText.split("\n").slice(0, 4).map((line, i) => (
           <p key={i} className={line.trim() === "" ? "h-2" : "mb-1"}>{line}</p>
         ))}
       </div>
