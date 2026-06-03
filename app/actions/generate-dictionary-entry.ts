@@ -51,7 +51,8 @@ GÖREV: Sana bir rüya metni verilecek. Şu kuralları KESİNLİKLE uygula:
 2. SOYUTLAMA: Sadece rüyadaki ana nesneleri ve eylemleri (örn: "eski okul", "siyah su",
    "boğulmak", "uçmak") birleştirerek genel ve ansiklopedik bir rüya tabiri yaz.
 3. DİL: Her şey 3. tekil şahıs ağzıyla ("rüyayı gören", "kişi", "bu rüya").
-4. FORMAT: Yanıtın SADECE aşağıdaki JSON olsun, başka hiçbir şey ekleme:
+4.description alanı SEO odaklı, merak uyandıran, 120-160 karakter arası olsun.
+5. FORMAT: Yanıtın SADECE aşağıdaki JSON olsun, başka hiçbir şey ekleme:
 
 {
   "title": "Rüyada [Ana Tema] Görmek",
