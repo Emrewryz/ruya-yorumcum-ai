@@ -27,8 +27,13 @@ interface DictionaryContent {
 function toSlug(text: string): string {
   return text
     .toLowerCase()
-    .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
-    .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")  // ← bu satır eksikti
+    .replace(/İ/g, "i")  // ← büyük İ de
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
     .replace(/[^a-z0-9\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-")
@@ -74,6 +79,8 @@ GÖREV: Sana bir rüya metni verilecek. Şu kuralları KESİNLİKLE uygula:
 // ─── Ana Fonksiyon ────────────────────────────────────────────────────────────
 
 export async function generateDictionaryEntry(dreamText: string): Promise<void> {
+      console.log("[DictGen] BAŞLADI:", dreamText.slice(0, 50)); // ← ekle
+
   // Çok kısa metinleri atla
   if (!dreamText || dreamText.trim().length < 20) return;
 
@@ -85,7 +92,7 @@ export async function generateDictionaryEntry(dreamText: string): Promise<void> 
         "Content-Type":  "application/json",
         "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "HTTP-Referer":  "https://www.ruyayorumcum.com.tr",
-        "X-Title":       "Rüya Yorumcum — Dictionary Generator",
+"X-Title":       "Ruya Yorumcum - Dictionary Generator",
       },
       body: JSON.stringify({
         model:       "google/gemini-2.5-flash-lite",
