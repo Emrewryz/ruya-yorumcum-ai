@@ -14,21 +14,25 @@ export interface ChatMessage {
 }
 
 export interface DreamSession {
-  id:                  string;
-  dream_title:         string | null;
-  dream_text:          string;
+  id:             string;
+  dream_title:    string | null;
+  dream_text:     string;
   ai_response: {
-    kisa_ozet:          string;
-    islami_analiz:      string;
-    psikolojik_analiz:  string;
-    semboller:          string;
+    kisa_ozet:      string;
+    detayli_tahlil: string; // ← güncellendi
+    semboller:      string;
+    // Eski alanlar — geriye dönük uyumluluk için opsiyonel
+    islami_analiz?:     string;
+    psikolojik_analiz?: string;
   };
-  moon_phase:           string | null;
-  image_url:            string | null;
-  created_at:           string;
-  islami_unlocked:      boolean;
-  psikolojik_unlocked:  boolean;
-  messages:             ChatMessage[];
+  moon_phase:      string | null;
+  image_url:       string | null;
+  created_at:      string;
+  detay_unlocked:  boolean;        // ← yeni
+  // Eski alanlar — silinmedi, mevcut veriler bozulmasın
+  islami_unlocked:     boolean;
+  psikolojik_unlocked: boolean;
+  messages:        ChatMessage[];
 }
 
 export interface SidebarChat {
@@ -96,6 +100,7 @@ export async function getDreamSession(dreamId: string): Promise<DreamSession | n
       created_at,
       user_id,
       guest_session_id,
+      detay_unlocked,
       islami_unlocked,
       psikolojik_unlocked
     `)
@@ -125,7 +130,8 @@ export async function getDreamSession(dreamId: string): Promise<DreamSession | n
     moon_phase:          dream.moon_phase,
     image_url:           dream.image_url ?? null,
     created_at:          dream.created_at,
-    islami_unlocked:     dream.islami_unlocked ?? false,
+    detay_unlocked:      dream.detay_unlocked      ?? false,
+    islami_unlocked:     dream.islami_unlocked     ?? false,
     psikolojik_unlocked: dream.psikolojik_unlocked ?? false,
     messages:            (messages ?? []) as ChatMessage[],
   };

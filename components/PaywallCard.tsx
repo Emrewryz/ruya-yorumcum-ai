@@ -1,54 +1,52 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Lock, Loader2, CheckCircle } from "lucide-react";
+import { Lock, Loader2, ChevronDown } from "lucide-react";
 import { spendAnalysisCredit } from "@/app/actions/credit-actions";
 import CreditModal from "@/components/CreditModal";
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
 interface PaywallCardProps {
-  dreamId:              string;
-  islamiAnaliz:         string;
-  psikolojikAnaliz:     string;
-  semboller:            string;
-  // DB'den gelen başlangıç durumu — sayfa yenilemede korunur
-  initialIslamiUnlocked?:     boolean;
-  initialPsikolojikUnlocked?: boolean;
-  onUnlocked?: () => void;
+  dreamId:          string;
+  detayliTahlil:    string;
+  semboller:        string;
+  initialUnlocked?: boolean;
+  onUnlocked?:      () => void;
 }
 
 type ModalReason = "NO_AUTH" | "NO_CREDIT";
 
-// ─── Analiz Bölümü ────────────────────────────────────────────────────────────
+// ─── Metin Render ─────────────────────────────────────────────────────────────
 
-function AnalysisSection({ label, text }: { label: string; text: string }) {
-  // ── güvenlik: string'e zorla ──
-  const safeText = typeof text === "string" ? text : JSON.stringify(text ?? "");
-
+function TextBlock({ text, label }: { text: string; label: string }) {
+  const safeText = typeof text === "string" ? text : "";
   return (
-    <div className="py-5 border-b border-zinc-100 last:border-0 animate-in fade-in duration-500">
+    <div>
       <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">
         {label}
       </p>
-      <div className="text-sm leading-loose text-zinc-700">
-        {safeText.split("\n").map((line, i) => (
-          <p key={i} className={line.trim() === "" ? "h-2" : "mb-1"}>{line}</p>
+      <div className="text-[15px] leading-loose text-zinc-700 space-y-3">
+        {safeText.split("\n\n").filter(Boolean).map((para, i) => (
+          <p key={i}>{para.trim()}</p>
         ))}
       </div>
     </div>
   );
 }
 
-function LockedPreview({ label, text }: { label: string; text: string }) {
-  const safeText = typeof text === "string" ? text : JSON.stringify(text ?? "");
+// ─── Semboller ────────────────────────────────────────────────────────────────
 
+function SembollerBlock({ text }: { text: string }) {
+  const safeText = typeof text === "string" ? text : "";
   return (
-    <div className="py-5 border-b border-zinc-100 last:border-0">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">{label}</p>
-      <div className="blur-[5px] select-none pointer-events-none text-sm leading-loose text-zinc-700">
-        {safeText.split("\n").slice(0, 4).map((line, i) => (
-          <p key={i} className={line.trim() === "" ? "h-2" : "mb-1"}>{line}</p>
+    <div>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">
+        Öne Çıkan Semboller
+      </p>
+      <div className="space-y-2">
+        {safeText.split("\n").filter((l) => l.trim()).map((line, i) => (
+          <p key={i} className="text-[15px] leading-relaxed text-zinc-700">{line.trim()}</p>
         ))}
       </div>
     </div>
@@ -59,165 +57,123 @@ function LockedPreview({ label, text }: { label: string; text: string }) {
 
 export default function PaywallCard({
   dreamId,
-  islamiAnaliz,
-  psikolojikAnaliz,
+  detayliTahlil,
   semboller,
-  initialIslamiUnlocked     = false,
-  initialPsikolojikUnlocked = false,
+  initialUnlocked = false,
   onUnlocked,
 }: PaywallCardProps) {
-  // DB'den gelen başlangıç durumu — sayfa yenilemede açık kalır
-  const [islamiUnlocked,     setIslamiUnlocked]     = useState(initialIslamiUnlocked);
-  const [psikolojikUnlocked, setPsikolojikUnlocked] = useState(initialPsikolojikUnlocked);
-  const [loadingTarget,      setLoadingTarget]      = useState<"islami" | "psikolojik" | "ikisi" | null>(null);
-  const [errorMsg,           setErrorMsg]           = useState<string | null>(null);
-  const [modalOpen,          setModalOpen]          = useState(false);
-  const [modalReason,        setModalReason]        = useState<ModalReason>("NO_CREDIT");
-  const [, startTransition]  = useTransition();
+  const [isUnlocked, setIsUnlocked]   = useState(initialUnlocked);
+  const [loading, setLoading]         = useState(false);
+  const [errorMsg, setErrorMsg]       = useState<string | null>(null);
+  const [modalOpen, setModalOpen]     = useState(false);
+  const [modalReason, setModalReason] = useState<ModalReason>("NO_CREDIT");
+  const [, startTransition]           = useTransition();
 
-  const bothUnlocked = islamiUnlocked && psikolojikUnlocked;
+  const safeDetay = typeof detayliTahlil === "string" ? detayliTahlil : "";
 
-  function checkBothAndNotify(i: boolean, p: boolean) {
-    if (i && p) onUnlocked?.();
-  }
+  // Önizleme: ilk ~200 karakter
+  const preview = safeDetay.slice(0, 220).trim() + (safeDetay.length > 220 ? "..." : "");
 
-  async function doUnlock(target: "islami" | "psikolojik"): Promise<boolean> {
-    const result = await spendAnalysisCredit(dreamId, target);
-    if (result.success) return true;
-    if (result.code === "NO_AUTH" || result.code === "NO_CREDIT") {
-      setModalReason(result.code);
-      setModalOpen(true);
-    } else {
-      setErrorMsg(result.error);
-    }
-    return false;
-  }
-
-  function handleUnlock(target: "islami" | "psikolojik" | "ikisi") {
-    if (loadingTarget) return;
+  function handleUnlock() {
+    if (loading) return;
     setErrorMsg(null);
-    setLoadingTarget(target);
+    setLoading(true);
 
     startTransition(async () => {
-      if (target === "islami") {
-        const ok = await doUnlock("islami");
-        if (ok) {
-          setIslamiUnlocked(true);
-          checkBothAndNotify(true, psikolojikUnlocked);
+      const result = await spendAnalysisCredit(dreamId);
+
+      if (!result.success) {
+        if (result.code === "NO_AUTH" || result.code === "NO_CREDIT") {
+          setModalReason(result.code as ModalReason);
+          setModalOpen(true);
+        } else {
+          setErrorMsg(result.error ?? "Bir hata oluştu.");
         }
-      } else if (target === "psikolojik") {
-        const ok = await doUnlock("psikolojik");
-        if (ok) {
-          setPsikolojikUnlocked(true);
-          checkBothAndNotify(islamiUnlocked, true);
-        }
-      } else if (target === "ikisi") {
-        const ok1 = await doUnlock("islami");
-        if (!ok1) { setLoadingTarget(null); return; }
-        setIslamiUnlocked(true);
-        const ok2 = await doUnlock("psikolojik");
-        if (ok2) {
-          setPsikolojikUnlocked(true);
-          onUnlocked?.();
-        }
+      } else {
+        setIsUnlocked(true);
+        onUnlocked?.();
       }
-      setLoadingTarget(null);
+      setLoading(false);
     });
   }
 
-  return (
-    <>
-      <CreditModal open={modalOpen} onClose={() => setModalOpen(false)} reason={modalReason} />
+  // ── Kilitli Görünüm ──
+  if (!isUnlocked) {
+    return (
+      <>
+        <CreditModal open={modalOpen} onClose={() => setModalOpen(false)} reason={modalReason} />
 
-      <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
-        <div className="px-6">
-          {islamiUnlocked
-            ? <AnalysisSection label="İslami Yorum" text={islamiAnaliz} />
-            : <LockedPreview   label="İslami Yorum" text={islamiAnaliz} />
-          }
-          {psikolojikUnlocked
-            ? <AnalysisSection label="Psikolojik Analiz" text={psikolojikAnaliz} />
-            : <LockedPreview   label="Psikolojik Analiz" text={psikolojikAnaliz} />
-          }
-          {bothUnlocked && (
-            <AnalysisSection label="Semboller" text={semboller} />
-          )}
-        </div>
+        <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+          {/* Önizleme + blur */}
+          <div className="relative px-6 pt-6 pb-0">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">
+              Detaylı Rüya Tahlili
+            </p>
 
-        {/* Kilit butonları */}
-        {!bothUnlocked && (
-          <div className="border-t border-zinc-100 bg-zinc-50/60 px-6 py-5">
+            {/* Önizleme metni */}
+            <p className="text-[15px] leading-loose text-zinc-700 mb-0">
+              {preview}
+            </p>
+
+            {/* Blur + gradient overlay */}
+            <div className="relative -mx-6 h-32 pointer-events-none select-none overflow-hidden">
+              {/* Blurlu içerik arkada */}
+              <div className="px-6 blur-[6px] opacity-60 text-[15px] leading-loose text-zinc-700">
+                {safeDetay.slice(220, 500)}
+              </div>
+              {/* Gradient üstten alta beyaza */}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/60 to-white" />
+            </div>
+          </div>
+
+          {/* Kilit butonu */}
+          <div className="px-6 pb-6 pt-2">
             {errorMsg && (
               <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-500">
                 {errorMsg}
               </p>
             )}
-            <p className="mb-3 text-xs text-zinc-400 text-center">
-              {!islamiUnlocked && !psikolojikUnlocked
-                ? "Hangi analizi görmek istersiniz?"
-                : islamiUnlocked ? "Psikolojik analiz kilitli" : "İslami yorum kilitli"
-              }
-            </p>
-            <div className="flex flex-col gap-2">
-              {!islamiUnlocked && !psikolojikUnlocked && (
-                <button
-                  onClick={() => handleUnlock("ikisi")}
-                  disabled={!!loadingTarget}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-[0.98] disabled:opacity-50"
-                >
-                  {loadingTarget === "ikisi"
-                    ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
-                    : <Lock className="h-4 w-4" strokeWidth={1.5} />
-                  }
-                  Her İkisini Gör
-                  <span className="rounded-md bg-white/15 px-2 py-0.5 text-xs">2 Kredi</span>
-                </button>
-              )}
-              <div className="flex flex-col sm:flex-row gap-2">
-                {!islamiUnlocked && (
-                  <button
-                    onClick={() => handleUnlock("islami")}
-                    disabled={!!loadingTarget}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-xs font-semibold text-zinc-700 transition-all hover:border-zinc-400 hover:bg-zinc-50 active:scale-[0.98] disabled:opacity-50"
-                  >
-                    {loadingTarget === "islami"
-                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
-                      : <Lock className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    }
-                    İslami Yorum
-                    <span className="text-zinc-400">· 1 Kredi</span>
-                  </button>
-                )}
-                {!psikolojikUnlocked && (
-                  <button
-                    onClick={() => handleUnlock("psikolojik")}
-                    disabled={!!loadingTarget}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-xs font-semibold text-zinc-700 transition-all hover:border-zinc-400 hover:bg-zinc-50 active:scale-[0.98] disabled:opacity-50"
-                  >
-                    {loadingTarget === "psikolojik"
-                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
-                      : <Lock className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    }
-                    Psikolojik
-                    <span className="text-zinc-400">· 1 Kredi</span>
-                  </button>
-                )}
-              </div>
-              <p className="text-center text-xs text-zinc-400">
-                Krediniz yoksa ödeme seçenekleri gösterilir
-              </p>
-            </div>
-          </div>
-        )}
 
-        {/* Tümü açıldı */}
-        {bothUnlocked && (
-          <div className="mx-6 mb-5 flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2.5 animate-in fade-in duration-500">
-            <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" strokeWidth={1.5} />
-            <p className="text-xs font-medium text-emerald-700">Tüm analizler açıldı</p>
+            <button
+              onClick={handleUnlock}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-3 rounded-xl bg-zinc-900 px-5 py-3.5 text-sm font-medium text-white transition-all hover:bg-zinc-800 active:scale-[0.99] disabled:opacity-60"
+            >
+              {loading
+                ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
+                : <Lock    className="h-4 w-4"              strokeWidth={1.5} />
+              }
+              <span>Detaylı Tahlili Gör</span>
+              <span className="ml-auto rounded-md border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-normal">
+                2 Kredi
+              </span>
+            </button>
+
+            <p className="mt-2.5 text-center text-[11px] text-zinc-400">
+              İslami tabir · Günlük dil analizi · Semboller dahil
+            </p>
           </div>
-        )}
+        </div>
+      </>
+    );
+  }
+
+  // ── Açık Görünüm ──
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden divide-y divide-zinc-100">
+
+      {/* Detaylı Tahlil */}
+      <div className="px-6 py-5">
+        <TextBlock text={detayliTahlil} label="Detaylı Rüya Tahlili" />
       </div>
-    </>
+
+      {/* Semboller */}
+      {semboller && (
+        <div className="px-6 py-5">
+          <SembollerBlock text={semboller} />
+        </div>
+      )}
+
+    </div>
   );
 }

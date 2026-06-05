@@ -2,25 +2,26 @@
 
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import {
   Plus, Search, RefreshCw, Pencil, Trash2, Loader2,
   Eye, EyeOff, CheckCircle, Clock, Send, FileJson,
-  AlertCircle, Bot, User2, Library, FileText, FlaskConical
+  AlertCircle, Bot, Library, FileText, FlaskConical, Sparkles
 } from "lucide-react";
 import { getDreamEntries, deleteDreamEntry } from "@/app/actions/cms-actions";
 import { createBlogPost } from "@/app/actions/admin-blog-actions";
+import { generateDictionaryContent } from "@/app/actions/admin-dictionary-actions";
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
-type MainTab   = "sozluk" | "blog" | "testler";
-type DictFilter = "ai" | "manuel" | "yayinda";
+type MainTab    = "sozluk" | "blog" | "testler";
+type DictFilter = "bekliyor" | "taslak" | "yayinda";
 
 interface DictEntry {
   id: string; term: string; slug: string;
   is_published: boolean; published_at: string | null;
   search_count: number; updated_at: string;
+  content: any;
 }
 
 interface BlogPost {
@@ -34,11 +35,15 @@ interface ViralTest {
   is_published: boolean; created_at: string;
 }
 
-// ─── Yardımcı ─────────────────────────────────────────────────────────────────
+// ─── Yardımcılar ──────────────────────────────────────────────────────────────
 
 function isLive(published: boolean, publishedAt: string | null): boolean {
   if (!published || !publishedAt) return false;
   return new Date(publishedAt) <= new Date();
+}
+
+function hasContent(entry: DictEntry): boolean {
+  return !!entry.content && Object.keys(entry.content).length > 0;
 }
 
 function TabBtn({
@@ -70,19 +75,21 @@ function TabBtn({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SÖZLÜK SEKMESI
+// SÖZLÜK SEKMESİ
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SozlukTab() {
   const [entries, setEntries]       = useState<DictEntry[]>([]);
   const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState("");
-  const [filter, setFilter]         = useState<DictFilter>("ai");
+  const [filter, setFilter]         = useState<DictFilter>("bekliyor");
   const [deleting, setDeleting]     = useState<string | null>(null);
   const [publishing, setPublishing] = useState<string | null>(null);
+  const [generating, setGenerating] = useState<string | null>(null);
+  const [genError, setGenError]     = useState<Record<string, string>>({});
   const [, start]                   = useTransition();
 
-  const fetch = (q = search) => {
+  const fetchEntries = (q = search) => {
     setLoading(true);
     start(async () => {
       const data = await getDreamEntries(q);
@@ -92,31 +99,31 @@ function SozlukTab() {
   };
 
   useEffect(() => {
-    const t = setTimeout(() => fetch(), 300);
+    fetchEntries();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => fetchEntries(), 300);
     return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  // AI üretilmiş = published_at gelecekte (1 yıl sonra) veya is_published false
-  // Manuel = admin tarafından eklendi (search_count başlangıçta 0)
-  // Bu ayrımı published_at'ten anlıyoruz: AI maddeleri 1 yıl sonraya set edilir
-  const AI_FUTURE_THRESHOLD = 30 * 24 * 60 * 60 * 1000; // 30 gün
-
-  function isAIGenerated(e: DictEntry) {
-    if (!e.published_at) return false;
-    const pub = new Date(e.published_at);
-    return pub.getTime() - Date.now() > AI_FUTURE_THRESHOLD;
-  }
+  // bekliyor = içerik yok + yayında değil (AI trigger'dan geldi)
+  // taslak   = içerik var + yayında değil (admin üretti, henüz yayınlamadı)
+  // yayinda  = yayında
 
   const filtered = entries.filter((e) => {
-    if (filter === "ai")      return !isLive(e.is_published, e.published_at) && isAIGenerated(e);
-    if (filter === "manuel")  return !isLive(e.is_published, e.published_at) && !isAIGenerated(e);
-    if (filter === "yayinda") return isLive(e.is_published, e.published_at);
+    const live = isLive(e.is_published, e.published_at);
+    if (filter === "bekliyor") return !live && !hasContent(e);
+    if (filter === "taslak")   return !live && hasContent(e);
+    if (filter === "yayinda")  return live;
     return true;
   });
 
-  const aiCount     = entries.filter((e) => !isLive(e.is_published, e.published_at) && isAIGenerated(e)).length;
-  const manuelCount = entries.filter((e) => !isLive(e.is_published, e.published_at) && !isAIGenerated(e)).length;
-  const liveCount   = entries.filter((e) => isLive(e.is_published, e.published_at)).length;
+  const bekliyorCount = entries.filter((e) => !isLive(e.is_published, e.published_at) && !hasContent(e)).length;
+  const taslakCount   = entries.filter((e) => !isLive(e.is_published, e.published_at) && hasContent(e)).length;
+  const yayindaCount  = entries.filter((e) => isLive(e.is_published, e.published_at)).length;
 
   async function handleDelete(id: string, term: string) {
     if (!confirm(`"${term}" silinsin mi?`)) return;
@@ -142,33 +149,47 @@ function SozlukTab() {
     setPublishing(null);
   }
 
-  const filterBtns: { key: DictFilter; label: string; count: number; icon: React.ElementType }[] = [
-    { key: "ai",      label: "AI Üretildi",   count: aiCount,     icon: Bot   },
-    { key: "manuel",  label: "Manuel Taslak", count: manuelCount, icon: User2 },
-    { key: "yayinda", label: "Yayında",       count: liveCount,   icon: Eye   },
+  async function handleGenerate(entry: DictEntry) {
+    setGenerating(entry.id);
+    setGenError((prev) => { const n = { ...prev }; delete n[entry.id]; return n; });
+
+    const result = await generateDictionaryContent(entry.id);
+
+    if (!result.success) {
+      setGenError((prev) => ({ ...prev, [entry.id]: result.error }));
+      setGenerating(null);
+    } else {
+      // İçerik üretildi — listeyi yenile
+      fetchEntries();
+      setGenerating(null);
+    }
+  }
+
+  const filterBtns: { key: DictFilter; label: string; count: number }[] = [
+    { key: "bekliyor", label: "İçerik Bekliyor", count: bekliyorCount },
+    { key: "taslak",   label: "Taslak",          count: taslakCount   },
+    { key: "yayinda",  label: "Yayında",         count: yayindaCount  },
   ];
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
+      {/* Üst bar */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 p-1">
-          {filterBtns.map(({ key, label, count, icon: Icon }) => (
+          {filterBtns.map(({ key, label, count }) => (
             <button
               key={key}
               onClick={() => setFilter(key)}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                 filter === key
-                  ? key === "ai" ? "bg-amber-400 text-zinc-900"
-                  : key === "manuel" ? "bg-zinc-600 text-white"
-                  : "bg-emerald-600 text-white"
+                  ? "bg-amber-400 text-zinc-900"
                   : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
               {label}
               {count > 0 && (
                 <span className={`rounded-full px-1.5 text-[10px] font-bold ${
-                  filter === key ? "bg-black/20 text-current" : "bg-zinc-700 text-zinc-400"
+                  filter === key ? "bg-zinc-900/30 text-zinc-900" : "bg-zinc-700 text-zinc-400"
                 }`}>{count}</span>
               )}
             </button>
@@ -176,12 +197,15 @@ function SozlukTab() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => fetch()} className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white transition-colors">
+          <button
+            onClick={() => fetchEntries()}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white transition-colors"
+          >
             <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.5} />
           </button>
           <Link
             href="/admin/cms/ruya-ekle"
-            className="flex items-center gap-2 rounded-xl bg-amber-400 px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-amber-300 transition-colors"
+            className="flex items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-amber-300 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
             Yeni Madde
@@ -189,11 +213,11 @@ function SozlukTab() {
         </div>
       </div>
 
-      {/* AI filtresi açıklama */}
-      {filter === "ai" && (
+      {/* Açıklama */}
+      {filter === "bekliyor" && bekliyorCount > 0 && (
         <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-800/50 bg-amber-900/20 px-4 py-2.5 text-xs text-amber-400">
           <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-          Kullanıcı rüya analizlerinden otomatik üretildi. Kontrol edip onaylayın.
+          Kullanıcı rüyalarından otomatik oluşturuldu. "AI ile İçerik Üret" ile detay ekleyin, ardından yayınlayın.
         </div>
       )}
 
@@ -208,49 +232,82 @@ function SozlukTab() {
         />
       </div>
 
+      {/* Tablo */}
       <div className="overflow-hidden rounded-xl border border-zinc-800">
         <table className="w-full text-sm">
           <thead className="border-b border-zinc-800 bg-zinc-900">
             <tr>
               <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Sembol</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Kaynak</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">İçerik</th>
               <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Arama</th>
               <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">İşlem</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800 bg-zinc-900/50">
             {loading ? (
-              <tr><td colSpan={4} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-zinc-600" strokeWidth={1.5} /></td></tr>
+              <tr><td colSpan={4} className="py-10 text-center">
+                <Loader2 className="mx-auto h-5 w-5 animate-spin text-zinc-600" strokeWidth={1.5} />
+              </td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={4} className="py-10 text-center text-sm text-zinc-600">Bu filtrede içerik yok.</td></tr>
+              <tr><td colSpan={4} className="py-10 text-center text-sm text-zinc-600">
+                Bu filtrede içerik yok.
+              </td></tr>
             ) : filtered.map((entry) => {
-              const live = isLive(entry.is_published, entry.published_at);
-              const ai   = isAIGenerated(entry);
+              const live  = isLive(entry.is_published, entry.published_at);
+              const hasC  = hasContent(entry);
+              const isGen = generating === entry.id;
+
               return (
                 <tr key={entry.id} className="hover:bg-zinc-800/40 transition-colors">
-                  <td className="px-5 py-3">
+
+                  {/* Sembol */}
+                  <td className="px-5 py-3.5">
                     <p className="font-medium text-white">{entry.term}</p>
                     <p className="text-xs text-zinc-600">{entry.slug}</p>
                   </td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-                      ai
-                        ? "border-amber-700/50 bg-amber-900/20 text-amber-400"
-                        : "border-zinc-700 bg-zinc-800 text-zinc-400"
-                    }`}>
-                      {ai ? <><Bot className="h-3 w-3" strokeWidth={1.5} />AI</> : <><User2 className="h-3 w-3" strokeWidth={1.5} />Manuel</>}
-                    </span>
+
+                  {/* İçerik durumu */}
+                  <td className="px-5 py-3.5">
+                    {hasC ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-800 bg-emerald-900/30 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+                        <CheckCircle className="h-3 w-3" strokeWidth={1.5} />
+                        Hazır
+                      </span>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <button
+                          onClick={() => handleGenerate(entry)}
+                          disabled={isGen}
+                          className="flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:border-amber-400 hover:bg-amber-400 hover:text-zinc-900 transition-all disabled:opacity-50"
+                        >
+                          {isGen
+                            ? <><Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />Üretiliyor...</>
+                            : <><Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />AI ile İçerik Üret</>
+                          }
+                        </button>
+                        {genError[entry.id] && (
+                          <p className="flex items-center gap-1 text-[11px] text-red-400">
+                            <AlertCircle className="h-3 w-3" strokeWidth={1.5} />
+                            {genError[entry.id]}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </td>
-                  <td className="px-5 py-3">
+
+                  {/* Arama sayısı */}
+                  <td className="px-5 py-3.5">
                     <span className="font-medium text-amber-400">{entry.search_count ?? 0}</span>
                   </td>
-                  <td className="px-5 py-3">
+
+                  {/* İşlemler */}
+                  <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => handleTogglePublish(entry)}
-                        disabled={publishing === entry.id}
-                        title={live ? "Yayından kaldır" : "Yayınla"}
-                        className={`flex h-7 w-7 items-center justify-center rounded-lg border transition-colors disabled:opacity-50 ${
+                        disabled={publishing === entry.id || (!live && !hasC)}
+                        title={!hasC ? "Önce içerik üretin" : live ? "Yayından kaldır" : "Yayınla"}
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg border transition-colors disabled:opacity-30 ${
                           live
                             ? "border-zinc-700 text-zinc-500 hover:text-white"
                             : "border-emerald-800 text-emerald-500 hover:bg-emerald-900/20"
@@ -258,12 +315,14 @@ function SozlukTab() {
                       >
                         {publishing === entry.id
                           ? <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
-                          : live ? <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
-                          : <CheckCircle className="h-3.5 w-3.5" strokeWidth={1.5} />}
+                          : live
+                          ? <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          : <Eye className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        }
                       </button>
                       <Link
                         href={`/admin/cms/ruya-ekle?id=${entry.id}`}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-700 text-zinc-500 hover:text-white transition-colors"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-white transition-colors"
                       >
                         <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
                       </Link>
@@ -274,10 +333,12 @@ function SozlukTab() {
                       >
                         {deleting === entry.id
                           ? <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
-                          : <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />}
+                          : <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        }
                       </button>
                     </div>
                   </td>
+
                 </tr>
               );
             })}
@@ -293,14 +354,14 @@ function SozlukTab() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function BlogTab() {
-  const [posts, setPosts]           = useState<BlogPost[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [rawJson, setRawJson]       = useState("");
+  const [posts, setPosts]             = useState<BlogPost[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [rawJson, setRawJson]         = useState("");
   const [publishDate, setPublishDate] = useState("");
-  const [status, setStatus]         = useState<"idle"|"loading"|"success"|"error">("idle");
-  const [message, setMessage]       = useState<string | null>(null);
-  const [showForm, setShowForm]     = useState(false);
-  const [, start]                   = useTransition();
+  const [status, setStatus]           = useState<"idle"|"loading"|"success"|"error">("idle");
+  const [message, setMessage]         = useState<string | null>(null);
+  const [showForm, setShowForm]       = useState(false);
+  const [, start]                     = useTransition();
 
   function getLocalNow() {
     const now = new Date();
@@ -357,7 +418,6 @@ function BlogTab() {
         </button>
       </div>
 
-      {/* Ekle formu */}
       {showForm && (
         <div className="mb-6 rounded-xl border border-zinc-700 bg-zinc-900 p-5 space-y-4">
           <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Yeni Blog Yazısı (JSON)</p>
@@ -403,7 +463,6 @@ function BlogTab() {
         </div>
       )}
 
-      {/* Liste */}
       <div className="overflow-hidden rounded-xl border border-zinc-800">
         <table className="w-full text-sm">
           <thead className="border-b border-zinc-800 bg-zinc-900">
@@ -602,9 +661,9 @@ export default function IcerikMerkeziPage() {
   const [tab, setTab] = useState<MainTab>("sozluk");
 
   const tabs = [
-    { key: "sozluk"  as MainTab, icon: Library,      label: "Rüya Sözlüğü" },
-    { key: "blog"    as MainTab, icon: FileText,      label: "Blog"          },
-    { key: "testler" as MainTab, icon: FlaskConical,  label: "Testler"       },
+    { key: "sozluk"  as MainTab, icon: Library,     label: "Rüya Sözlüğü" },
+    { key: "blog"    as MainTab, icon: FileText,     label: "Blog"          },
+    { key: "testler" as MainTab, icon: FlaskConical, label: "Testler"       },
   ];
 
   return (
@@ -614,7 +673,6 @@ export default function IcerikMerkeziPage() {
         <p className="mt-0.5 text-sm text-zinc-500">Sözlük, blog yazıları ve testleri tek yerden yönet.</p>
       </div>
 
-      {/* Tab bar */}
       <div className="mb-7 flex items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 p-1 w-fit">
         {tabs.map(({ key, icon, label }) => (
           <TabBtn
@@ -627,7 +685,6 @@ export default function IcerikMerkeziPage() {
         ))}
       </div>
 
-      {/* Tab içeriği */}
       {tab === "sozluk"  && <SozlukTab  />}
       {tab === "blog"    && <BlogTab    />}
       {tab === "testler" && <TestlerTab />}

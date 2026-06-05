@@ -1,16 +1,52 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import { TrendingUp, BookOpen, Brain, HelpCircle, Eye } from "lucide-react";
-import RelatedDreams from "@/components/RelatedDreams";
-
-// ISR — 30 saniyede bir yenile
-export const revalidate = 30;
+import { ArrowLeft, ArrowRight, TrendingUp } from "lucide-react";
 
 const SITE_URL = "https://www.ruyayorumcum.com.tr";
+export const revalidate = 3600;
 
-// ─── Metadata (değişmedi) ─────────────────────────────────────────────────────
+// ─── Yardımcı: Başlık temizliği ───────────────────────────────────────────────
+
+function cleanTitle(title: string): string {
+  return title.replace(/\s*Rüyası\s*$/gi, "").trim();
+}
+
+// ─── Tipler ───────────────────────────────────────────────────────────────────
+
+interface UltimateContent {
+  type:               "ultimate";
+  psychological?:     string;
+  traditional_wisdom?: {
+    introduction?: string;
+    pillars?: { title: string; description: string }[];
+  };
+  scenarios?: { title: string; meaning: string }[];
+  faq?:       { question: string; answer: string }[];
+}
+
+interface DictEntry {
+  id:           string;
+  term:         string;
+  slug:         string;
+  description:  string | null;
+  content:      UltimateContent | any;
+  tags:         string[] | null;
+  search_count: number;
+  updated_at:   string;
+  created_at:   string;
+  published_at: string | null;
+}
+
+interface RelatedEntry {
+  id:          string;
+  term:        string;
+  slug:        string;
+  description: string | null;
+}
+
+// ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
   params,
@@ -18,347 +54,408 @@ export async function generateMetadata({
   params: { slug: string };
 }): Promise<Metadata> {
   const supabase = createClient();
-  const { data: entry } = await supabase
+  const { data } = await supabase
     .from("dream_dictionary")
     .select("term, description, updated_at, created_at")
     .eq("slug", params.slug)
+    .eq("is_published", true)
     .single();
 
-  if (!entry) return { title: "Rüya Tabiri Bulunamadı" };
+  if (!data) return { title: "Rüya Tabirleri" };
 
+  const ct    = cleanTitle(data.term);
+  const title = `${ct} Rüyası Ne Anlama Gelir? — Rüya Yorumcum`;
+  const desc  = data.description?.slice(0, 160) ?? `${ct} rüya tabiri, İslami ve psikolojik yorum.`;
   const url   = `${SITE_URL}/ruya-tabirleri/${params.slug}`;
-  const title = `${entry.term} Rüyası Ne Anlama Gelir? — Rüya Yorumcum`;
-  const desc  = entry.description?.slice(0, 160) ?? undefined;
 
   return {
     title,
     description: desc,
-    alternates: { canonical: url },
-    robots: { index: true, follow: true },
-    openGraph: { title, description: desc, url, type: "article", siteName: "Rüya Yorumcum" },
+    alternates:  { canonical: url },
+    robots:      { index: true, follow: true },
+    openGraph: {
+      title, description: desc, url, type: "article", siteName: "Rüya Yorumcum",
+    },
     twitter: { card: "summary_large_image", title, description: desc },
   };
 }
 
-// ─── FAQ Schema Builder (değişmedi) ──────────────────────────────────────────
+// ─── JSON-LD Builder ──────────────────────────────────────────────────────────
 
-function buildFaqSchema(content: any, term: string) {
-  if (!content) return null;
-  const faqs: { question: string; answer: string }[] = [];
+function buildSchemas(entry: DictEntry, ct: string) {
+  const url = `${SITE_URL}/ruya-tabirleri/${entry.slug}`;
 
-  if (Array.isArray(content?.faq)) {
-    content.faq.forEach((item: any) => {
-      if (item.question && item.answer) faqs.push(item);
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Ana Sayfa",      item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Rüya Tabirleri", item: `${SITE_URL}/ruya-tabirleri` },
+      { "@type": "ListItem", position: 3, name: `${ct} Rüyası`,   item: url },
+    ],
+  };
+
+  const article = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline:      `${ct} Rüyası Ne Anlama Gelir?`,
+    description:   entry.description,
+    datePublished: entry.created_at,
+    dateModified:  entry.updated_at ?? entry.created_at,
+    url,
+    publisher: { "@type": "Organization", name: "Rüya Yorumcum", url: SITE_URL },
+    author:    { "@type": "Organization", name: "Rüya Yorumcum" },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+  };
+
+  const faqItems: { question: string; answer: string }[] = [];
+  const c = entry.content;
+  if (c) {
+    if (Array.isArray(c.faq))
+      c.faq.forEach((f: any) => f.question && f.answer && faqItems.push(f));
+    if (Array.isArray(c.scenarios))
+      c.scenarios.forEach((s: any) =>
+        s.title && s.meaning && faqItems.push({ question: s.title, answer: s.meaning })
+      );
+  }
+  if (faqItems.length === 0) {
+    faqItems.push({
+      question: `${ct} rüyası ne anlama gelir?`,
+      answer:   entry.description ?? `${ct} rüyası çeşitli anlamlar taşır.`,
     });
   }
 
-  if (Array.isArray(content?.scenarios)) {
-    content.scenarios.forEach((s: any) => {
-      if (s.title && s.meaning) faqs.push({ question: s.title, answer: s.meaning });
-    });
-  }
-
-  if (faqs.length === 0) {
-    const firstParagraph =
-      typeof content === "string"
-        ? content.slice(0, 300)
-        : content?.blocks?.find((b: any) => b.type === "paragraph")?.content ?? "";
-    if (!firstParagraph) return null;
-    faqs.push(
-      { question: `${term} rüyası ne anlama gelir?`, answer: firstParagraph },
-      {
-        question: `${term} rüyasının İslami tabirde anlamı nedir?`,
-        answer: `İslami rüya tabirinde ${term} görmek çeşitli anlamlar taşır. Detaylar için sayfamızı inceleyin.`,
-      }
-    );
-  }
-
-  return {
+  const faq = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: faqs.map((f) => ({
+    mainEntity: faqItems.map((f) => ({
       "@type": "Question",
       name: f.question,
       acceptedAnswer: { "@type": "Answer", text: f.answer },
     })),
   };
+
+  return { breadcrumb, article, faq };
 }
 
 // ─── Bölüm Başlığı ────────────────────────────────────────────────────────────
 
-function SectionHeading({
-  icon: Icon,
-  children,
-}: {
-  icon: React.ElementType;
-  children: React.ReactNode;
-}) {
+function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="flex items-center gap-2.5 text-base font-semibold text-zinc-900 mb-4 mt-10">
-      <Icon className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1.5} />
+    <h2 className="not-prose text-lg font-bold text-zinc-900 border-b border-zinc-100 pb-2.5 mb-5 mt-10">
       {children}
     </h2>
   );
 }
 
-// ─── Düz Metin Paragrafı ──────────────────────────────────────────────────────
+// ─── İçerik Render ────────────────────────────────────────────────────────────
 
-function Prose({ text }: { text: string }) {
+function ContentRenderer({ content }: { content: UltimateContent }) {
   return (
-    <>
-      {text.split("\n").filter(Boolean).map((line, i) => (
-        <p key={i} className="text-[16px] leading-loose text-zinc-700 mb-4">
-          {line}
-        </p>
-      ))}
-    </>
+    <div className="prose prose-zinc max-w-none prose-p:text-zinc-700 prose-p:leading-loose prose-headings:font-semibold prose-a:text-zinc-900">
+
+      {/* İslami / Geleneksel Yorum */}
+      {content.traditional_wisdom && (
+        <>
+          <SectionHeading>İslami ve Geleneksel Yorum</SectionHeading>
+
+          {content.traditional_wisdom.introduction && (
+            <p>{content.traditional_wisdom.introduction}</p>
+          )}
+
+          {content.traditional_wisdom.pillars?.map((pillar, i) => (
+            <div key={i} className="not-prose mb-4 rounded-xl border border-zinc-100 bg-zinc-50 px-5 py-4">
+              <p className="text-sm font-semibold text-zinc-900 mb-1.5">{pillar.title}</p>
+              <p className="text-sm leading-loose text-zinc-600">{pillar.description}</p>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* Psikolojik Analiz */}
+      {content.psychological && (
+        <>
+          <SectionHeading>Psikolojik Analiz</SectionHeading>
+          {content.psychological.split("\n\n").filter(Boolean).map((para, i) => (
+            <p key={i}>{para.trim()}</p>
+          ))}
+        </>
+      )}
+
+      {/* Senaryolar */}
+      {content.scenarios && content.scenarios.length > 0 && (
+        <>
+          <SectionHeading>Rüya Senaryoları</SectionHeading>
+          <div className="not-prose space-y-3">
+            {content.scenarios.map((s, i) => (
+              <div key={i} className="flex gap-4 rounded-xl border border-zinc-100 px-5 py-4">
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white">
+                  {i + 1}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900 mb-1">{s.title}</p>
+                  <p className="text-sm leading-loose text-zinc-600">{s.meaning}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* SSS */}
+      {content.faq && content.faq.length > 0 && (
+        <>
+          <SectionHeading>Sık Sorulan Sorular</SectionHeading>
+          <div className="not-prose space-y-5">
+            {content.faq.map((item, i) => (
+              <div key={i}>
+                <p className="text-sm font-semibold text-zinc-900 mb-1.5">{item.question}</p>
+                <p className="text-sm leading-loose text-zinc-600">{item.answer}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+    </div>
   );
 }
 
-// ─── İçerik Render (yeni sıralama ve sade tasarım) ───────────────────────────
+// ─── İlgili Rüyalar (mobilde carousel, masaüstünde grid) ─────────────────────
 
-function renderDictionaryContent(content: any): React.ReactNode {
-  if (!content) return null;
+async function RelatedDreams({
+  currentSlug,
+  tags,
+  firstLetter,
+}: {
+  currentSlug: string;
+  tags: string[];
+  firstLetter: string;
+}) {
+  const supabase = createClient();
+  const now      = new Date().toISOString();
+  let entries: RelatedEntry[] = [];
 
-  // ── "ultimate" format ──
-  if (content.type === "ultimate") {
-    const faqItems: { question: string; answer: string }[] = [
-      ...(Array.isArray(content.faq) ? content.faq : []),
-      ...(Array.isArray(content.scenarios)
-        ? content.scenarios.map((s: any) => ({ question: s.title, answer: s.meaning }))
-        : []),
-    ];
-
-    return (
-      <>
-        {/* 1. İslami ve Dini Yorum */}
-        {content.traditional_wisdom &&
-          (content.traditional_wisdom.introduction || content.traditional_wisdom.pillars?.length > 0) && (
-            <section>
-              <SectionHeading icon={BookOpen}>İslami ve Dini Yorum</SectionHeading>
-              {content.traditional_wisdom.introduction && (
-                <Prose text={content.traditional_wisdom.introduction} />
-              )}
-              {Array.isArray(content.traditional_wisdom.pillars) &&
-                content.traditional_wisdom.pillars.map((p: any, i: number) => (
-                  <div key={i} className="mb-5">
-                    <p className="text-[15px] font-semibold text-zinc-800 mb-1.5">{p.title}</p>
-                    <p className="text-[16px] leading-loose text-zinc-700">{p.description}</p>
-                  </div>
-                ))}
-              <hr className="border-zinc-100 my-8" />
-            </section>
-          )}
-
-        {/* 2. Psikolojik Analiz */}
-        {content.psychological && (
-          <section>
-            <SectionHeading icon={Brain}>Psikolojik Analiz</SectionHeading>
-            <Prose text={content.psychological} />
-            <hr className="border-zinc-100 my-8" />
-          </section>
-        )}
-
-        {/* 3. Sıkça Sorulan Sorular (FAQ + Senaryolar birleşik) */}
-        {faqItems.length > 0 && (
-          <section>
-            <SectionHeading icon={HelpCircle}>Sıkça Sorulan Sorular</SectionHeading>
-            <div className="space-y-6">
-              {faqItems.map((item, i) => (
-                <div key={i}>
-                  <p className="text-[15px] font-semibold text-zinc-800 mb-1.5">{item.question}</p>
-                  <p className="text-[16px] leading-loose text-zinc-700">{item.answer}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-      </>
-    );
+  // 1. Aynı etiketler
+  if (tags.length > 0) {
+    const { data } = await supabase
+      .from("dream_dictionary")
+      .select("id, term, slug, description")
+      .neq("slug", currentSlug)
+      .eq("is_published", true)
+      .lte("published_at", now)
+      .overlaps("tags", tags)
+      .limit(3);
+    entries = (data ?? []) as RelatedEntry[];
   }
 
-  // ── Legacy "blocks" format ──
-  if (Array.isArray(content.blocks) || Array.isArray(content)) {
-    const blocks: any[] = Array.isArray(content) ? content : content.blocks;
-    return (
-      <>
-        {blocks.map((block: any, i: number) => {
-          switch (block.type) {
-            case "heading":
-              return (
-                <h2 key={i} className="text-lg font-semibold text-zinc-900 mt-10 mb-4">
-                  {block.content}
-                </h2>
-              );
-            case "subheading":
-              return (
-                <h3 key={i} className="text-base font-semibold text-zinc-800 mt-7 mb-3">
-                  {block.content}
-                </h3>
-              );
-            case "paragraph":
-            default:
-              return block.content ? (
-                <p key={i} className="text-[16px] leading-loose text-zinc-700 mb-4">
-                  {block.content}
-                </p>
-              ) : null;
-          }
+  // 2. Aynı ilk harf ile tamamla
+  if (entries.length < 3 && firstLetter) {
+    const needed       = 3 - entries.length;
+    const excludeSlugs = [currentSlug, ...entries.map((e) => e.slug)];
+    const { data } = await supabase
+      .from("dream_dictionary")
+      .select("id, term, slug, description")
+      .neq("slug", currentSlug)
+      .not("slug", "in", `(${excludeSlugs.map((s) => `"${s}"`).join(",")})`)
+      .eq("is_published", true)
+      .lte("published_at", now)
+      .ilike("first_letter", firstLetter)
+      .limit(needed);
+    entries = [...entries, ...((data ?? []) as RelatedEntry[])];
+  }
+
+  // 3. Fallback: son eklenenler
+  if (entries.length < 3) {
+    const needed       = 3 - entries.length;
+    const excludeSlugs = [currentSlug, ...entries.map((e) => e.slug)];
+    const { data } = await supabase
+      .from("dream_dictionary")
+      .select("id, term, slug, description")
+      .not("slug", "in", `(${excludeSlugs.map((s) => `"${s}"`).join(",")})`)
+      .eq("is_published", true)
+      .lte("published_at", now)
+      .order("published_at", { ascending: false })
+      .limit(needed);
+    entries = [...entries, ...((data ?? []) as RelatedEntry[])];
+  }
+
+  if (entries.length === 0) return null;
+
+  return (
+    <section className="mt-14">
+      <div className="mb-5 flex items-center gap-4">
+        <div className="h-px flex-1 bg-zinc-100" />
+        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+          İlginizi Çekebilecek Diğer Rüyalar
+        </p>
+        <div className="h-px flex-1 bg-zinc-100" />
+      </div>
+
+      {/* Mobilde yatay kaydırma, masaüstünde 3 kolon grid */}
+      <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 hide-scrollbar md:grid md:grid-cols-3 md:overflow-visible">
+        {entries.map((entry) => {
+          const ct = cleanTitle(entry.term);
+          return (
+            <Link
+              key={entry.id}
+              href={`/ruya-tabirleri/${entry.slug}`}
+              className="min-w-[280px] snap-start md:min-w-0 flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-300 hover:shadow-sm shrink-0"
+            >
+              <div>
+                <p className="font-semibold text-zinc-900 text-sm mb-2">{ct} Rüyası</p>
+                {entry.description && (
+                  <p className="text-xs leading-relaxed text-zinc-400 line-clamp-2">
+                    {entry.description}
+                  </p>
+                )}
+              </div>
+              <div className="mt-4 flex items-center gap-1 text-xs font-medium text-zinc-400">
+                <span>Tabiri Oku</span>
+                <ArrowRight className="h-3 w-3" strokeWidth={2} />
+              </div>
+            </Link>
+          );
         })}
-      </>
-    );
-  }
+      </div>
 
-  // ── Plain string ──
-  if (typeof content === "string") {
-    return <Prose text={content} />;
-  }
-
-  return null;
+      <div className="mt-5 text-center">
+        <Link
+          href="/ruya-tabirleri"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-700 transition-colors"
+        >
+          Tüm rüya tabirlerini görüntüle
+          <ArrowRight className="h-3 w-3" strokeWidth={2} />
+        </Link>
+      </div>
+    </section>
+  );
 }
 
 // ─── Sayfa ────────────────────────────────────────────────────────────────────
 
-export default async function DreamDictionaryDetailPage({
+export default async function RuyaTabiriPage({
   params,
 }: {
   params: { slug: string };
 }) {
   const supabase = createClient();
-  const nowISO   = new Date().toISOString();
+  const now      = new Date().toISOString();
 
-  const { data: entry, error } = await supabase
+  const { data, error } = await supabase
     .from("dream_dictionary")
-    .select(
-      "id, term, slug, description, content, tags, search_count, first_letter, updated_at, created_at, published_at"
-    )
+    .select("id, term, slug, description, content, tags, search_count, first_letter, updated_at, created_at, published_at")
     .eq("slug", params.slug)
     .eq("is_published", true)
-    .lte("published_at", nowISO)
+    .lte("published_at", now)
     .single();
 
-  if (error || !entry) notFound();
+  if (error || !data) notFound();
 
-  // Arama sayacı — fire and forget (değişmedi)
+  const entry      = data as DictEntry & { first_letter: string | null };
+  const ct         = cleanTitle(entry.term);
+  const tags        = Array.isArray(entry.tags) ? entry.tags : [];
+  const firstLetter = entry.first_letter ?? ct.charAt(0).toUpperCase();
+  const hasContent  = entry.content && Object.keys(entry.content).length > 0;
+
+  // search_count artır (fire-and-forget)
   supabase
     .from("dream_dictionary")
     .update({ search_count: (entry.search_count ?? 0) + 1 })
     .eq("id", entry.id)
     .then(() => {});
 
-  const tags: string[] = Array.isArray(entry.tags) ? entry.tags : [];
-
-  // ── JSON-LD (değişmedi) ──
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Ana Sayfa",      item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Rüya Tabirleri", item: `${SITE_URL}/ruya-tabirleri` },
-      { "@type": "ListItem", position: 3, name: `${entry.term} Rüyası`, item: `${SITE_URL}/ruya-tabirleri/${entry.slug}` },
-    ],
-  };
-
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline:      `${entry.term} Rüyası Ne Anlama Gelir?`,
-    description:   entry.description,
-    datePublished: entry.created_at,
-    dateModified:  entry.updated_at ?? entry.created_at,
-    url:           `${SITE_URL}/ruya-tabirleri/${entry.slug}`,
-    publisher: { "@type": "Organization", name: "Rüya Yorumcum", url: SITE_URL },
-  };
-
-  const faqSchema = buildFaqSchema(entry.content, entry.term);
+  const { breadcrumb, article, faq } = buildSchemas(entry, ct);
 
   return (
-    <article className="mx-auto max-w-2xl px-5 py-12">
+    <article className="min-h-screen bg-white">
+      <div className="mx-auto max-w-2xl px-5 py-10 pb-20">
 
-      {/* Breadcrumb */}
-      <nav className="mb-8 flex items-center gap-1.5 text-xs text-zinc-400" aria-label="Breadcrumb">
-        <Link href="/" className="hover:text-zinc-600 transition-colors">Ana Sayfa</Link>
-        <span>/</span>
-        <Link href="/ruya-tabirleri" className="hover:text-zinc-600 transition-colors">Rüya Tabirleri</Link>
-        <span>/</span>
-        <span className="max-w-[160px] truncate font-medium text-zinc-600">{entry.term}</span>
-      </nav>
+        {/* Breadcrumb */}
+        <nav className="mb-8 flex items-center gap-1.5 text-xs text-zinc-400" aria-label="Breadcrumb">
+          <Link href="/" className="hover:text-zinc-600 transition-colors">Ana Sayfa</Link>
+          <span>/</span>
+          <Link href="/ruya-tabirleri" className="hover:text-zinc-600 transition-colors">
+            Rüya Tabirleri
+          </Link>
+          <span>/</span>
+          <span className="max-w-[180px] truncate font-medium text-zinc-600">{ct}</span>
+        </nav>
 
-      {/* Başlık */}
-      <header className="mb-8">
-        <div className="mb-4">
-          <span className="inline-flex items-center gap-1.5 text-xs text-zinc-400">
+        {/* Başlık */}
+        <header className="mb-8">
+          <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
             <TrendingUp className="h-3 w-3" strokeWidth={1.5} />
-            {(entry.search_count ?? 0).toLocaleString("tr-TR")} kez arandı
-          </span>
-        </div>
+            <span>{(entry.search_count ?? 0).toLocaleString("tr-TR")} kez okundu</span>
+          </div>
 
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 leading-snug">
-          {entry.term} Rüyası Ne Anlama Gelir?
-        </h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 leading-tight md:text-4xl">
+            {ct} Rüyası Ne Anlama Gelir?
+          </h1>
 
-        {entry.description && (
-          <p className="mt-4 text-[17px] leading-relaxed text-zinc-500">
-            {entry.description}
-          </p>
-        )}
+          {entry.description && (
+            <p className="mt-4 text-[17px] leading-relaxed text-zinc-500">
+              {entry.description}
+            </p>
+          )}
 
-        {tags.length > 0 && (
-          <div className="mt-5 flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <Link
-                key={tag}
-                href={`/ruya-tabirleri?q=${encodeURIComponent(tag)}`}
-                className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-800"
-              >
-                #{tag}
-              </Link>
-            ))}
+          {/* Tıklanabilir etiketler */}
+          {tags.length > 0 && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={`/ruya-tabirleri?q=${encodeURIComponent(tag)}`}
+                  className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-500 transition-colors hover:border-zinc-300 hover:text-zinc-800"
+                >
+                  #{tag}
+                </Link>
+              ))}
+            </div>
+          )}
+        </header>
+
+        <hr className="border-zinc-100 mb-8" />
+
+        {/* Ana İçerik */}
+        {hasContent ? (
+          <ContentRenderer content={entry.content} />
+        ) : (
+          <div className="rounded-2xl border border-dashed border-zinc-200 py-14 text-center">
+            <p className="text-sm text-zinc-400">Bu madde için henüz içerik hazırlanmamış.</p>
           </div>
         )}
-      </header>
 
-      <hr className="border-zinc-100 mb-8" />
+        {/* CTA */}
+        <div className="mt-14 rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center">
+          <p className="text-sm font-semibold text-zinc-900 mb-1">
+            {ct} rüyasını siz mi gördünüz?
+          </p>
+          <p className="text-xs leading-relaxed text-zinc-500 mb-4">
+            Yapay zeka ile kişiselleştirilmiş, derinlikli bir yorum alın. İlk analiz ücretsiz.
+          </p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 transition-colors"
+          >
+            Rüyamı Analiz Et
+            <ArrowRight className="h-4 w-4" strokeWidth={2} />
+          </Link>
+        </div>
 
-      {/* Genel Bakış — description'dan ayrı, content'in ilk paragrafından gelebilir */}
-      {entry.content?.introduction && (
-        <section className="mb-2">
-          <SectionHeading icon={Eye}>Genel Bakış</SectionHeading>
-          <Prose text={entry.content.introduction} />
-          <hr className="border-zinc-100 my-8" />
-        </section>
-      )}
+        {/* İlgili Rüyalar */}
+        <RelatedDreams
+          currentSlug={entry.slug}
+          tags={tags}
+          firstLetter={firstLetter}
+        />
 
-      {/* Ana İçerik */}
-      <div>
-        {renderDictionaryContent(entry.content)}
       </div>
 
-      {/* CTA */}
-      <div className="mt-14 rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center">
-        <p className="mb-1 font-semibold text-zinc-900">{entry.term} rüyasını mı gördünüz?</p>
-        <p className="mb-4 text-sm text-zinc-500">Yapay zeka ile kişisel analizinizi hemen alın.</p>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700"
-        >
-          Rüyamı Analiz Et
-        </Link>
-      </div>
-
-      {/* Benzer Rüya Tabirleri */}
-      <RelatedDreams
-        currentSlug={entry.slug}
-        tags={tags}
-      />
-
-      {/* JSON-LD (değişmedi) */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      {faqSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      )}
-
+      {/* JSON-LD */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(article) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faq) }} />
     </article>
   );
 }

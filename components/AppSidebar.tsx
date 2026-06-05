@@ -17,7 +17,6 @@ const NAV_LINKS = [
   { href: "/blog",           icon: BookOpen,  label: "Blog"            },
   { href: "/ruya-tabirleri", icon: Library,   label: "Rüya Tabirleri"  },
   { href: "/oruntu-analizi", icon: BarChart2, label: "Haftalık Analiz" },
-  { href: "/kesfet",         icon: Compass,   label: "Keşfet"          },
   { href: "/testler",        icon: Brain,     label: "Testler"         },
 ];
 

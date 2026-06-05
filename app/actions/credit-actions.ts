@@ -2,76 +2,59 @@
 
 import { createClient } from "@/utils/supabase/server";
 
-export type CreditActionResult =
-  | { success: true;  remainingCredits: number }
-  | { success: false; code: "NO_AUTH" | "NO_CREDIT" | "SERVER_ERROR"; error: string };
+type SpendResult =
+  | { success: true }
+  | { success: false; error: string; code?: string };
 
-export async function spendAnalysisCredit(
-  dreamId: string,
-  target?: "islami" | "psikolojik"
-): Promise<CreditActionResult> {
+// ─── Detaylı tahlil kilidini aç — 2 kredi ─────────────────────────────────────
+
+export async function spendAnalysisCredit(dreamId: string): Promise<SpendResult> {
   const supabase = createClient();
 
-  // 1. Auth kontrolü
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { success: false, code: "NO_AUTH", error: "Giriş yapmanız gerekmektedir." };
+  // Auth kontrolü
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return { success: false, error: "Giriş yapmanız gerekiyor.", code: "NO_AUTH" };
   }
 
-  // 2. Kredi kontrolü
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("credits")
-    .eq("id", user.id)
-    .single();
+  // Kredi kontrolü — 2 kredi gerekiyor
+  const { data: profile } = await supabase
+    .from("profiles").select("credits").eq("id", user.id).single();
 
-  if (profileError || !profile) {
-    return { success: false, code: "SERVER_ERROR", error: "Profil yüklenemedi." };
+  if (!profile || profile.credits < 2) {
+    return { success: false, error: "Yetersiz kredi. En az 2 krediniz olması gerekiyor.", code: "NO_CREDIT" };
   }
 
-  if ((profile.credits ?? 0) < 1) {
-    return { success: false, code: "NO_CREDIT", error: "Yetersiz bakiye." };
+  // Zaten açık mı?
+  const { data: dream } = await supabase
+    .from("dreams").select("detay_unlocked").eq("id", dreamId).single();
+
+  if (dream?.detay_unlocked) return { success: true };
+
+  // DB'de kilidi aç
+  const { error: updateError } = await supabase
+    .from("dreams")
+    .update({ detay_unlocked: true })
+    .eq("id", dreamId)
+    .eq("user_id", user.id);
+
+  if (updateError) {
+    return { success: false, error: "Kilit açma işlemi başarısız." };
   }
 
-  // 3. Krediyi düş
-  const { data: txResult, error: txError } = await supabase.rpc(
-    "handle_credit_transaction",
-    {
-      p_user_id:      user.id,
-      p_amount:       -1,
-      p_process_type: "spend",
-      p_description:  "Rüya Analizi Kilidi",
-      p_metadata:     { dream_id: dreamId, target },
-    }
-  );
+  // 2 kredi düş
+  const { error: rpcError } = await supabase.rpc("handle_credit_transaction", {
+    p_user_id:      user.id,
+    p_amount:       -2,
+    p_process_type: "analysis_unlock",
+    p_description:  `Detaylı tahlil kilidi açıldı: ${dreamId}`,
+  });
 
-  if (txError) {
-    return { success: false, code: "SERVER_ERROR", error: "Bir sorun oluştu. Lütfen tekrar deneyin." };
+  if (rpcError) {
+    // Geri al
+    await supabase.from("dreams").update({ detay_unlocked: false }).eq("id", dreamId);
+    return { success: false, error: "Kredi işlemi başarısız." };
   }
 
-  if (!txResult?.success) {
-    return { success: false, code: "NO_CREDIT", error: "Yetersiz bakiye." };
-  }
-
-  // 4. Unlock state'i DB'ye kaydet — sayfa yenilemede korunur
-  if (target && dreamId) {
-    const updateField = target === "islami"
-      ? { islami_unlocked: true }
-      : { psikolojik_unlocked: true };
-
-    await supabase
-      .from("dreams")
-      .update(updateField)
-      .eq("id", dreamId)
-      .eq("user_id", user.id);
-  }
-
-  // 5. Güncel bakiyeyi döndür
-  const { data: updated } = await supabase
-    .from("profiles")
-    .select("credits")
-    .eq("id", user.id)
-    .single();
-
-  return { success: true, remainingCredits: updated?.credits ?? 0 };
+  return { success: true };
 }

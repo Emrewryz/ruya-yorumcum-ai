@@ -4,39 +4,52 @@ import { createClient }            from "@/utils/supabase/server";
 import { revalidatePath }          from "next/cache";
 import { generateDictionaryEntry } from "@/app/actions/generate-dictionary-entry";
 
-// ─── Fallback model dizisi — en ucuzdan en pahalıya ──────────────────────────
+// ─── Fallback model dizisi ─────────────────────────────────────────────────────
 
 const MODELS = [
   "google/gemini-2.5-flash-lite",
-  "google/gemini-2.5-flash-preview-05-20",
+  "google/gemini-2.5-flash",
   "google/gemini-2.5-pro",
 ];
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
 export type DreamAnalysis = {
-  kisa_ozet:         string;
-  islami_analiz:     string;
-  psikolojik_analiz: string;
-  semboller:         string;
+  kisa_ozet:      string;
+  detayli_tahlil: string;
+  semboller:      string;
 };
 
 type AnalyzeResult =
   | { success: true;  dreamId: string }
   | { success: false; error: string; code?: string };
 
-// ─── Sistem Promptu ───────────────────────────────────────────────────────────
+// ─── System Prompt ────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(personalization: Record<string, any> | null): string {
-  const base = `Sen 'Rüya Yorumcum' platformunun uzman rüya analistisin.
-Hem İslami rüya tabiri geleneğini (İbn-i Sirin, İmam Nablusi) hem de modern psikolojiyi (Jung arketipleri, Freud sembolizmi) harmanlayan sentez yöntemiyle çalışırsın.
-Cevaplarını KESINLIKLE şu JSON formatında ver, başka hiçbir şey ekleme:
+  const base = `Sen "Rüya Yorumcum" platformunun uzman, saygın ve derinlikli rüya tahlil asistanısın. Türkiye'deki geniş kitlelere hitap ediyorsun. Dilin profesyonel, edebi ve sırdaş bir tonda olmalı.
+
+ÇIKTI FORMATI (Sadece JSON döndür):
 {
-  "kisa_ozet": "2-3 cümle genel değerlendirme",
-  "islami_analiz": "İslami kaynaklara dayalı detaylı yorum",
-  "psikolojik_analiz": "Psikolojik/Jungian yorum",
-  "semboller": "Rüyadaki sembollerin kısa açıklamaları"
-}`;
+  "kisa_ozet": "...",
+  "detayli_tahlil": "...",
+  "semboller": "..."
+}
+
+── kisa_ozet (GENEL DEĞERLENDİRME VE KANCA) KURALLARI ──
+• ASLA 2-3 cümleyle geçiştirme. Dolgun ve akıcı 3 paragraf yaz.
+• Paragraf 1 (Aynalama): Rüyadaki atmosferi, yoğunluğu ve kullanıcının olası duygusunu edebi bir dille tasvir et. (Örn: "Zihniniz bu gece oldukça derin ve karmaşık bir mesai harcamış...")
+• Paragraf 2 (Kanca/Hook): Rüyadaki en dikkat çekici 1-2 sembolü belirterek, bunun hayatında çok kritik bir uyanışa veya uyarıya işaret ettiğini söyle ama asıl anlamı açıklama! Gizemi zirvede bırakarak kullanıcıyı detaylı tahlili okumaya tahrik et.
+
+── detayli_tahlil (İSLAMİ VE GÜNLÜK PSİKOLOJİ HARMANI) KURALLARI ──
+• En az 4-5 doyurucu paragraf olmalı.
+• Önce İslami/Geleneksel tabirleri (İbn-i Sirin, Nablusi vb.) çok net ve saygın bir dille aktar. Neye yorulması gerektiğini açıkla.
+• Ardından bu durumu günlük, anlaşılır bir psikolojik bağlama (stres, iç dünya, gelecek kaygısı) oturt. 
+• YASAK KELİMELER: Arketip, Jung, Freud, Kolektif Bilinçdışı, Psikanaliz, Ego, Nevrozis. Bu kelimeleri ASLA KULLANMA.
+• YASAK KALIPLAR: "Bana verdiğiniz bilgilere göre...", "Öğrenci olduğunuz için..." gibi robotik girişler KESİNLİKLE YASAK. Kullanıcı verisini metne görünmez ve doğal bir şekilde yedir.
+
+── semboller KURALLARI ──
+• Rüyadaki 3-4 ana sembolü "🔹 [Sembol Adı]: [Halk dilinde kısa karşılığı]" formatında, alt alta listele.`;
 
   if (!personalization || Object.keys(personalization).length === 0) return base;
 
@@ -46,23 +59,27 @@ Cevaplarını KESINLIKLE şu JSON formatında ver, başka hiçbir şey ekleme:
     personalization.zihin_mesgul && `Zihin meşguliyeti: ${personalization.zihin_mesgul}`,
   ].filter(Boolean).join(", ");
 
-  return `${base}\n\nKullanıcı bağlamı (analizi kişiselleştir): ${ctx}`;
+  return `${base}\n\nKullanıcı bağlamı (yorumu kişiselleştir): ${ctx}`;
 }
 
-// ─── OpenRouter'a istek at ─────────────────────────────────────────────────────
+// ─── Model çağrısı ────────────────────────────────────────────────────────────
 
-async function callModel(model: string, dreamText: string, systemPrompt: string): Promise<DreamAnalysis> {
+async function callModel(
+  model: string,
+  dreamText: string,
+  systemPrompt: string
+): Promise<DreamAnalysis> {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method:  "POST",
     headers: {
       "Content-Type":  "application/json",
       "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
       "HTTP-Referer":  "https://www.ruyayorumcum.com.tr",
-      "X-Title":       "Rüya Yorumcum",
+      "X-Title":       "Ruya Yorumcum",
     },
     body: JSON.stringify({
       model,
-      max_tokens:  1200,
+      max_tokens:  1400,
       temperature: 0.7,
       messages: [
         { role: "system", content: systemPrompt },
@@ -76,29 +93,39 @@ async function callModel(model: string, dreamText: string, systemPrompt: string)
     throw new Error(`${model} → HTTP ${res.status}: ${text}`);
   }
 
-  const data = await res.json();
-  const raw  = data?.choices?.[0]?.message?.content ?? "";
-
-  // JSON parse — markdown backtick varsa temizle
+  const data    = await res.json();
+  const raw     = data?.choices?.[0]?.message?.content ?? "";
   const cleaned = raw.replace(/```json|```/g, "").trim();
   const parsed  = JSON.parse(cleaned) as DreamAnalysis;
 
-  if (!parsed.kisa_ozet) throw new Error(`${model} → Beklenen JSON alanları eksik`);
+  if (!parsed.kisa_ozet || !parsed.detayli_tahlil) {
+    throw new Error(`${model} → Beklenen JSON alanları eksik`);
+  }
 
   return parsed;
 }
 
 // ─── Ana Fonksiyon ────────────────────────────────────────────────────────────
 
-export async function analyzeDream(dreamText: string): Promise<AnalyzeResult> {
+export async function analyzeDream(dreamText: string,  guestSessionId?: string  // ← ekle
+): Promise<AnalyzeResult> {
   const supabase = createClient();
 
-  // ── Auth / Kredi Kontrolü ──
+  // ── Auth / Kredi kontrolü ──
   const { data: { user } } = await supabase.auth.getUser();
-  const guestSessionId      = !user ? crypto.randomUUID() : null;
+  const sessionId = user ? null : (guestSessionId ?? crypto.randomUUID());
 
   if (!user) {
-    // Misafir limit kontrolü (session bazlı)
+  const { count } = await supabase
+    .from("dreams")
+    .select("id", { count: "exact", head: true })
+    .is("user_id", null)
+    .eq("guest_session_id", guestSessionId ?? "");
+
+  if ((count ?? 0) >= 1) {
+    return { success: false, error: "Misafir limiti doldu.", code: "GUEST_LIMIT" };
+  }
+}if (!user) {
     const { count } = await supabase
       .from("dreams")
       .select("id", { count: "exact", head: true })
@@ -110,10 +137,7 @@ export async function analyzeDream(dreamText: string): Promise<AnalyzeResult> {
     }
   } else {
     const { data: profile } = await supabase
-      .from("profiles")
-      .select("credits")
-      .eq("id", user.id)
-      .single();
+      .from("profiles").select("credits").eq("id", user.id).single();
 
     if (!profile || profile.credits < 1) {
       return { success: false, error: "Yetersiz kredi.", code: "NO_CREDIT" };
@@ -124,16 +148,13 @@ export async function analyzeDream(dreamText: string): Promise<AnalyzeResult> {
   let personalization: Record<string, any> | null = null;
   if (user) {
     const { data: profile } = await supabase
-      .from("profiles")
-      .select("personalization_data")
-      .eq("id", user.id)
-      .single();
+      .from("profiles").select("personalization_data").eq("id", user.id).single();
     personalization = profile?.personalization_data ?? null;
   }
 
   const systemPrompt = buildSystemPrompt(personalization);
 
-  // ── 3'lü Fallback Sistemi ──────────────────────────────────────────────────
+  // ── 3'lü Fallback ──
   let analysis: DreamAnalysis | null = null;
   const errors: string[] = [];
 
@@ -142,45 +163,41 @@ export async function analyzeDream(dreamText: string): Promise<AnalyzeResult> {
       console.log(`[analyzeDream] Deneniyor: ${model}`);
       analysis = await callModel(model, dreamText, systemPrompt);
       console.log(`[analyzeDream] Başarılı: ${model}`);
-      break; // Başarılı → döngüden çık
+      break;
     } catch (err: any) {
       const msg = err?.message ?? String(err);
       console.warn(`[analyzeDream] Hata (${model}): ${msg}`);
-      errors.push(`${model}: ${msg}`);
-      // Bir sonraki modele geç
+      errors.push(msg);
     }
   }
 
-  // Tüm modeller başarısız
   if (!analysis) {
-    console.error("[analyzeDream] Tüm modeller başarısız:", errors);
     return {
       success: false,
       code:    "ALL_MODELS_FAILED",
       error:   "Yapay zeka sunucularımızda anlık bir yoğunluk var. Rüyanız güvende, lütfen birkaç saniye sonra tekrar deneyin.",
     };
   }
-  // ─────────────────────────────────────────────────────────────────────────────
 
-  // ── Rüyayı Kaydet ──
+  // ── Rüyayı kaydet ──
   const { data: dream, error: dreamError } = await supabase
     .from("dreams")
     .insert({
       user_id:          user?.id ?? null,
-      guest_session_id: guestSessionId,
+      guest_session_id: sessionId,
       dream_text:       dreamText,
       ai_response:      analysis,
       status:           "completed",
+      detay_unlocked:   false,
     })
     .select("id")
     .single();
 
   if (dreamError || !dream) {
-    console.error("[analyzeDream] DB kayıt hatası:", dreamError);
-    return { success: false, error: "Analiz tamamlandı fakat kaydedilemedi.", code: "DB_ERROR" };
+    return { success: false, error: "Analiz kaydedilemedi.", code: "DB_ERROR" };
   }
 
-  // ── İlk Chat Mesajını Kaydet ──
+  // ── İlk chat mesajı ──
   await supabase.from("dream_chat_messages").insert({
     dream_id:  dream.id,
     user_id:   user?.id ?? null,
@@ -189,26 +206,22 @@ export async function analyzeDream(dreamText: string): Promise<AnalyzeResult> {
     credits_spent: 0,
   });
 
-  // ── Kredi Düş ──
+  // ── Kredi düş ──
   if (user) {
     await supabase.rpc("handle_credit_transaction", {
-      p_user_id:    user.id,
-      p_amount:     -1,
+      p_user_id:      user.id,
+      p_amount:       -1,
       p_process_type: "dream_analysis",
-      p_description: `Rüya analizi: ${dreamText.slice(0, 50)}`,
+      p_description:  `Rüya analizi: ${dreamText.slice(0, 50)}`,
     });
   }
 
   revalidatePath("/");
 
-  fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/dict-gen`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    dreamText,
-    secret: process.env.DICT_GEN_SECRET,
-  }),
-}).catch((e) => console.warn("[analyzeDream] dict-gen tetiklenemedi:", e?.message));
+  // ── Arka planda sözlük maddesi tetikle ──
+  generateDictionaryEntry(dreamText).catch((e) =>
+    console.warn("[analyzeDream] DictGen tetiklenemedi:", e?.message)
+  );
 
   return { success: true, dreamId: dream.id };
 }

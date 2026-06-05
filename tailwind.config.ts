@@ -18,6 +18,16 @@ const config: Config = {
           glass: "rgba(255, 255, 255, 0.05)", // Efekt: Buzlu Cam
         },
       },
+      theme: {
+  extend: {
+    keyframes: {
+      shimmer: {
+        "0%":   { transform: "translateX(-100%)" },
+        "100%": { transform: "translateX(100%)" },
+      },
+    },
+  },
+},
       backgroundImage: {
         "mystic-gradient": "linear-gradient(to bottom, #020617, #1e1b4b)", // Siyahtan mora geçiş
       },

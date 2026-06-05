@@ -214,10 +214,17 @@ function HomeInner() {
     if ((dreamText?.trim()?.length ?? 0) < 10 || isPending) return;
     setErrorMsg(null);
     setPhase("loading");
-
+let guestId: string | undefined;
+  if (typeof window !== "undefined") {
+    guestId = localStorage.getItem("guest_session_id") ?? undefined;
+    if (!guestId) {
+      guestId = crypto.randomUUID();
+      localStorage.setItem("guest_session_id", guestId);
+    }
+  }
     startTransition(async () => {
       try {
-        const res = await analyzeDream(dreamText);
+        const res = await analyzeDream(dreamText,guestId);
         if (!res.success) {
           setPhase("idle");
           if (res.code === "NO_CREDIT" || res.code === "GUEST_LIMIT") {
@@ -461,14 +468,21 @@ function HomeInner() {
 
                     {session.ai_response && (
                       <PaywallCard
-                        dreamId={session.id}
-                        islamiAnaliz={session.ai_response.islami_analiz ?? ""}
-                        psikolojikAnaliz={session.ai_response.psikolojik_analiz ?? ""}
-                        semboller={session.ai_response.semboller ?? ""}
-                        initialIslamiUnlocked={session.islami_unlocked ?? false}
-                        initialPsikolojikUnlocked={session.psikolojik_unlocked ?? false}
-                        onUnlocked={() => setShowOruntuKarti(true)}
-                      />
+  dreamId={session.id}
+  detayliTahlil={
+    session.ai_response.detayli_tahlil ??
+    [session.ai_response.islami_analiz, session.ai_response.psikolojik_analiz]
+      .filter(Boolean).join("\n\n") ??
+    ""
+  }
+  semboller={session.ai_response.semboller ?? ""}
+  initialUnlocked={
+    session.detay_unlocked ||
+    session.islami_unlocked ||
+    session.psikolojik_unlocked
+  }
+  onUnlocked={() => setShowOruntuKarti(true)}
+/>
                     )}
 
                     {showOruntuKarti && <OruntuKarti dreamCount={dreamCount} />}
@@ -479,12 +493,73 @@ function HomeInner() {
                       existingImageUrl={session.image_url ?? null}
                     />
 
+                    {/* ── Hazır Sorular — henüz mesaj yokken göster ── */}
+                    {localMessages.length === 0 && !followUpLoading && (
+                      <div className="pt-2">
+                        <div className="border-t border-zinc-100 mb-4" />
+                        <p className="mb-3 text-xs text-zinc-400">
+                          Rüyanız hakkında merak ettiğiniz bir şey var mı?
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            "Bu rüyanın hayatımdaki anlamı nedir?",
+                            "Bu rüyayı tekrar görürsem ne yapmalıyım?",
+                            "Rüyadaki semboller bana ne söylüyor?",
+                          ].map((q) => (
+                            <button
+                              key={q}
+                              onClick={() => {
+                                setInputText(q);
+                                setTimeout(() => {
+                                  const msg = q.trim();
+                                  if (!msg || followUpLoading || !activeChatId) return;
+                                  const optimistic: ChatMessage = {
+                                    id: `optimistic-${Date.now()}`,
+                                    role: "user",
+                                    content: msg,
+                                    created_at: new Date().toISOString(),
+                                    credits_spent: 0,
+                                  };
+                                  setLocalMessages((prev) => [...prev, optimistic]);
+                                  setInputText("");
+                                  setFollowUpLoading(true);
+                                  scrollToBottom();
+                                  sendFollowUp(activeChatId, msg).then((result) => {
+                                    if (!result.success) {
+                                      setLocalMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+                                      setInputText(msg);
+                                      if (result.code === "NO_CREDIT" || result.code === "NO_AUTH") {
+                                        setModalReason(result.code);
+                                        setModalOpen(true);
+                                      } else {
+                                        setErrorMsg(result.error ?? "Bir hata oluştu.");
+                                      }
+                                    } else {
+                                      setLocalMessages((prev) => [
+                                        ...prev.filter((m) => m.id !== optimistic.id),
+                                        result.userMessage,
+                                        result.assistantMessage,
+                                      ]);
+                                      setSidebarRefresh((n) => n + 1);
+                                    }
+                                    setFollowUpLoading(false);
+                                  });
+                                }, 0);
+                              }}
+                              disabled={followUpLoading || isPending}
+                              className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs text-zinc-600 transition-all hover:border-zinc-400 hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] disabled:opacity-40"
+                            >
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── Mesaj geçmişi ── */}
                     {localMessages.length > 0 && (
                       <div className="space-y-4 pt-2">
                         <div className="border-t border-zinc-100" />
-                        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
-                          Devam Soruları
-                        </p>
                         {localMessages.map((msg) => (
                           <MessageBubble key={msg.id} msg={msg} />
                         ))}

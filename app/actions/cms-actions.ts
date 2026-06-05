@@ -102,7 +102,7 @@ export async function getDreamEntries(search = "") {
 
   let query = supabase
     .from("dream_dictionary")
-    .select("id, term, slug, is_published, published_at, search_count, updated_at")
+    .select("id, term, slug, is_published, published_at, search_count, updated_at, content") // ← content eklendi
     .order("published_at", { ascending: false })
     .limit(200);
 
@@ -112,7 +112,6 @@ export async function getDreamEntries(search = "") {
   if (error) throw new Error(error.message);
   return data ?? [];
 }
-
 // ─── Sil ─────────────────────────────────────────────────────────────────────
 
 export async function deleteDreamEntry(id: string): Promise<SaveResult> {
