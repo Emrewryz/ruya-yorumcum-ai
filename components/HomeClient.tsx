@@ -26,7 +26,6 @@ import {
 } from "@/app/actions/chat-actions";
 import { sendFollowUp }        from "@/app/actions/follow-up-actions";
 import { generateShareToken }  from "@/app/actions/share-actions";
-import { refreshDailyCredits } from "@/app/actions/refresh-credits";
 
 // ─── Ağır bileşenler — lazy load (idle'da kullanılmaz) ───────────────────────
 const PaywallCard     = dynamic(() => import("@/components/PaywallCard"),     { ssr: false });
@@ -137,13 +136,9 @@ function HomeInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // ── Günlük kredi yenileme ──
-  useEffect(() => {
-    refreshDailyCredits().then((result) => {
-      if (result.refreshed) console.log(`[DailyRefresh] → ${result.newCredits}`);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // ── Günlük kredi yenileme kaldırıldı ──
+  // Kullanıcılar artık günlük ücretsiz kredi almıyor.
+  // Yeni kayıt bonusu: 3 kredi (tek seferlik)
 
   // ── Loading adımları ──
   useEffect(() => {
@@ -213,6 +208,14 @@ function HomeInner() {
   function handleSubmitDream() {
     if ((dreamText?.trim()?.length ?? 0) < 10 || isPending) return;
     setErrorMsg(null);
+
+    // Kredi kontrolü — kayıtlı kullanıcıysa önce kredisini kontrol et
+    if (mobileUser && (mobileCredits ?? 0) < 1) {
+      setModalReason("NO_CREDIT");
+      setModalOpen(true);
+      return;
+    }
+
     setPhase("loading");
 
     startTransition(async () => {

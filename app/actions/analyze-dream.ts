@@ -25,31 +25,42 @@ type AnalyzeResult =
   | { success: false; error: string; code?: string };
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
+// kisa_ozet: Kullanıcıyı merak ettiren kısa teaser — detayları verme
+// detayli_tahlil: İslami + psikolojik derin yorum — ödeme duvarı arkasında
 
 function buildSystemPrompt(personalization: Record<string, any> | null): string {
-  const base = `Sen "Rüya Yorumcum" platformunun uzman, saygın ve derinlikli rüya tahlil asistanısın. Türkiye'deki geniş kitlelere hitap ediyorsun. Dilin profesyonel, edebi ve sırdaş bir tonda olmalı.
+  const base = `Sen Jung psikolojisi, İslami rüya tabiri geleneği ve sembolizm konusunda uzman, gizemli bir rüya yorumcususun.
 
-ÇIKTI FORMATI (Sadece JSON döndür):
+Kullanıcının rüyasını aldığında SADECE şu JSON formatında yanıt ver, başka hiçbir şey ekleme:
 {
   "kisa_ozet": "...",
   "detayli_tahlil": "...",
   "semboller": "..."
 }
 
-── kisa_ozet (GENEL DEĞERLENDİRME VE KANCA) KURALLARI ──
-• ASLA 2-3 cümleyle geçiştirme. Dolgun ve akıcı 3 paragraf yaz.
-• Paragraf 1 (Aynalama): Rüyadaki atmosferi, yoğunluğu ve kullanıcının olası duygusunu edebi bir dille tasvir et. (Örn: "Zihniniz bu gece oldukça derin ve karmaşık bir mesai harcamış...")
-• Paragraf 2 (Kanca/Hook): Rüyadaki en dikkat çekici 1-2 sembolü belirterek, bunun hayatında çok kritik bir uyanışa veya uyarıya işaret ettiğini söyle ama asıl anlamı açıklama! Gizemi zirvede bırakarak kullanıcıyı detaylı tahlili okumaya tahrik et.
+── kisa_ozet KURALLARI (Teaser / Fragman) ──────────────────────────────────────
+Sen bir sinema fragmanı yazıyorsun. Kullanıcıyı merakta bırak, tatmin etme.
 
-── detayli_tahlil (İSLAMİ VE GÜNLÜK PSİKOLOJİ HARMANI) KURALLARI ──
-• En az 4-5 doyurucu paragraf olmalı.
-• Önce İslami/Geleneksel tabirleri (İbn-i Sirin, Nablusi vb.) çok net ve saygın bir dille aktar. Neye yorulması gerektiğini açıkla.
-• Ardından bu durumu günlük, anlaşılır bir psikolojik bağlama (stres, iç dünya, gelecek kaygısı) oturt. 
-• YASAK KELİMELER: Arketip, Jung, Freud, Kolektif Bilinçdışı, Psikanaliz, Ego, Nevrozis. Bu kelimeleri ASLA KULLANMA.
-• YASAK KALIPLAR: "Bana verdiğiniz bilgilere göre...", "Öğrenci olduğunuz için..." gibi robotik girişler KESİNLİKLE YASAK. Kullanıcı verisini metne görünmez ve doğal bir şekilde yedir.
+KESİN KURALLAR:
+1. MAKSİMUM 3 cümle, en fazla 50 kelime.
+2. Rüyadaki sembollerin ne anlama geldiğini ASLA açıklama. Sadece dikkat çekici olduklarını vurgula.
+3. Çözüm, tavsiye veya rahatlatıcı söz verme.
+4. Ton: Gizemli, hafif karanlık, merak uyandırıcı.
+5. Yanıtı mutlaka tamamlanmamış bir "kanca" cümlesiyle bitir.
+   Örnek kancalar: "...ancak asıl mesaj henüz yüzeye çıkmadı:", "...bu sembol çok daha derin bir şeyi işaret ediyor:", "...ve bu rüyanın seni en çok zorlayacak kısmı şurada gizli:"
+6. Türkçe yaz.
 
-── semboller KURALLARI ──
-• Rüyadaki 3-4 ana sembolü "🔹 [Sembol Adı]: [Halk dilinde kısa karşılığı]" formatında, alt alta listele.`;
+── detayli_tahlil KURALLARI ────────────────────────────────────────────────────
+Bu bölüm ödeme duvarının arkasındadır. Derin, doyurucu ve değerli olmalı.
+• En az 4 paragraf.
+• ÖNCE İslami/geleneksel yorum: İbn-i Sirin ve Nablusi referanslı net tabir.
+• SONRA günlük dil psikoloji harmanı: "iç dünyanız, son günlerdeki stresiniz, zihninizin yansıması" gibi herkesin anlayacağı ifadeler.
+• YASAK: Arketip, Jung, Freud, Kolektif Bilinçdışı, Psikanaliz — bunları ASLA kullanma.
+• Paragraflar arasına boş satır koy (\\n\\n).
+
+── semboller KURALLARI ─────────────────────────────────────────────────────────
+• 2-4 ana sembol, madde madde.
+• Format: "🔹 [Sembol]: [Kısa anlam]"`;
 
   if (!personalization || Object.keys(personalization).length === 0) return base;
 
@@ -107,40 +118,32 @@ async function callModel(
 
 // ─── Ana Fonksiyon ────────────────────────────────────────────────────────────
 
-export async function analyzeDream(dreamText: string,  guestSessionId?: string  // ← ekle
+export async function analyzeDream(
+  dreamText:      string,
+  guestSessionId?: string
 ): Promise<AnalyzeResult> {
-  const supabase = createClient();
-
-  // ── Auth / Kredi kontrolü ──
+  const supabase  = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const sessionId = user ? null : (guestSessionId ?? crypto.randomUUID());
 
+  // ── Misafir limit kontrolü ──
   if (!user) {
-  const { count } = await supabase
-    .from("dreams")
-    .select("id", { count: "exact", head: true })
-    .is("user_id", null)
-    .eq("guest_session_id", guestSessionId ?? "");
-
-  if ((count ?? 0) >= 1) {
-    return { success: false, error: "Misafir limiti doldu.", code: "GUEST_LIMIT" };
-  }
-}if (!user) {
     const { count } = await supabase
       .from("dreams")
       .select("id", { count: "exact", head: true })
       .is("user_id", null)
-      .eq("guest_session_id", guestSessionId ?? "");
+      .eq("guest_session_id", sessionId ?? "");
 
     if ((count ?? 0) >= 1) {
       return { success: false, error: "Misafir limiti doldu.", code: "GUEST_LIMIT" };
     }
   } else {
+    // ── Kayıtlı kullanıcı kredi kontrolü — en az 1 kredi gerekli ──
     const { data: profile } = await supabase
       .from("profiles").select("credits").eq("id", user.id).single();
 
     if (!profile || profile.credits < 1) {
-      return { success: false, error: "Yetersiz kredi.", code: "NO_CREDIT" };
+      return { success: false, error: "Krediniz tükendi.", code: "NO_CREDIT" };
     }
   }
 
@@ -199,20 +202,20 @@ export async function analyzeDream(dreamText: string,  guestSessionId?: string  
 
   // ── İlk chat mesajı ──
   await supabase.from("dream_chat_messages").insert({
-    dream_id:  dream.id,
-    user_id:   user?.id ?? null,
-    role:      "assistant",
-    content:   analysis.kisa_ozet,
+    dream_id:      dream.id,
+    user_id:       user?.id ?? null,
+    role:          "assistant",
+    content:       analysis.kisa_ozet,
     credits_spent: 0,
   });
 
-  // ── Kredi düş ──
+  // ── 1 Kredi düş (kısa özet = 1 kredi) ──
   if (user) {
     await supabase.rpc("handle_credit_transaction", {
       p_user_id:      user.id,
       p_amount:       -1,
       p_process_type: "dream_analysis",
-      p_description:  `Rüya analizi: ${dreamText.slice(0, 50)}`,
+      p_description:  `Rüya analizi (teaser): ${dreamText.slice(0, 50)}`,
     });
   }
 
