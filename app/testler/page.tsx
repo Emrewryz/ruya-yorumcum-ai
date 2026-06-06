@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { ArrowRight } from "lucide-react";
 
+
 const SITE_URL = "https://www.ruyayorumcum.com.tr";
 
 export const revalidate = 60;
