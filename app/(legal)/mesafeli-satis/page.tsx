@@ -11,34 +11,33 @@ export default function MesafeliSatisPage() {
       <div className="prose prose-zinc prose-sm max-w-none">
 
         <h1>Mesafeli Satış Sözleşmesi</h1>
-        <p className="lead">Son güncelleme: Ocak 2026</p>
+        <p className="lead">Son güncelleme: Haziran 2026</p>
 
         <h2>1. Taraflar</h2>
         <p>
-          <strong>Satıcı:</strong> Rüya Yorumcum ("Hizmet Sağlayıcı")<br />
-          E-posta: iletisim@ruyayorumcum.com<br />
-          Web: ruyayorumcum.com
+          <strong>Satıcı (Hizmet Sağlayıcı):</strong><br />
+          Adı/Unvanı: Fikri Emre Topcu<br />
+          E-posta: fikriemretopcu07s@gmail.com<br />
+          Web: ruyayorumcum.com.tr
         </p>
         <p>
-          <strong>Alıcı:</strong> Hizmeti satın alan kayıtlı kullanıcı ("Üye").
+          <strong>Alıcı (Tüketici):</strong><br />
+          Platforma kayıt olan, giriş yapan veya misafir olarak dijital hizmeti satın alan kullanıcı.
         </p>
 
         <h2>2. Sözleşmenin Konusu</h2>
         <p>
-          İşbu sözleşme; Alıcı'nın Rüya Yorumcum platformu üzerinden
-          satın aldığı dijital kredi paketlerine (Tekli Rapor, Kâşif
-          Paketi, Laboratuvar Paketi) ilişkin koşulları düzenler.
-          Satın alınan krediler, yapay zeka destekli rüya analizi
-          hizmeti için kullanılır.
+          İşbu sözleşme; Alıcı'nın Satıcı'ya ait Rüya Yorumcum platformu üzerinden elektronik ortamda siparişini verdiği dijital kredi paketlerinin (Tekli Rapor, Kâşif Paketi, Laboratuvar Paketi) satışı ve ifasına ilişkin olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerini düzenler.
         </p>
 
         <h2>3. Ürün ve Hizmet Bilgileri</h2>
+        <p>Sözleşme konusu hizmet, yapay zeka destekli metin analizinde kullanılmak üzere hesaba tanımlanan dijital kredilerdir.</p>
         <table>
           <thead>
             <tr>
-              <th>Paket</th>
-              <th>Kredi</th>
-              <th>Fiyat</th>
+              <th>Paket Adı</th>
+              <th>İçerik (Kapasite)</th>
+              <th>Satış Fiyatı (KDV Dahil)</th>
             </tr>
           </thead>
           <tbody>
@@ -48,48 +47,39 @@ export default function MesafeliSatisPage() {
           </tbody>
         </table>
         <p>
-          Tüm fiyatlara KDV dahildir. Krediler dijital hizmet
-          niteliğinde olup anlık olarak hesaba tanımlanır.
+          Satın alınan krediler tamamen dijital hizmet niteliğinde olup, fiziki kargo veya teslimat süreci bulunmamaktadır.
         </p>
 
-        <h2>4. Sipariş ve Ödeme</h2>
+        <h2>4. Sipariş, Ödeme ve Teslimat</h2>
         <p>
-          Ödeme işlemleri Shopier ödeme altyapısı üzerinden güvenli
-          biçimde gerçekleştirilir. Satıcı, kart bilgilerine erişemez
-          ve bu bilgileri saklamaz. Ödeme onaylandıktan sonra
-          krediler otomatik olarak hesaba yüklenir.
+          Ödeme işlemleri, BDDK (Bankacılık Düzenleme ve Denetleme Kurumu) lisanslı güvenli sanal POS ödeme kuruluşları altyapısı üzerinden şifrelenmiş olarak gerçekleştirilir. Satıcı, Alıcı'ya ait kredi kartı bilgilerini hiçbir şekilde göremez ve saklayamaz.
+        </p>
+        <p>
+          Ödeme işleminin banka tarafından onaylanmasıyla birlikte, sözleşme konusu dijital krediler anında ve otomatik olarak Alıcı'nın platformdaki hesabına teslim edilir (tanımlanır).
         </p>
 
-        <h2>5. Teslimat</h2>
+        <h2>5. Cayma Hakkı İstisnası</h2>
         <p>
-          Satın alınan krediler dijital ürün niteliğinde olup ödeme
-          onayının ardından anında Alıcı'nın hesabına tanımlanır.
-          Herhangi bir fiziksel teslimat söz konusu değildir.
+          Mesafeli Sözleşmeler Yönetmeliği'nin "Cayma Hakkının İstisnaları" başlıklı 15. maddesinin 1. fıkrasının (ğ) bendi uyarınca; <strong>"Elektronik ortamda anında ifa edilen hizmetler veya tüketiciye anında teslim edilen gayrimaddi mallara ilişkin sözleşmelerde"</strong> cayma hakkı kullanılamaz. 
+        </p>
+        <p>
+          Alıcı, işbu sözleşmeye konu olan dijital analiz kredilerinin bu kapsamda olduğunu ve siparişi onayladığı anda cayma hakkının sona ereceğini kabul, beyan ve taahhüt eder.
         </p>
 
-        <h2>6. Cayma Hakkı</h2>
+        <h2>6. Uyuşmazlıkların Çözümü</h2>
         <p>
-          6502 sayılı Tüketicinin Korunması Hakkında Kanun'un 49.
-          maddesi uyarınca; dijital içerik ve hizmetlerde, tüketicinin
-          onayıyla ifaya başlanmış işlemlerde cayma hakkı kullanılamaz.
-          Kredi kullanımına başlanması halinde ilgili krediler iade
-          edilmez.
-        </p>
-        <p>
-          Kullanılmamış krediler için iptal talebi{" "}
-          <a href="mailto:iletisim@ruyayorumcum.com">iletisim@ruyayorumcum.com</a>{" "}
-          adresine iletilerek değerlendirilir.
+          İşbu sözleşmeden doğabilecek uyuşmazlıklarda, Ticaret Bakanlığı'nca her yıl ilan edilen parasal sınırlar dâhilinde Alıcı'nın yerleşim yerindeki veya tüketici işleminin yapıldığı yerdeki Tüketici Hakem Heyetleri ile Tüketici Mahkemeleri yetkilidir.
         </p>
 
-        <h2>7. Uygulanacak Hukuk ve Yetki</h2>
+        <h2>7. Yürürlük</h2>
         <p>
-          İşbu sözleşme Türk Hukuku'na tabidir. Uyuşmazlıklarda
-          Türkiye Cumhuriyeti mahkemeleri yetkilidir.
+          Alıcı, platform üzerinden ödeme işlemini gerçekleştirmeden önce bu sözleşmenin tüm koşullarını okuduğunu, anladığını ve elektronik ortamda onayladığını kabul eder.
         </p>
 
         <h2>8. İletişim</h2>
         <p>
-          <a href="mailto:iletisim@ruyayorumcum.com">iletisim@ruyayorumcum.com</a>
+          Yetkili: Fikri Emre Topcu<br />
+          E-posta: <a href="mailto:fikriemretopcu07s@gmail.com">fikriemretopcu07s@gmail.com</a>
         </p>
 
       </div>

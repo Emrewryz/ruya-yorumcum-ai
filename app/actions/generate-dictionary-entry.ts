@@ -102,6 +102,8 @@ export async function generateDictionaryEntry(dreamText: string): Promise<void> 
       slug,
       description:  "",
       content:      null,
+        source:       "ai_trigger",   // ← EKLE
+
       first_letter: firstLetter,
       is_published: false,
       published_at: null,

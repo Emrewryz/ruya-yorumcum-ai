@@ -190,6 +190,7 @@ function PurchaseScreen({
   onClose:   () => void;
   onSuccess: (c: number) => void;
 }) {
+  const [agreed, setAgreed] = useState(false);
   return (
     <div className="overflow-hidden rounded-t-2xl md:rounded-2xl border border-zinc-200 bg-white shadow-xl">
 
@@ -206,8 +207,30 @@ function PurchaseScreen({
         </button>
       </div>
 
+      {/* Sözleşme onayı */}
+      <div className="border-t border-zinc-100 px-5 py-3">
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-zinc-900 cursor-pointer"
+          />
+          <span className="text-[11px] leading-relaxed text-zinc-500">
+            <a href="/mesafeli-satis" target="_top" className="font-medium text-zinc-700 underline underline-offset-2 hover:text-zinc-900">
+              Mesafeli Satış Sözleşmesi
+            </a>
+            'ni ve{" "}
+            <a href="/iptal-iade" target="_top" className="font-medium text-zinc-700 underline underline-offset-2 hover:text-zinc-900">
+              İptal & İade Koşulları
+            </a>
+            'nı okudum, onaylıyorum.
+          </span>
+        </label>
+      </div>
+
       {/* Paketler */}
-      <div className="p-4 space-y-2.5">
+      <div className={`p-4 space-y-2.5 transition-opacity ${!agreed ? "opacity-40 pointer-events-none" : ""}`}>
         {PACKAGES.map((pkg) => {
           const Icon = pkg.icon;
           return (

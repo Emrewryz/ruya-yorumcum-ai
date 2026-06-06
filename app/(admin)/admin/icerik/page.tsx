@@ -18,21 +18,32 @@ type MainTab    = "sozluk" | "blog" | "testler";
 type DictFilter = "bekliyor" | "taslak" | "yayinda";
 
 interface DictEntry {
-  id: string; term: string; slug: string;
-  is_published: boolean; published_at: string | null;
-  search_count: number; updated_at: string;
-  content: any;
+  id:           string;
+  term:         string;
+  slug:         string;
+  is_published: boolean;
+  published_at: string | null;
+  search_count: number;
+  updated_at:   string;
+  content:      any;
+  source:       string | null;
 }
 
 interface BlogPost {
-  id: string; title: string; slug: string;
-  is_published: boolean; published_at: string | null;
-  created_at: string;
+  id:           string;
+  title:        string;
+  slug:         string;
+  is_published: boolean;
+  published_at: string | null;
+  created_at:   string;
 }
 
 interface ViralTest {
-  id: string; title: string; slug: string;
-  is_published: boolean; created_at: string;
+  id:           string;
+  title:        string;
+  slug:         string;
+  is_published: boolean;
+  created_at:   string;
 }
 
 // ─── Yardımcılar ──────────────────────────────────────────────────────────────
@@ -109,21 +120,26 @@ function SozlukTab() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  // bekliyor = içerik yok + yayında değil (AI trigger'dan geldi)
-  // taslak   = içerik var + yayında değil (admin üretti, henüz yayınlamadı)
+  // ── Filtre Mantığı ──
+  // bekliyor = AI trigger'dan geldi (source = ai_trigger), içerik yok, yayında değil
+  // taslak   = admin ekledi veya içerik var ama henüz yayında değil
   // yayinda  = yayında
 
   const filtered = entries.filter((e) => {
     const live = isLive(e.is_published, e.published_at);
-    if (filter === "bekliyor") return !live && !hasContent(e);
-    if (filter === "taslak")   return !live && hasContent(e);
+    if (filter === "bekliyor") return !live && !hasContent(e) && e.source === "ai_trigger";
+    if (filter === "taslak")   return !live && (hasContent(e) || e.source !== "ai_trigger");
     if (filter === "yayinda")  return live;
     return true;
   });
 
-  const bekliyorCount = entries.filter((e) => !isLive(e.is_published, e.published_at) && !hasContent(e)).length;
-  const taslakCount   = entries.filter((e) => !isLive(e.is_published, e.published_at) && hasContent(e)).length;
-  const yayindaCount  = entries.filter((e) => isLive(e.is_published, e.published_at)).length;
+  const bekliyorCount = entries.filter((e) =>
+    !isLive(e.is_published, e.published_at) && !hasContent(e) && e.source === "ai_trigger"
+  ).length;
+  const taslakCount = entries.filter((e) =>
+    !isLive(e.is_published, e.published_at) && (hasContent(e) || e.source !== "ai_trigger")
+  ).length;
+  const yayindaCount = entries.filter((e) => isLive(e.is_published, e.published_at)).length;
 
   async function handleDelete(id: string, term: string) {
     if (!confirm(`"${term}" silinsin mi?`)) return;
@@ -152,17 +168,13 @@ function SozlukTab() {
   async function handleGenerate(entry: DictEntry) {
     setGenerating(entry.id);
     setGenError((prev) => { const n = { ...prev }; delete n[entry.id]; return n; });
-
     const result = await generateDictionaryContent(entry.id);
-
     if (!result.success) {
       setGenError((prev) => ({ ...prev, [entry.id]: result.error }));
-      setGenerating(null);
     } else {
-      // İçerik üretildi — listeyi yenile
       fetchEntries();
-      setGenerating(null);
     }
+    setGenerating(null);
   }
 
   const filterBtns: { key: DictFilter; label: string; count: number }[] = [
@@ -195,7 +207,6 @@ function SozlukTab() {
             </button>
           ))}
         </div>
-
         <div className="flex items-center gap-2">
           <button
             onClick={() => fetchEntries()}
@@ -259,14 +270,10 @@ function SozlukTab() {
 
               return (
                 <tr key={entry.id} className="hover:bg-zinc-800/40 transition-colors">
-
-                  {/* Sembol */}
                   <td className="px-5 py-3.5">
                     <p className="font-medium text-white">{entry.term}</p>
                     <p className="text-xs text-zinc-600">{entry.slug}</p>
                   </td>
-
-                  {/* İçerik durumu */}
                   <td className="px-5 py-3.5">
                     {hasC ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-800 bg-emerald-900/30 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
@@ -294,13 +301,9 @@ function SozlukTab() {
                       </div>
                     )}
                   </td>
-
-                  {/* Arama sayısı */}
                   <td className="px-5 py-3.5">
                     <span className="font-medium text-amber-400">{entry.search_count ?? 0}</span>
                   </td>
-
-                  {/* İşlemler */}
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
@@ -317,7 +320,7 @@ function SozlukTab() {
                           ? <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
                           : live
                           ? <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
-                          : <Eye className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          : <Eye    className="h-3.5 w-3.5" strokeWidth={1.5} />
                         }
                       </button>
                       <Link
@@ -333,12 +336,11 @@ function SozlukTab() {
                       >
                         {deleting === entry.id
                           ? <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
-                          : <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          : <Trash2  className="h-3.5 w-3.5" strokeWidth={1.5} />
                         }
                       </button>
                     </div>
                   </td>
-
                 </tr>
               );
             })}
@@ -546,10 +548,11 @@ function TestlerTab() {
     }
     const supabase = createClient();
     const { error } = await supabase.from("viral_tests").insert({
-      title: parsed.title.trim(), slug: parsed.slug.trim(),
-      description: parsed.description ?? null,
+      title:        parsed.title.trim(),
+      slug:         parsed.slug.trim(),
+      description:  parsed.description ?? null,
       is_published: parsed.is_published ?? false,
-      content: { questions: parsed.content.questions, results: parsed.content.results ?? [] },
+      content:      { questions: parsed.content.questions, results: parsed.content.results ?? [] },
     });
     if (error) {
       setStatus("error");

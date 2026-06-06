@@ -214,17 +214,10 @@ function HomeInner() {
     if ((dreamText?.trim()?.length ?? 0) < 10 || isPending) return;
     setErrorMsg(null);
     setPhase("loading");
-let guestId: string | undefined;
-  if (typeof window !== "undefined") {
-    guestId = localStorage.getItem("guest_session_id") ?? undefined;
-    if (!guestId) {
-      guestId = crypto.randomUUID();
-      localStorage.setItem("guest_session_id", guestId);
-    }
-  }
+
     startTransition(async () => {
       try {
-        const res = await analyzeDream(dreamText,guestId);
+        const res = await analyzeDream(dreamText);
         if (!res.success) {
           setPhase("idle");
           if (res.code === "NO_CREDIT" || res.code === "GUEST_LIMIT") {
@@ -341,7 +334,7 @@ let guestId: string | undefined;
 
           {/* ══ IDLE ══ */}
           {phase === "idle" && (
-            <div className="relative flex flex-1 flex-col items-center justify-center px-6 overflow-hidden pb-36 md:pb-16 pt-4 md:pt-0">
+            <div className="relative flex flex-1 flex-col items-center justify-center px-6 overflow-hidden pb-36 md:pb-20 pt-4 md:pt-0">
 
               {/* Yapay Zeka Aurası */}
               <div
@@ -389,6 +382,21 @@ let guestId: string | undefined;
                     <kbd className="rounded bg-zinc-100 px-1 py-0.5 font-mono text-[10px] text-zinc-400">⌘ Enter</kbd>
                   </p>
                 </div>
+              </div>
+
+              {/* Footer linkleri — sadece desktop, idle fazında */}
+              <div className="hidden md:flex absolute bottom-0 left-0 right-0 items-center justify-center gap-5 border-t border-zinc-100 bg-white/90 backdrop-blur-sm py-3 z-10">
+                <span className="text-[11px] text-zinc-300">© {new Date().getFullYear()} Rüya Yorumcum</span>
+                {[
+                  { href: "/gizlilik",       label: "Gizlilik" },
+                  { href: "/mesafeli-satis", label: "Mesafeli Satış" },
+                  { href: "/iptal-iade",     label: "İptal & İade" },
+                  { href: "mailto:destek@ruyayorumcum.com.tr", label: "İletişim" },
+                ].map(({ href, label }) => (
+                  <a key={href} href={href} className="text-[11px] text-zinc-400 hover:text-zinc-700 transition-colors">
+                    {label}
+                  </a>
+                ))}
               </div>
             </div>
           )}
