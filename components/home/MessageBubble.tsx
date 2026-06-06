@@ -2,29 +2,38 @@
 
 import type { ChatMessage } from "@/app/actions/chat-actions";
 
-function safeLines(text: string | null | undefined): string[] {
-  if (!text) return [""];
-  return text.split("\n");
+interface MessageBubbleProps {
+  msg: ChatMessage;
 }
 
-export default function MessageBubble({ msg }: { msg: ChatMessage }) {
+export default function MessageBubble({ msg }: MessageBubbleProps) {
   const isUser = msg.role === "user";
-  const lines  = safeLines(msg.content);
+
+  if (isUser) {
+    return (
+      <div className="space-y-1">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+          Soru
+        </p>
+        <div className="border-l-2 border-zinc-800 bg-zinc-50 pl-4 py-2.5 rounded-r-xl">
+          <p className="text-sm leading-relaxed text-zinc-800">{msg.content}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div className={`
-        max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed
-        ${isUser
-          ? "bg-zinc-900 text-white rounded-br-sm"
-          : "bg-zinc-50 border border-zinc-200 text-zinc-800 rounded-bl-sm"
-        }
-      `}>
-        {lines.map((line, i) => (
-          <p key={i} className={line.trim() === "" ? "h-2" : "mb-1 last:mb-0"}>
-            {line || "\u00A0"}
+    <div className="space-y-1">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+        Analiz
+      </p>
+      <div className="border-l-2 border-zinc-200 bg-white pl-4 py-2.5">
+        <p className="text-sm leading-loose text-zinc-600">{msg.content}</p>
+        {msg.credits_spent > 0 && (
+          <p className="mt-1.5 text-[11px] text-zinc-300">
+            {msg.credits_spent} kredi harcandı
           </p>
-        ))}
+        )}
       </div>
     </div>
   );

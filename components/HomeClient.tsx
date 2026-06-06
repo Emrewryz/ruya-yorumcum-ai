@@ -339,16 +339,15 @@ function HomeInner() {
           {phase === "idle" && (
             <div className="relative flex flex-1 flex-col items-center justify-center px-6 overflow-hidden pb-36 md:pb-20 pt-4 md:pt-0">
 
-              {/* Yapay Zeka Aurası */}
+              {/* Klinik Yapay Zeka Aurası — sade, kurumsal */}
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
                 style={{ contain: "paint layout" }}
               >
-                <div className="absolute -top-10 -left-10 h-56 w-56 md:h-96 md:w-96 rounded-full bg-indigo-200/70 blur-3xl md:blur-[120px] animate-pulse transform-gpu [animation-duration:5s] [backface-visibility:hidden]" style={{ willChange: "opacity" }} />
-                <div className="absolute top-1/4 -right-10 h-52 w-52 md:h-[420px] md:w-[420px] rounded-full bg-violet-200/70 blur-3xl md:blur-[120px] animate-pulse transform-gpu [animation-duration:7s] [animation-delay:1.5s] [backface-visibility:hidden]" style={{ willChange: "opacity" }} />
-                <div className="hidden md:block absolute -bottom-10 left-1/4 h-80 w-80 rounded-full bg-sky-200/60 blur-[100px] animate-pulse transform-gpu [animation-duration:6s] [animation-delay:3s] [backface-visibility:hidden]" style={{ willChange: "opacity" }} />
-                <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-52 w-52 rounded-full bg-rose-100/50 blur-[90px] animate-pulse transform-gpu [animation-duration:8s] [animation-delay:2s] [backface-visibility:hidden]" style={{ willChange: "opacity" }} />
+                <div className="absolute -top-10 -left-10 h-56 w-56 md:h-96 md:w-96 rounded-full bg-zinc-200/50 blur-3xl md:blur-[120px] animate-pulse transform-gpu [animation-duration:6s] [backface-visibility:hidden]" style={{ willChange: "opacity" }} />
+                <div className="absolute top-1/4 -right-10 h-52 w-52 md:h-[420px] md:w-[420px] rounded-full bg-slate-200/50 blur-3xl md:blur-[120px] animate-pulse transform-gpu [animation-duration:8s] [animation-delay:2s] [backface-visibility:hidden]" style={{ willChange: "opacity" }} />
+                <div className="hidden md:block absolute -bottom-10 left-1/4 h-80 w-80 rounded-full bg-sky-100/40 blur-[100px] animate-pulse transform-gpu [animation-duration:7s] [animation-delay:3s] [backface-visibility:hidden]" style={{ willChange: "opacity" }} />
               </div>
 
               <div className="relative z-10 w-full flex flex-col items-center">
@@ -479,21 +478,21 @@ function HomeInner() {
 
                     {session.ai_response && (
                       <PaywallCard
-  dreamId={session.id}
-  detayliTahlil={
-    session.ai_response.detayli_tahlil ??
-    [session.ai_response.islami_analiz, session.ai_response.psikolojik_analiz]
-      .filter(Boolean).join("\n\n") ??
-    ""
-  }
-  semboller={session.ai_response.semboller ?? ""}
-  initialUnlocked={
-    session.detay_unlocked ||
-    session.islami_unlocked ||
-    session.psikolojik_unlocked
-  }
-  onUnlocked={() => setShowOruntuKarti(true)}
-/>
+                        dreamId={session.id}
+                        detayliTahlil={
+                          session.ai_response.detayli_tahlil ??
+                          [session.ai_response.islami_analiz, session.ai_response.psikolojik_analiz]
+                            .filter(Boolean).join("\n\n") ??
+                          ""
+                        }
+                        semboller={session.ai_response.semboller ?? ""}
+                        initialUnlocked={
+                          session.detay_unlocked ||
+                          session.islami_unlocked ||
+                          session.psikolojik_unlocked
+                        }
+                        onUnlocked={() => setShowOruntuKarti(true)}
+                      />
                     )}
 
                     {showOruntuKarti && <OruntuKarti dreamCount={dreamCount} />}
