@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   description:
     "Sıkıcı rüya tabirlerini unutun. Yapay zeka ile rüyanızın psikolojik ve İslami analizini öğrenin, rüyanızı muazzam bir tabloya dönüştürün. Ücretsiz analiz için tıklayın!",
   robots: {
-    index: true,
+    index:  true,
     follow: true,
   },
 };
@@ -39,10 +39,8 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
 
-        {/* Vercel Speed Insights */}
         <SpeedInsights />
 
-        {/* Google Analytics — Sadece canlı ortamda (production) çalışır, localhost'ta engellenir */}
         {process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}

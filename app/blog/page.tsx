@@ -26,8 +26,9 @@ export async function generateMetadata({
   return {
     title: "Blog — Rüya Yorumcum",
     description: "Rüya tabiri, psikoloji ve bilinçaltı üzerine uzman içerikler.",
-    alternates: { canonical: `${SITE_URL}/blog` },
-    robots: { index: true, follow: true },
+alternates: {
+  canonical: "https://www.ruyayorumcum.com.tr/blog",
+},    robots: { index: true, follow: true },
     openGraph: {
       title: "Blog — Rüya Yorumcum",
       description: "Rüya tabiri, psikoloji ve bilinçaltı üzerine uzman içerikler.",

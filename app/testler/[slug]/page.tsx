@@ -6,6 +6,13 @@ import { createClient } from "@/utils/supabase/client";
 import { Loader2, AlertCircle, ArrowRight } from "lucide-react";
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  return {
+    alternates: {
+      canonical: `https://www.ruyayorumcum.com.tr/testler/${params.slug}`,
+    },
+  };
+}
 
 interface TestOption {
   label:    string;

@@ -71,7 +71,9 @@ export async function generateMetadata({
   return {
     title,
     description: desc,
-    alternates:  { canonical: url },
+    alternates: {
+    canonical: `https://www.ruyayorumcum.com.tr/ruya-tabirleri/${params.slug}`,
+  },
     robots:      { index: true, follow: true },
     openGraph: {
       title, description: desc, url, type: "article", siteName: "Rüya Yorumcum",

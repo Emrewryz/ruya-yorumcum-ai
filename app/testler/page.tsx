@@ -11,8 +11,9 @@ export const metadata: Metadata = {
   title: "Psikoloji Testleri — Rüya Yorumcum",
   description:
     "Bilinçaltını keşfet. Rüya psikolojisi ve bilinçaltı örüntüleri üzerine ücretsiz testler.",
-  alternates: { canonical: `${SITE_URL}/testler` },
-  openGraph: {
+alternates: {
+    canonical: "https://www.ruyayorumcum.com.tr/testler",
+  },  openGraph: {
     title: "Psikoloji Testleri — Rüya Yorumcum",
     description: "Bilinçaltını keşfet. Ücretsiz psikoloji testleri.",
     url: `${SITE_URL}/testler`,

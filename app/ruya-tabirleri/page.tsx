@@ -12,12 +12,15 @@ export const metadata: Metadata = {
   title: "Rüya Tabirleri Sözlüğü — Rüya Yorumcum",
   description:
     "İslami ve psikolojik perspektiften kapsamlı rüya tabirleri sözlüğü. Bilinçaltınızın dilini çözün.",
-  alternates: { canonical: `${SITE_URL}/ruya-tabirleri` },
+ alternates: {
+    canonical: "https://www.ruyayorumcum.com.tr/ruya-tabirleri",
+  },
   openGraph: {
     title: "Rüya Tabirleri Sözlüğü — Rüya Yorumcum",
     description: "İslami ve psikolojik perspektiften kapsamlı rüya tabirleri sözlüğü.",
     url: `${SITE_URL}/ruya-tabirleri`,
     type: "website",
+    
   },
 };
 

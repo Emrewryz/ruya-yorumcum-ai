@@ -31,8 +31,9 @@ export async function generateMetadata({
   return {
     title,
     description: desc,
-    alternates: { canonical: url },
-    robots: { index: true, follow: true },
+alternates: {
+  canonical: `https://www.ruyayorumcum.com.tr/blog/${params.slug}`,
+},    robots: { index: true, follow: true },
     openGraph: {
       title: post.title,
       description: desc,
