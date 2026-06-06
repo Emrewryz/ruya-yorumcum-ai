@@ -4,41 +4,39 @@ import { useEffect, useCallback, useState, useTransition } from "react";
 import { X, ShieldCheck, Loader2, CheckCircle, AlertCircle, Moon, Sparkles, Zap, Star, Crown } from "lucide-react";
 import { claimOrder } from "@/app/actions/payment-actions";
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
 
 // ─── Paket Tanımları ──────────────────────────────────────────────────────────
-// href: Shopier ürün linkinizi buraya yazın
 
 const PACKAGES = [
   {
-    key:     "baslangic",
-    icon:    Zap,
-    name:    "Başlangıç",
-    credits: 10,
-    price:   39,
-    badge:   null,
+    key:       "baslangic",
+    icon:      Zap,
+    name:      "Başlangıç",
+    credits:   10,
+    price:     39,
+    badge:     null,
     highlight: false,
-    href:    "https://www.shopier.com/ruyayorumcumai/43928759",
+    href:      "https://www.shopier.com/ruyayorumcumai/43928759",
   },
   {
-    key:     "populer",
-    icon:    Star,
-    name:    "Popüler",
-    credits: 30,
-    price:   89,
-    badge:   "En Popüler",
+    key:       "populer",
+    icon:      Star,
+    name:      "Popüler",
+    credits:   30,
+    price:     89,
+    badge:     "En Popüler",
     highlight: true,
-    href:    "https://www.shopier.com/ruyayorumcumai/43369308",
+    href:      "https://www.shopier.com/ruyayorumcumai/43369308",
   },
   {
-    key:     "bilge",
-    icon:    Crown,
-    name:    "Bilge",
-    credits: 100,
-    price:   249,
-    badge:   "En Avantajlı",
+    key:       "bilge",
+    icon:      Crown,
+    name:      "Bilge",
+    credits:   100,
+    price:     249,
+    badge:     "En Avantajlı",
     highlight: false,
-    href:    "https://www.shopier.com/ruyayorumcumai/43369409",
+    href:      "https://www.shopier.com/ruyayorumcumai/43369409",
   },
 ] as const;
 
@@ -51,6 +49,12 @@ interface CreditModalProps {
 // ─── Giriş Yap Ekranı ────────────────────────────────────────────────────────
 
 function AuthScreen({ onClose }: { onClose: () => void }) {
+  // Mevcut sayfayı al — login sonrası geri dönmek için
+  const currentPath =
+    typeof window !== "undefined"
+      ? window.location.pathname + window.location.search
+      : "/";
+
   return (
     <div className="overflow-hidden rounded-t-2xl md:rounded-2xl border border-zinc-200 bg-white shadow-xl">
 
@@ -91,9 +95,8 @@ function AuthScreen({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="space-y-2">
-          {/* target="_top" — TikTok in-app browser uyumlu */}
           <a
-            href="/auth?mode=register"
+            href={`/auth?mode=register&next=${encodeURIComponent(currentPath)}`}
             target="_top"
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 transition-colors"
           >
@@ -101,7 +104,7 @@ function AuthScreen({ onClose }: { onClose: () => void }) {
             Ücretsiz Hesap Oluştur
           </a>
           <a
-            href="/auth?mode=login"
+            href={`/auth?mode=login&next=${encodeURIComponent(currentPath)}`}
             target="_top"
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 transition-colors"
           >
@@ -184,7 +187,7 @@ function PurchaseScreen({
   onClose,
   onSuccess,
 }: {
-  onClose: () => void;
+  onClose:   () => void;
   onSuccess: (c: number) => void;
 }) {
   return (
@@ -208,12 +211,6 @@ function PurchaseScreen({
         {PACKAGES.map((pkg) => {
           const Icon = pkg.icon;
           return (
-            /*
-             * TikTok in-app browser uyumlu:
-             * - <a href="..."> — onClick/router.push YOK
-             * - target="_top"  — TikTok'un iframe'ini kırar, system browser'a taşır
-             * - target="_blank" KULLANILMADI
-             */
             <a
               key={pkg.key}
               href={pkg.href}
@@ -228,7 +225,6 @@ function PurchaseScreen({
                 }
               `}
             >
-              {/* Badge */}
               {pkg.badge && (
                 <div className={`absolute -top-2.5 right-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                   pkg.highlight ? "bg-white text-zinc-900" : "bg-zinc-900 text-white"
@@ -237,14 +233,12 @@ function PurchaseScreen({
                 </div>
               )}
 
-              {/* İkon */}
               <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
                 pkg.highlight ? "border-white/20 bg-white/10" : "border-zinc-200 bg-zinc-50"
               }`}>
                 <Icon className={`h-4 w-4 ${pkg.highlight ? "text-white" : "text-zinc-500"}`} strokeWidth={1.5} />
               </div>
 
-              {/* Bilgi */}
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-semibold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>
                   {pkg.name}
@@ -254,7 +248,6 @@ function PurchaseScreen({
                 </p>
               </div>
 
-              {/* Fiyat */}
               <div className="shrink-0 text-right">
                 <p className={`text-lg font-bold ${pkg.highlight ? "text-white" : "text-zinc-900"}`}>
                   {pkg.price}₺
@@ -268,10 +261,8 @@ function PurchaseScreen({
         })}
       </div>
 
-      {/* Sipariş doğrulama */}
       <ClaimSection onSuccess={onSuccess} />
 
-      {/* Alt bilgi */}
       <div className="px-5 py-3 border-t border-zinc-100">
         <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-400">
           <span className="flex items-center gap-1">
@@ -291,8 +282,8 @@ function PurchaseScreen({
 // ─── Ana Modal ────────────────────────────────────────────────────────────────
 
 export default function CreditModal({ open, onClose, reason }: CreditModalProps) {
-  const [credited, setCredited]   = useState(false);
-  const [isGuest, setIsGuest]     = useState<boolean | null>(null);
+  const [credited, setCredited] = useState(false);
+  const [isGuest, setIsGuest]   = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -323,7 +314,6 @@ export default function CreditModal({ open, onClose, reason }: CreditModalProps)
 
   if (!open) return null;
 
-  // Kredi yüklendi ekranı
   if (credited) {
     return (
       <>
@@ -352,17 +342,14 @@ export default function CreditModal({ open, onClose, reason }: CreditModalProps)
         role="dialog"
         aria-modal="true"
       >
-        {/* Yükleniyor */}
         {isGuest === null && (
           <div className="flex items-center justify-center rounded-t-2xl md:rounded-2xl border border-zinc-200 bg-white py-10 shadow-xl">
             <Loader2 className="h-5 w-5 animate-spin text-zinc-400" strokeWidth={1.5} />
           </div>
         )}
 
-        {/* Misafir */}
-        {isGuest === true && <AuthScreen onClose={onClose} />}
+        {isGuest === true  && <AuthScreen onClose={onClose} />}
 
-        {/* Kayıtlı kullanıcı */}
         {isGuest === false && (
           <PurchaseScreen onClose={onClose} onSuccess={handleClaimSuccess} />
         )}
