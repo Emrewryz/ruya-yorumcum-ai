@@ -16,8 +16,8 @@ import { getChatList, type SidebarChat } from "@/app/actions/chat-actions";
 const NAV_LINKS = [
   { href: "/blog",           icon: BookOpen,  label: "Blog"            },
   { href: "/ruya-tabirleri", icon: Library,   label: "Rüya Tabirleri"  },
-  { href: "/oruntu-analizi", icon: BarChart2, label: "Haftalık Analiz" },
   { href: "/testler",        icon: Brain,     label: "Testler"         },
+
 ];
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
